@@ -31,6 +31,33 @@ class CaptureRegion {
 
   bool get isEmpty => width <= 0 || height <= 0;
 
+  /// Clips this region to a `bounds` sized image anchored at the origin.
+  ///
+  /// A selection dragged past the edge of the frozen screenshot would make the
+  /// capture backend read out of bounds, so every crop goes through this first.
+  /// Returns an empty region when there is no overlap.
+  CaptureRegion clampedTo(int boundsWidth, int boundsHeight) {
+    final left = x < 0 ? 0 : x;
+    final top = y < 0 ? 0 : y;
+    final right = (x + width) > boundsWidth ? boundsWidth : x + width;
+    final bottom = (y + height) > boundsHeight ? boundsHeight : y + height;
+    return CaptureRegion(
+      x: left,
+      y: top,
+      width: right - left < 0 ? 0 : right - left,
+      height: bottom - top < 0 ? 0 : bottom - top,
+    );
+  }
+
+  /// Scales this region by [factor], for converting between the overlay's
+  /// logical pixels and the screenshot's physical pixels.
+  CaptureRegion scaled(double factor) => CaptureRegion(
+    x: (x * factor).round(),
+    y: (y * factor).round(),
+    width: (width * factor).round(),
+    height: (height * factor).round(),
+  );
+
   Rect toRect() => Rect.fromLTWH(
     x.toDouble(),
     y.toDouble(),

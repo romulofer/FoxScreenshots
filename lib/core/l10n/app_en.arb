@@ -13,6 +13,13 @@
   "captureFullScreen": "Full screen",
   "captureActiveWindow": "Active window",
 
+  "selectionHint": "Drag to select an area · Esc cancels",
+  "captureFailedWayland": "Capture is not available on Wayland yet. Log in to an X11 session.",
+  "captureFailedPlatform": "Screen capture is not supported on this system yet.",
+  "captureFailedDisplay": "Could not read the screen. Check that the display server is reachable.",
+  "captureFailedNoActiveWindow": "No active window to capture.",
+  "captureFailedWindowNotReady": "The app window is not ready yet. Try again.",
+
   "sessionEmpty": "No captures yet. Use the toolbar above to start.",
   "sessionGalleryTitle": "Captures this session",
 

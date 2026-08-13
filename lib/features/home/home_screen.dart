@@ -8,6 +8,7 @@ import '../../core/l10n/gen/app_localizations.dart';
 import '../../core/storage/clipboard_service.dart';
 import '../../core/storage/output_service.dart';
 import '../capture/capture_controller.dart';
+import '../capture/capture_failure_message.dart';
 import '../editor/editor_screen.dart';
 import '../settings/settings_screen.dart';
 import 'session_controller.dart';
@@ -90,12 +91,14 @@ class HomeScreen extends ConsumerWidget {
     WidgetRef ref,
     CaptureMode mode,
   ) async {
+    final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      // Real region selection overlay is wired once a capture backend exists.
-      await ref.read(captureControllerProvider).beginInstant();
-    } on UnimplementedError catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text(e.message ?? 'TODO')));
+      await ref.read(captureControllerProvider).capture(mode);
+    } on CaptureException catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(captureFailureMessage(l10n, e))),
+      );
     }
   }
 

@@ -31,38 +31,67 @@ class ThumbnailTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(child: Image.memory(capture.pngBytes, fit: BoxFit.cover)),
+          // Each action takes an equal share of the tile width: four fixed-size
+          // icon buttons overflow once the grid packs tiles below ~200px.
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                IconButton(
+                _TileAction(
                   tooltip: l10n.actionEdit,
-                  icon: const Icon(Icons.edit_outlined),
+                  icon: Icons.edit_outlined,
                   onPressed: onEdit,
                 ),
-                IconButton(
+                _TileAction(
                   tooltip: l10n.actionCopy,
-                  icon: const Icon(Icons.copy_outlined),
+                  icon: Icons.copy_outlined,
                   onPressed: onCopy,
                 ),
-                IconButton(
+                _TileAction(
                   tooltip: l10n.actionSave,
-                  icon: const Icon(Icons.save_outlined),
+                  icon: Icons.save_outlined,
                   onPressed: onSave,
                 ),
-                IconButton(
+                _TileAction(
                   tooltip: l10n.actionDelete,
-                  icon: Icon(
-                    Icons.delete_outline,
-                    color: theme.colorScheme.error,
-                  ),
+                  icon: Icons.delete_outline,
+                  color: theme.colorScheme.error,
                   onPressed: onDelete,
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// One action in the tile footer, sized to an equal share of the row.
+class _TileAction extends StatelessWidget {
+  const _TileAction({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+    this.color,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onPressed;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: IconButton(
+        tooltip: tooltip,
+        padding: EdgeInsets.zero,
+        visualDensity: VisualDensity.compact,
+        iconSize: 20,
+        constraints: const BoxConstraints(minWidth: 32, minHeight: 36),
+        icon: Icon(icon, color: color),
+        onPressed: onPressed,
       ),
     );
   }

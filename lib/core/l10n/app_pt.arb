@@ -15,6 +15,14 @@
   "captureActiveWindow": "Janela ativa",
   "@captureInstant": { "description": "Capture the screen now via region selection." },
 
+  "selectionHint": "Arraste para selecionar uma área · Esc cancela",
+  "@selectionHint": { "description": "Hint shown on the fullscreen capture overlay." },
+  "captureFailedWayland": "A captura ainda não funciona no Wayland. Entre em uma sessão X11.",
+  "captureFailedPlatform": "Captura de tela ainda não é suportada neste sistema.",
+  "captureFailedDisplay": "Não foi possível ler a tela. Verifique se o servidor gráfico está acessível.",
+  "captureFailedNoActiveWindow": "Nenhuma janela ativa para capturar.",
+  "captureFailedWindowNotReady": "A janela do aplicativo ainda não está pronta. Tente de novo.",
+
   "sessionEmpty": "Nenhuma captura ainda. Use a barra acima para começar.",
   "sessionGalleryTitle": "Capturas desta sessão",
 

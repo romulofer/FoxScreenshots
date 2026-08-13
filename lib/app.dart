@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/l10n/gen/app_localizations.dart';
+import 'core/navigation/app_navigator.dart';
 import 'core/theme/app_theme.dart';
 import 'features/home/home_screen.dart';
 import 'features/settings/settings_controller.dart';
@@ -17,6 +18,7 @@ class FoxScreenShotsApp extends ConsumerWidget {
     final settings = ref.watch(settingsControllerProvider);
 
     return MaterialApp(
+      navigatorKey: ref.watch(navigatorKeyProvider),
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
