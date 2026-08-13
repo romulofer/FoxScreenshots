@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/l10n/gen/app_localizations.dart';
 import 'core/navigation/app_navigator.dart';
 import 'core/theme/app_theme.dart';
-import 'features/home/home_screen.dart';
+import 'features/shell/app_shell.dart';
 import 'features/settings/settings_controller.dart';
 
 /// Root widget: wires theme, locale, and localization delegates from the
@@ -43,7 +43,7 @@ class FoxScreenShotsApp extends ConsumerWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const HomeScreen(),
+      home: const AppShell(),
     );
   }
 }

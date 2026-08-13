@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foxscreenshots/app.dart';
 import 'package:foxscreenshots/core/capture/screen_capture_service.dart';
+import 'package:foxscreenshots/core/desktop/desktop_integration.dart';
 import 'package:foxscreenshots/core/image/png_codec.dart';
 import 'package:foxscreenshots/core/storage/settings_service.dart';
 import 'package:foxscreenshots/core/window/capture_window_controller.dart';
@@ -33,6 +34,9 @@ void main() {
         settingsServiceProvider.overrideWithValue(SettingsService(prefs)),
         screenCaptureServiceProvider.overrideWithValue(service),
         captureWindowControllerProvider.overrideWithValue(window),
+        desktopIntegrationProvider.overrideWithValue(
+          const NoopDesktopIntegration(),
+        ),
         // Both hop off the fake clock in production; keep tests synchronous.
         pngCodecProvider.overrideWithValue(const PngCodec.inline()),
         imageDecoderProvider.overrideWithValue(_fakeDecoder(service)),

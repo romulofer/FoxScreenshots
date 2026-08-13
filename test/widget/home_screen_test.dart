@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foxscreenshots/app.dart';
 import 'package:foxscreenshots/core/capture/screen_capture_service.dart';
+import 'package:foxscreenshots/core/desktop/desktop_integration.dart';
 import 'package:foxscreenshots/core/storage/settings_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,6 +27,10 @@ void main() {
           settingsServiceProvider.overrideWithValue(SettingsService(prefs)),
           screenCaptureServiceProvider.overrideWithValue(
             FakeScreenCaptureService(),
+          ),
+          // No tray or global hotkey in a widget test.
+          desktopIntegrationProvider.overrideWithValue(
+            const NoopDesktopIntegration(),
           ),
         ],
         child: const FoxScreenShotsApp(),
