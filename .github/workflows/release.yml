@@ -1,0 +1,89 @@
+name: Release
+
+# Builds standalone desktop bundles for Windows and macOS and attaches them to
+# the GitHub Release. Trigger: publishing a Release (or a manual run for a dry
+# build). No network/telemetry is added — builds are plain `flutter build`.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+# Keep the Flutter SDK pinned to the version used in development.
+env:
+  FLUTTER_VERSION: "3.45.0-0.1.pre"
+  FLUTTER_CHANNEL: "beta"
+
+permissions:
+  contents: write # needed to upload assets to the Release
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+
+      - run: flutter config --enable-windows-desktop
+      - run: flutter pub get
+      - run: flutter build windows --release
+
+      # The Release folder is self-contained (exe + DLLs + data): unzip and run.
+      - name: Package standalone zip
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $out = "foxscreenshots-$tag-windows-x64.zip"
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath $out
+          echo "ASSET=$out" >> $env:GITHUB_ENV
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: ${{ env.ASSET }}
+
+      - name: Attach to Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ASSET }}
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+
+      - run: flutter config --enable-macos-desktop
+      - run: flutter pub get
+      - run: flutter build macos --release
+
+      # Zip the .app bundle with ditto to preserve macOS metadata. The build is
+      # unsigned/un-notarized: users may need to right-click > Open on first run.
+      - name: Package standalone zip
+        run: |
+          tag="${{ github.ref_name }}"
+          app=$(find build/macos/Build/Products/Release -maxdepth 1 -name "*.app" | head -1)
+          out="foxscreenshots-$tag-macos.zip"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$out"
+          echo "ASSET=$out" >> "$GITHUB_ENV"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: ${{ env.ASSET }}
+
+      - name: Attach to Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ASSET }}

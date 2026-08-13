@@ -1,0 +1,82 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/storage/settings_service.dart';
+
+/// User-facing app preferences (SPEC §2.6, §2.7). Immutable.
+@immutable
+class SettingsState {
+  const SettingsState({
+    required this.themeMode,
+    required this.locale,
+    required this.timerDelaySeconds,
+    required this.hotkey,
+  });
+
+  /// `null` [locale] means "follow the OS" (falling back to pt-BR).
+  final ThemeMode themeMode;
+  final Locale? locale;
+  final int timerDelaySeconds;
+  final String hotkey;
+
+  SettingsState copyWith({
+    ThemeMode? themeMode,
+    Locale? locale,
+    bool clearLocale = false,
+    int? timerDelaySeconds,
+    String? hotkey,
+  }) {
+    return SettingsState(
+      themeMode: themeMode ?? this.themeMode,
+      locale: clearLocale ? null : (locale ?? this.locale),
+      timerDelaySeconds: timerDelaySeconds ?? this.timerDelaySeconds,
+      hotkey: hotkey ?? this.hotkey,
+    );
+  }
+}
+
+/// Loads persisted settings and writes changes back through [SettingsService].
+class SettingsController extends Notifier<SettingsState> {
+  @override
+  SettingsState build() {
+    final s = ref.watch(settingsServiceProvider);
+    return SettingsState(
+      themeMode: _themeModeFromString(s.themeMode),
+      locale: _localeFromTag(s.localeTag),
+      timerDelaySeconds: s.timerDelaySeconds,
+      hotkey: s.hotkey,
+    );
+  }
+
+  SettingsService get _service => ref.read(settingsServiceProvider);
+
+  Future<void> setThemeMode(ThemeMode mode) async {
+    await _service.setThemeMode(mode.name);
+    state = state.copyWith(themeMode: mode);
+  }
+
+  Future<void> setLocale(Locale? locale) async {
+    await _service.setLocaleTag(locale?.languageCode ?? 'system');
+    state = state.copyWith(locale: locale, clearLocale: locale == null);
+  }
+
+  Future<void> setTimerDelaySeconds(int seconds) async {
+    await _service.setTimerDelaySeconds(seconds);
+    state = state.copyWith(timerDelaySeconds: seconds);
+  }
+
+  static ThemeMode _themeModeFromString(String value) => switch (value) {
+    'light' => ThemeMode.light,
+    'dark' => ThemeMode.dark,
+    _ => ThemeMode.system,
+  };
+
+  static Locale? _localeFromTag(String tag) => switch (tag) {
+    'pt' => const Locale('pt'),
+    'en' => const Locale('en'),
+    _ => null,
+  };
+}
+
+final settingsControllerProvider =
+    NotifierProvider<SettingsController, SettingsState>(SettingsController.new);

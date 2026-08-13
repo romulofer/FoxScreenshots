@@ -1,0 +1,59 @@
+{
+  "@@locale": "pt",
+  "appTitle": "FoxScreenShots",
+  "@appTitle": { "description": "Application name shown in title bar and about." },
+
+  "menuFile": "Arquivo",
+  "menuEdit": "Editar",
+  "menuSettings": "Configurações",
+  "menuHelp": "Ajuda",
+  "quit": "Sair",
+
+  "captureInstant": "Instantâneo",
+  "captureTimer": "Temporizador",
+  "captureFullScreen": "Tela cheia",
+  "captureActiveWindow": "Janela ativa",
+  "@captureInstant": { "description": "Capture the screen now via region selection." },
+
+  "sessionEmpty": "Nenhuma captura ainda. Use a barra acima para começar.",
+  "sessionGalleryTitle": "Capturas desta sessão",
+
+  "actionEdit": "Editar",
+  "actionCopy": "Copiar",
+  "actionSave": "Salvar",
+  "actionDelete": "Excluir",
+  "actionReveal": "Mostrar na pasta",
+
+  "settingsTitle": "Configurações",
+  "settingsTheme": "Tema",
+  "settingsThemeSystem": "Sistema",
+  "settingsThemeLight": "Claro",
+  "settingsThemeDark": "Escuro",
+  "settingsLanguage": "Idioma",
+  "settingsLanguageSystem": "Sistema",
+  "settingsLanguagePt": "Português (Brasil)",
+  "settingsLanguageEn": "Inglês (EUA)",
+  "settingsHotkey": "Atalho de captura",
+  "settingsCaptureDelay": "Atraso do temporizador (s)",
+  "settingsOutputFolder": "Pasta de saída",
+
+  "copiedToClipboard": "Copiado para a área de transferência",
+  "savedTo": "Salvo em {path}",
+  "@savedTo": {
+    "description": "Confirmation after saving a screenshot to disk.",
+    "placeholders": { "path": { "type": "String" } }
+  },
+
+  "editorTitle": "Editor",
+  "toolCrop": "Recortar",
+  "toolArrow": "Seta",
+  "toolRectangle": "Retângulo",
+  "toolEllipse": "Elipse",
+  "toolText": "Texto",
+  "toolHighlight": "Marca-texto",
+  "toolBlur": "Desfoque",
+  "toolPen": "Caneta",
+  "toolNumber": "Marcador numerado",
+  "undo": "Desfazer",
+  "redo": "Refazer"
+}

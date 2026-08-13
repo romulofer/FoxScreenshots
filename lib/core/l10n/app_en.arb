@@ -1,0 +1,53 @@
+{
+  "@@locale": "en",
+  "appTitle": "FoxScreenShots",
+
+  "menuFile": "File",
+  "menuEdit": "Edit",
+  "menuSettings": "Settings",
+  "menuHelp": "Help",
+  "quit": "Quit",
+
+  "captureInstant": "Instant",
+  "captureTimer": "Timer",
+  "captureFullScreen": "Full screen",
+  "captureActiveWindow": "Active window",
+
+  "sessionEmpty": "No captures yet. Use the toolbar above to start.",
+  "sessionGalleryTitle": "Captures this session",
+
+  "actionEdit": "Edit",
+  "actionCopy": "Copy",
+  "actionSave": "Save",
+  "actionDelete": "Delete",
+  "actionReveal": "Reveal in folder",
+
+  "settingsTitle": "Settings",
+  "settingsTheme": "Theme",
+  "settingsThemeSystem": "System",
+  "settingsThemeLight": "Light",
+  "settingsThemeDark": "Dark",
+  "settingsLanguage": "Language",
+  "settingsLanguageSystem": "System",
+  "settingsLanguagePt": "Portuguese (Brazil)",
+  "settingsLanguageEn": "English (US)",
+  "settingsHotkey": "Capture hotkey",
+  "settingsCaptureDelay": "Timer delay (s)",
+  "settingsOutputFolder": "Output folder",
+
+  "copiedToClipboard": "Copied to clipboard",
+  "savedTo": "Saved to {path}",
+
+  "editorTitle": "Editor",
+  "toolCrop": "Crop",
+  "toolArrow": "Arrow",
+  "toolRectangle": "Rectangle",
+  "toolEllipse": "Ellipse",
+  "toolText": "Text",
+  "toolHighlight": "Highlight",
+  "toolBlur": "Blur",
+  "toolPen": "Pen",
+  "toolNumber": "Numbered marker",
+  "undo": "Undo",
+  "redo": "Redo"
+}
