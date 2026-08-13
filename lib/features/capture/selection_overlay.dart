@@ -1,30 +1,51 @@
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../core/l10n/gen/app_localizations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/capture_region.dart';
+import 'screen_mapping.dart';
 import 'widgets/selection_painter.dart';
 
-/// Fullscreen frozen-frame overlay with a rubber-band selection (SPEC §2.1).
+/// Fullscreen overlay with a rubber-band selection (SPEC §2.1).
 ///
-/// [backdrop] is the already-grabbed screenshot of the whole virtual screen, so
-/// what the user drags over is a still image: menus and tooltips stay open in
-/// the frame. The selection is reported in **backdrop pixels**, derived from
-/// the widget size, which keeps it correct on any display scale factor.
+/// Two shapes, one widget:
+///
+/// * **Frozen** (instant mode) — [backdrop] holds a screenshot of the whole
+///   virtual screen, so what the user drags over is a still image and open
+///   menus or tooltips stay in the frame.
+/// * **Live** (timer mode) — [backdrop] is `null` and the window is
+///   see-through, so the user frames a region on the moving desktop; the shot
+///   is taken later, after the delay.
+///
+/// [mapping] says which slice of the screen sits under the overlay window, so
+/// a frozen backdrop lines up pixel-for-pixel with the real desktop; it updates
+/// once the window manager has placed the window. Selections are reported in
+/// screen pixels.
 class CaptureSelectionOverlay extends StatefulWidget {
   const CaptureSelectionOverlay({
     required this.backdrop,
+    required this.screenWidth,
+    required this.screenHeight,
+    required this.mapping,
     required this.onSelected,
     required this.onCancel,
     super.key,
   });
 
-  final ui.Image backdrop;
+  /// Frozen frame to draw, or `null` to select over the live desktop.
+  final ui.Image? backdrop;
 
-  /// Called once with the chosen region, in backdrop pixels.
+  /// Virtual screen size in physical pixels — the bounds a selection is
+  /// clipped to. Not read from [backdrop] because live mode has none.
+  final int screenWidth;
+  final int screenHeight;
+  final ValueListenable<ScreenMapping> mapping;
+
+  /// Called once with the chosen region, in screenshot pixels.
   final ValueChanged<CaptureRegion> onSelected;
   final VoidCallback onCancel;
 
@@ -50,32 +71,18 @@ class _CaptureSelectionOverlayState extends State<CaptureSelectionOverlay> {
     super.dispose();
   }
 
-  /// Converts a widget-space rectangle into backdrop pixels.
-  CaptureRegion _toImageRegion(Offset a, Offset b, Size widgetSize) {
-    final scaleX = widget.backdrop.width / widgetSize.width;
-    final scaleY = widget.backdrop.height / widgetSize.height;
-    final logical = CaptureRegion.fromPoints(a, b);
-    return CaptureRegion(
-      x: (logical.x * scaleX).round(),
-      y: (logical.y * scaleY).round(),
-      width: (logical.width * scaleX).round(),
-      height: (logical.height * scaleY).round(),
-    ).clampedTo(widget.backdrop.width, widget.backdrop.height);
-  }
-
   void _cancel() {
     if (_done) return;
     _done = true;
     widget.onCancel();
   }
 
-  void _finish(Size widgetSize) {
+  void _finish(ScreenMapping mapping) {
     final start = _start;
     final current = _current;
     if (_done || start == null || current == null) return;
 
-    final dragged = (current - start).distance;
-    if (dragged < CaptureSelectionOverlay.minDragExtent) {
+    if ((current - start).distance < CaptureSelectionOverlay.minDragExtent) {
       setState(() {
         _start = null;
         _current = null;
@@ -83,7 +90,12 @@ class _CaptureSelectionOverlayState extends State<CaptureSelectionOverlay> {
       return;
     }
 
-    final region = _toImageRegion(start, current, widgetSize);
+    final region = mapping.toRegion(
+      start,
+      current,
+      imageWidth: widget.screenWidth,
+      imageHeight: widget.screenHeight,
+    );
     if (region.isEmpty) return;
     _done = true;
     widget.onSelected(region);
@@ -105,9 +117,9 @@ class _CaptureSelectionOverlayState extends State<CaptureSelectionOverlay> {
         }
         return KeyEventResult.ignored;
       },
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final widgetSize = constraints.biggest;
+      child: ValueListenableBuilder<ScreenMapping>(
+        valueListenable: widget.mapping,
+        builder: (context, mapping, _) {
           return MouseRegion(
             cursor: SystemMouseCursors.precise,
             onHover: (e) => setState(() => _pointer = e.localPosition),
@@ -123,11 +135,11 @@ class _CaptureSelectionOverlayState extends State<CaptureSelectionOverlay> {
                 _current = d.localPosition;
                 _pointer = d.localPosition;
               }),
-              onPanEnd: (_) => _finish(widgetSize),
+              onPanEnd: (_) => _finish(mapping),
               child: CustomPaint(
-                size: widgetSize,
                 painter: SelectionPainter(
                   backdrop: widget.backdrop,
+                  mapping: mapping,
                   start: _start,
                   current: _current,
                   pointer: _pointer,
@@ -135,6 +147,7 @@ class _CaptureSelectionOverlayState extends State<CaptureSelectionOverlay> {
                   hint: l10n.selectionHint,
                   textDirection: Directionality.of(context),
                 ),
+                child: const SizedBox.expand(),
               ),
             ),
           );

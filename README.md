@@ -38,6 +38,32 @@ A desktop tool to capture and quickly annotate screenshots.
 Requires the [Flutter SDK](https://docs.flutter.dev/get-started/install) with
 desktop support enabled.
 
+### Linux system packages
+
+Capture talks to X11 directly, and the tray and global hotkey come from GTK
+libraries, so a few system packages are needed. Debian/Ubuntu/Mint:
+
+```bash
+# to build
+sudo apt install clang cmake ninja-build pkg-config libgtk-3-dev \
+                 libkeybinder-3.0-dev libayatana-appindicator3-dev
+
+# to run (usually already installed)
+sudo apt install libx11-6 libkeybinder-3.0-0 libayatana-appindicator3-1
+```
+
+| Library | Used for | Without it |
+|---|---|---|
+| `libX11.so.6` | screen capture | capture is unavailable |
+| `libkeybinder-3.0.so.0` | global hotkey | hotkey does not fire |
+| `libayatana-appindicator3.so.1` | tray icon | no tray icon |
+
+The app checks all of these at startup and shows a banner naming whatever is
+missing, so users are never left with a button that silently does nothing.
+
+**Wayland** is not supported yet — capture needs an X11 session for now
+(a `xdg-desktop-portal` backend is planned).
+
 ```bash
 # enable desktop (once)
 flutter config --enable-linux-desktop --enable-windows-desktop --enable-macos-desktop

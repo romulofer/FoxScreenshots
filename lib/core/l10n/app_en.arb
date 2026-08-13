@@ -20,6 +20,15 @@
   "captureFailedNoActiveWindow": "No active window to capture.",
   "captureFailedWindowNotReady": "The app window is not ready yet. Try again.",
 
+  "dependencyTitleBlocking": "Screen capture is unavailable on this system",
+  "dependencyTitleDegraded": "Some features are unavailable on this system",
+  "dependencyX11Library": "libX11.so.6 is missing — install it (Debian/Ubuntu: libx11-6).",
+  "dependencyXDisplay": "The X display server is unreachable — check the DISPLAY variable.",
+  "dependencyWaylandSession": "This is a Wayland session; capture currently needs X11.",
+  "dependencyKeybinder": "Global hotkeys are off — libkeybinder-3.0.so.0 is missing (Debian/Ubuntu: libkeybinder-3.0-0).",
+  "dependencyAppIndicator": "The tray icon may not show — libayatana-appindicator3.so.1 is missing (Debian/Ubuntu: libayatana-appindicator3-1).",
+  "dependencyDismiss": "Dismiss",
+
   "sessionEmpty": "No captures yet. Use the toolbar above to start.",
   "sessionGalleryTitle": "Captures this session",
 

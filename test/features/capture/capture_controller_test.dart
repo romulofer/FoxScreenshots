@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foxscreenshots/app.dart';
@@ -119,6 +120,7 @@ void main() {
       expect(window.calls, [
         'hideForCapture',
         'enterOverlay',
+        'revealOverlay',
         'leaveOverlay',
         'restore',
       ]);
@@ -138,6 +140,32 @@ void main() {
       expect(result, isNull);
       expect(container.read(sessionControllerProvider), isEmpty);
       expect(window.calls.last, 'restore');
+    });
+
+    testWidgets('maps the selection through the granted window bounds', (
+      tester,
+    ) async {
+      // The window manager clamped the overlay to the right-hand half of a
+      // 1600x600 virtual screen; a drag there must land on the right half of
+      // the screenshot, not at its origin.
+      window = FakeCaptureWindow(
+        virtualScreen: const Rect.fromLTWH(0, 0, 1600, 600),
+        granted: const Rect.fromLTWH(800, 0, 800, 600),
+      );
+      service = FakeScreenCaptureService(screenWidth: 1600, screenHeight: 600);
+      await pumpApp(tester);
+
+      final pending = container
+          .read(captureControllerProvider)
+          .captureWithTimer(delay: Duration.zero);
+      await tester.pumpAndSettle();
+      await dragSelection(tester, const Offset(10, 20), const Offset(110, 120));
+      await pending;
+
+      expect(
+        service.lastRegion,
+        const CaptureRegion(x: 810, y: 20, width: 100, height: 100),
+      );
     });
 
     testWidgets('a stray click is not a selection', (tester) async {

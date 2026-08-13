@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tray_manager/tray_manager.dart';
 
@@ -25,8 +26,20 @@ class TrayService with TrayListener {
     _onAction = onAction;
     trayManager.addListener(this);
     await trayManager.setIcon(iconPath);
-    await trayManager.setToolTip(tooltip);
+    // The Linux (AppIndicator) backend implements neither tooltips nor
+    // programmatic menu popups; both are no-ops there rather than errors.
+    await _ignoreUnsupported(() => trayManager.setToolTip(tooltip));
     await trayManager.setContextMenu(_buildMenu(labels));
+  }
+
+  /// Runs [call], swallowing the `MissingPluginException` raised by tray
+  /// features a platform does not implement.
+  Future<void> _ignoreUnsupported(Future<void> Function() call) async {
+    try {
+      await call();
+    } on MissingPluginException {
+      // Optional tray feature; the icon and menu still work.
+    }
   }
 
   Menu _buildMenu(Map<TrayAction, String> labels) {
@@ -56,7 +69,9 @@ class TrayService with TrayListener {
   void onTrayIconMouseDown() => _onOpenWindow?.call();
 
   @override
-  void onTrayIconRightMouseDown() => trayManager.popUpContextMenu();
+  void onTrayIconRightMouseDown() {
+    _ignoreUnsupported(trayManager.popUpContextMenu);
+  }
 
   @override
   void onTrayMenuItemClick(MenuItem menuItem) {

@@ -10,6 +10,7 @@ import '../../models/capture_result.dart';
 import '../home/session_controller.dart';
 import '../settings/settings_controller.dart';
 import 'image_decoder.dart';
+import 'screen_mapping.dart';
 import 'selection_overlay.dart';
 
 /// Runs the capture flows (SPEC §2.1) end to end: hide the hub window, grab
@@ -114,9 +115,16 @@ class CaptureController {
     }
 
     final backdrop = await _ref.read(imageDecoderProvider)(frozen.pngBytes);
+
+    // Size and position the window first, then push the overlay against that
+    // placement, then show it: the hub is never seen stretched across the
+    // monitors, and the frozen frame is drawn 1:1 from the start.
+    final requested = await _window.enterOverlay();
+    final mapping = ValueNotifier<ScreenMapping>(
+      ScreenMapping.fromPlacement(requested, imageWidth: backdrop.width),
+    );
+
     try {
-      // Push while the window is still hidden, so the hub is never seen
-      // stretched across the screen for a frame.
       final pending = navigator.push<CaptureRegion>(
         PageRouteBuilder<CaptureRegion>(
           opaque: true,
@@ -124,16 +132,26 @@ class CaptureController {
           reverseTransitionDuration: Duration.zero,
           pageBuilder: (context, _, _) => CaptureSelectionOverlay(
             backdrop: backdrop,
+            mapping: mapping,
             onSelected: (region) => Navigator.of(context).pop(region),
             onCancel: () => Navigator.of(context).pop(),
           ),
         ),
       );
-      await _window.enterOverlay();
+
+      // A window manager may clamp the overlay (to one monitor, or away from a
+      // panel); re-map against what it actually granted.
+      final granted = await _window.revealOverlay();
+      mapping.value = ScreenMapping.fromPlacement(
+        granted,
+        imageWidth: backdrop.width,
+      );
+
       final region = await pending;
       await _window.leaveOverlay();
       return region;
     } finally {
+      mapping.dispose();
       backdrop.dispose();
     }
   }

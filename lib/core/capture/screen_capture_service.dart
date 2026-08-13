@@ -64,6 +64,11 @@ abstract interface class ScreenCaptureService {
   /// pixels, or `null` when the platform cannot report one (nothing focused, or
   /// only the desktop). Callers pass it to [grabRegion].
   Future<CaptureRegion?> activeWindowRegion();
+
+  /// Size of the whole virtual screen in physical pixels, without grabbing it.
+  /// Timer mode needs the dimensions to map a selection made over the *live*
+  /// desktop, where there is no frozen frame to measure.
+  Future<({int width, int height})> virtualScreenSize();
 }
 
 /// Fallback for platforms whose backend is not written yet. Constructs fine so
@@ -86,6 +91,9 @@ class UnsupportedScreenCaptureService implements ScreenCaptureService {
 
   @override
   Future<CaptureRegion?> activeWindowRegion() async => _unsupported();
+
+  @override
+  Future<({int width, int height})> virtualScreenSize() async => _unsupported();
 }
 
 /// Picks the backend for the current session.

@@ -40,6 +40,18 @@ class X11ScreenCaptureService implements ScreenCaptureService {
     }
   }
 
+  @override
+  Future<({int width, int height})> virtualScreenSize() async {
+    try {
+      return await Isolate.run(_virtualScreenSizeSync);
+    } on X11Exception catch (e) {
+      throw CaptureException(
+        CaptureFailure.displayUnavailable,
+        details: e.message,
+      );
+    }
+  }
+
   Future<CaptureResult> _grab(CaptureRegion? region) async {
     final ({Uint8List png, int width, int height}) frame;
     try {
@@ -117,6 +129,26 @@ class X11ScreenCaptureService implements ScreenCaptureService {
     } finally {
       x11.destroyImage(image);
     }
+  } finally {
+    x11.closeDisplay(display);
+  }
+}
+
+/// Reads the virtual screen dimensions in physical pixels. Runs in an isolate.
+({int width, int height}) _virtualScreenSizeSync() {
+  final x11 = X11Lib.open();
+  final display = x11.openDisplay(nullptr);
+  if (display == nullptr) {
+    throw const X11Exception(
+      'Could not connect to the X server (is DISPLAY set?)',
+    );
+  }
+  try {
+    final screen = x11.defaultScreen(display);
+    return (
+      width: x11.displayWidth(display, screen),
+      height: x11.displayHeight(display, screen),
+    );
   } finally {
     x11.closeDisplay(display);
   }

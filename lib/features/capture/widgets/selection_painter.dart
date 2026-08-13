@@ -2,14 +2,22 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
-/// Draws the whole capture overlay: frozen backdrop, dimmed surroundings, the
-/// rubber band with its live size badge, and a pixel magnifier (SPEC §2.1).
+import '../screen_mapping.dart';
+
+/// Draws the whole capture overlay: the frozen backdrop (when there is one),
+/// dimmed surroundings, the rubber band with its live size badge, and a pixel
+/// magnifier (SPEC §2.1).
 ///
 /// One painter instead of stacked widgets: everything here repaints on every
 /// pointer move, and a single canvas pass keeps the drag smooth on a 4K frame.
+///
+/// With a `null` [backdrop] the overlay is see-through (timer mode): nothing is
+/// painted over the desktop but a light tint, the selection, and its size — and
+/// the magnifier is skipped, since there are no frozen pixels to zoom into.
 class SelectionPainter extends CustomPainter {
   const SelectionPainter({
     required this.backdrop,
+    required this.mapping,
     required this.start,
     required this.current,
     required this.pointer,
@@ -18,7 +26,10 @@ class SelectionPainter extends CustomPainter {
     required this.textDirection,
   });
 
-  final ui.Image backdrop;
+  final ui.Image? backdrop;
+
+  /// Which slice of [backdrop] lies under this overlay, and at what scale.
+  final ScreenMapping mapping;
   final Offset? start;
   final Offset? current;
   final Offset? pointer;
@@ -28,22 +39,31 @@ class SelectionPainter extends CustomPainter {
 
   static const double _magnifierSize = 132;
   static const double _magnifierZoom = 6;
-  static const Color _dim = Color(0x8C000000);
+  static const Color _frozenDim = Color(0x8C000000);
+
+  /// Much lighter over the live desktop: the user still has to see what they
+  /// are framing, and this tint never reaches the screenshot.
+  static const Color _liveDim = Color(0x33000000);
 
   @override
   void paint(Canvas canvas, Size size) {
     final canvasRect = Offset.zero & size;
-    canvas.drawImageRect(
-      backdrop,
-      Rect.fromLTWH(
-        0,
-        0,
-        backdrop.width.toDouble(),
-        backdrop.height.toDouble(),
-      ),
-      canvasRect,
-      Paint()..filterQuality = FilterQuality.high,
-    );
+    final frozen = backdrop;
+    if (frozen != null) {
+      // Draw only the part of the screenshot the window sits on, at 1:1, so
+      // the frozen desktop lines up exactly with the real one underneath.
+      canvas.drawImageRect(
+        frozen,
+        Rect.fromLTWH(
+          mapping.imageOrigin.dx,
+          mapping.imageOrigin.dy,
+          size.width * mapping.imagePixelsPerLogical,
+          size.height * mapping.imagePixelsPerLogical,
+        ),
+        canvasRect,
+        Paint()..filterQuality = FilterQuality.high,
+      );
+    }
 
     final selection = (start != null && current != null)
         ? Rect.fromPoints(start!, current!)
@@ -62,7 +82,7 @@ class SelectionPainter extends CustomPainter {
 
   /// Darkens everything outside the selection so the chosen region pops.
   void _paintDim(Canvas canvas, Rect canvasRect, Rect? selection) {
-    final paint = Paint()..color = _dim;
+    final paint = Paint()..color = backdrop == null ? _liveDim : _frozenDim;
     if (selection == null) {
       canvas.drawRect(canvasRect, paint);
       return;
@@ -128,11 +148,10 @@ class SelectionPainter extends CustomPainter {
     Rect selection,
     Size size,
   ) {
-    final scaleX = backdrop.width / size.width;
-    final scaleY = backdrop.height / size.height;
+    final scale = mapping.imagePixelsPerLogical;
     final label =
-        '${(selection.width * scaleX).round()} × '
-        '${(selection.height * scaleY).round()} px';
+        '${(selection.width * scale).round()} × '
+        '${(selection.height * scale).round()} px';
 
     final painter = _text(label, 13, FontWeight.w600);
     const padding = EdgeInsets.symmetric(horizontal: 8, vertical: 4);
@@ -172,8 +191,9 @@ class SelectionPainter extends CustomPainter {
 
   /// Zoomed view of the pixels under the cursor, for pixel-precise edges.
   void _paintMagnifier(Canvas canvas, Rect canvasRect, Size size) {
+    final frozen = backdrop;
     final at = pointer;
-    if (at == null) return;
+    if (frozen == null || at == null) return;
 
     // Keep the loupe clear of the cursor, flipping near the screen edges.
     var origin = at + const Offset(24, 24);
@@ -186,23 +206,19 @@ class SelectionPainter extends CustomPainter {
     final box = origin & const Size(_magnifierSize, _magnifierSize);
     final rrect = RRect.fromRectAndRadius(box, const Radius.circular(10));
 
-    final scaleX = backdrop.width / size.width;
-    final scaleY = backdrop.height / size.height;
-    final srcExtent = Size(
-      _magnifierSize / _magnifierZoom * scaleX,
-      _magnifierSize / _magnifierZoom * scaleY,
-    );
+    final scale = mapping.imagePixelsPerLogical;
+    final srcExtent = _magnifierSize / _magnifierZoom * scale;
     final src = Rect.fromCenter(
-      center: Offset(at.dx * scaleX, at.dy * scaleY),
-      width: srcExtent.width,
-      height: srcExtent.height,
+      center: mapping.toImage(at),
+      width: srcExtent,
+      height: srcExtent,
     );
 
     canvas
       ..save()
       ..clipRRect(rrect)
       ..drawImageRect(
-        backdrop,
+        frozen,
         src,
         box,
         Paint()..filterQuality = FilterQuality.none,
@@ -249,6 +265,7 @@ class SelectionPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(SelectionPainter old) =>
+      old.mapping != mapping ||
       old.start != start ||
       old.current != current ||
       old.pointer != pointer ||

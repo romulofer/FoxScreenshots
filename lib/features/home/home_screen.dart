@@ -13,6 +13,7 @@ import '../editor/editor_screen.dart';
 import '../settings/settings_screen.dart';
 import 'session_controller.dart';
 import 'widgets/capture_toolbar.dart';
+import 'widgets/dependency_banner.dart';
 import 'widgets/thumbnail_tile.dart';
 
 /// Shutter-like hub window (SPEC §2.5): capture toolbar on top, session gallery
@@ -43,6 +44,7 @@ class HomeScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const DependencyBanner(),
             CaptureToolbar(onCapture: (mode) => _onCapture(context, ref, mode)),
             const SizedBox(height: 16),
             Text(

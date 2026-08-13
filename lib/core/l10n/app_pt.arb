@@ -23,6 +23,16 @@
   "captureFailedNoActiveWindow": "Nenhuma janela ativa para capturar.",
   "captureFailedWindowNotReady": "A janela do aplicativo ainda não está pronta. Tente de novo.",
 
+  "dependencyTitleBlocking": "A captura de tela está indisponível neste sistema",
+  "@dependencyTitleBlocking": { "description": "Banner title when a required system component is missing." },
+  "dependencyTitleDegraded": "Alguns recursos estão indisponíveis neste sistema",
+  "dependencyX11Library": "libX11.so.6 não encontrada — instale (Debian/Ubuntu: libx11-6).",
+  "dependencyXDisplay": "Servidor gráfico X inacessível — verifique a variável DISPLAY.",
+  "dependencyWaylandSession": "Esta sessão é Wayland; por enquanto a captura precisa de X11.",
+  "dependencyKeybinder": "Atalhos globais desligados — libkeybinder-3.0.so.0 não encontrada (Debian/Ubuntu: libkeybinder-3.0-0).",
+  "dependencyAppIndicator": "O ícone na bandeja pode não aparecer — libayatana-appindicator3.so.1 não encontrada (Debian/Ubuntu: libayatana-appindicator3-1).",
+  "dependencyDismiss": "Dispensar",
+
   "sessionEmpty": "Nenhuma captura ainda. Use a barra acima para começar.",
   "sessionGalleryTitle": "Capturas desta sessão",
 

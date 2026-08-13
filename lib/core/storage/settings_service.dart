@@ -26,7 +26,8 @@ class SettingsService {
   String get hotkey => _prefs.getString(_kHotkey) ?? 'PrintScreen';
   Future<void> setHotkey(String value) => _prefs.setString(_kHotkey, value);
 
-  int get timerDelaySeconds => _prefs.getInt(_kDelaySeconds) ?? 3;
+  /// Seconds between the region being chosen and the shot being taken.
+  int get timerDelaySeconds => _prefs.getInt(_kDelaySeconds) ?? 5;
   Future<void> setTimerDelaySeconds(int value) =>
       _prefs.setInt(_kDelaySeconds, value);
 
