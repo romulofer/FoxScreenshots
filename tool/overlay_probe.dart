@@ -49,8 +49,12 @@ Future<void> main() async {
 Future<void> _wmctrl(String tag) async {
   final out = await Process.run('wmctrl', ['-lG']);
   for (final line in (out.stdout as String).split('\n')) {
-    if (line.toLowerCase().contains('probe')) {
-      stdout.writeln('wmctrl[$tag] $line');
+    if (!line.toLowerCase().contains('probe')) continue;
+    stdout.writeln('wmctrl[$tag] $line');
+    final id = line.split(RegExp(r'\s+')).first;
+    for (final property in ['_NET_WM_STATE', '_NET_WM_FULLSCREEN_MONITORS']) {
+      final value = await Process.run('xprop', ['-id', id, property]);
+      stdout.writeln('  ${(value.stdout as String).trim()}');
     }
   }
 }
@@ -114,5 +118,9 @@ Future<void> _probe() async {
   ]);
   stdout.writeln('import exit=${shot.exitCode} ${shot.stderr}');
 
+  // Same teardown the capture flow runs: leave the overlay, then restore.
   await window.leaveOverlay();
+  await window.restore();
+  await Future<void>.delayed(const Duration(milliseconds: 600));
+  await _wmctrl('after restore');
 }

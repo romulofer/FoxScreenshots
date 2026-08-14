@@ -5,6 +5,7 @@ import 'package:screen_retriever/screen_retriever.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../desktop/session_type.dart';
+import 'overlay_stacking.dart';
 import 'window_geometry.dart';
 
 /// Where the overlay window actually ended up, in logical pixels.
@@ -88,8 +89,10 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
   WindowManagerCaptureWindow({
     this.repaintDelay = const Duration(milliseconds: 220),
     WindowGeometryProbe? geometry,
+    OverlayStacking? stacking,
     DesktopSession? session,
   }) : _geometry = geometry ?? defaultWindowGeometryProbe(),
+       _stacking = stacking ?? defaultOverlayStacking(),
        _session = session ?? currentDesktopSession();
 
   /// How long to wait after hiding the window before grabbing pixels. Too short
@@ -99,6 +102,9 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
   /// Measures where the overlay really landed, since the window manager is free
   /// to ignore the geometry it was handed.
   final WindowGeometryProbe _geometry;
+
+  /// Keeps the overlay above windows that are themselves fullscreen.
+  final OverlayStacking _stacking;
 
   /// Wayland gives a window no say in where it goes and no way to ask, so the
   /// overlay is opened fullscreen there and the frozen frame is fitted into it
@@ -115,6 +121,10 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
   Rect? _restoreBounds;
   Rect _virtualScreen = Rect.zero;
   bool _wasVisible = true;
+
+  /// Whether the overlay is currently holding the fullscreen state, which the
+  /// teardown has to give back — the hub must not come back fullscreen.
+  bool _fullScreen = false;
 
   @override
   Future<void> hideForCapture() async {
@@ -168,13 +178,38 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
     // Several window managers only honor geometry once the window is mapped,
     // so ask again and then measure what was actually granted.
     await windowManager.setBounds(_virtualScreen);
+    // Sizing the window by hand leaves it below anything that is *itself*
+    // fullscreen — a video or a slideshow on another monitor would sit in front
+    // of the overlay. Being fullscreen too, across every monitor, is what puts
+    // the overlay in the same layer.
+    var fullScreen = await _stacking.spanAllMonitors();
+    var measured = await _measurePlacement();
+    if (fullScreen && !_covers(measured)) {
+      // Granted, but kept to a single monitor: a selection could not cross
+      // screens any more, so give the state back and place the window by hand.
+      await _stacking.clear();
+      await windowManager.setBounds(_virtualScreen);
+      measured = await _measurePlacement();
+      fullScreen = false;
+    }
+    _fullScreen = fullScreen;
     final granted = await windowManager.getBounds();
 
     return OverlayPlacement(
       window: granted,
       virtualScreen: _virtualScreen,
-      physicalWindow: await _measurePlacement(),
+      physicalWindow: measured,
     );
+  }
+
+  /// Whether [measured] is the whole virtual screen, give or take rounding.
+  bool _covers(Rect? measured) {
+    final view = PlatformDispatcher.instance.implicitView;
+    if (measured == null || view == null) return false;
+
+    final expected = _virtualScreen.size * view.devicePixelRatio;
+    return (measured.width - expected.width).abs() <= 2 &&
+        (measured.height - expected.height).abs() <= 2;
   }
 
   /// The overlay surface in logical pixels, straight from the engine — the one
@@ -241,8 +276,14 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
     }
   }
 
-  /// Drops the always-on-top and skip-taskbar flags the overlay sets.
+  /// Drops everything that keeps the overlay on top: the always-on-top and
+  /// skip-taskbar flags, and the fullscreen state when it was granted. Leaving
+  /// any of them on would bring the hub back pinned over the desktop.
   Future<void> _unpin() async {
+    if (_fullScreen) {
+      _fullScreen = false;
+      await _stacking.clear();
+    }
     await windowManager.setAlwaysOnTop(false);
     await windowManager.setSkipTaskbar(false);
   }

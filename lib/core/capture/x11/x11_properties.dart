@@ -10,10 +10,11 @@ import 'x11_bindings.dart';
 ///
 /// * bytes 0–63   — out-parameters of [readCardinals]
 /// * bytes 64–127 — the C string [internAtom] writes
-/// * bytes 128+   — free for the caller
+/// * bytes 128+   — free for the caller (an `XEvent` is 192 bytes, and the
+///   overlay builds one there)
 ///
 /// Allocate at least [scratchBytes] and hand the same pointer to every call.
-const int scratchBytes = 256;
+const int scratchBytes = 512;
 
 /// First byte a caller may use for its own out-parameters.
 const int callerScratchOffset = 128;
@@ -86,6 +87,47 @@ List<int> readCardinals(
   } finally {
     x11.freeData(buffer);
   }
+}
+
+/// Top-level windows of [processId], in the window manager's own client list.
+///
+/// Empty while the app's only window is hidden: a withdrawn window leaves
+/// `_NET_CLIENT_LIST`, so callers must ask again once it is mapped.
+List<int> ownWindows(
+  X11Lib x11,
+  Pointer<Void> display,
+  Pointer<Uint8> scratch,
+  int root,
+  int processId,
+) {
+  final clientList = internAtom(x11, display, scratch, '_NET_CLIENT_LIST');
+  if (clientList == 0) return const [];
+
+  return [
+    for (final window in readCardinals(x11, display, scratch, root, clientList))
+      if (windowPid(x11, display, scratch, window) == processId) window,
+  ];
+}
+
+/// Whether the window manager advertises support for every atom in [names]
+/// (`_NET_SUPPORTED`), so a request can be skipped instead of sent into the
+/// void and silently ignored.
+bool supportsAll(
+  X11Lib x11,
+  Pointer<Void> display,
+  Pointer<Uint8> scratch,
+  int root,
+  List<String> names,
+) {
+  final supported = internAtom(x11, display, scratch, '_NET_SUPPORTED');
+  final atoms = readCardinals(x11, display, scratch, root, supported).toSet();
+  if (atoms.isEmpty) return false;
+
+  for (final name in names) {
+    final atom = internAtom(x11, display, scratch, name);
+    if (atom == 0 || !atoms.contains(atom)) return false;
+  }
+  return true;
 }
 
 /// Process id that owns [window] (`_NET_WM_PID`), or `null` when it says

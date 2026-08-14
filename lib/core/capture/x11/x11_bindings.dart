@@ -184,6 +184,22 @@ typedef XGetWindowPropertyDart = int Function(
 );
 typedef _XFreeNative = Int32 Function(Pointer<Uint8>);
 typedef XFreeDart = int Function(Pointer<Uint8>);
+typedef _XSendEventNative = Int32 Function(
+  Pointer<Void> display,
+  UnsignedLong window,
+  Int32 propagate,
+  Long eventMask,
+  Pointer<Uint8> event,
+);
+typedef XSendEventDart = int Function(
+  Pointer<Void> display,
+  int window,
+  int propagate,
+  int eventMask,
+  Pointer<Uint8> event,
+);
+typedef _XFlushNative = Int32 Function(Pointer<Void>);
+typedef XFlushDart = int Function(Pointer<Void>);
 typedef _MallocNative = Pointer<Uint8> Function(IntPtr);
 typedef MallocDart = Pointer<Uint8> Function(int);
 typedef _FreeNative = Void Function(Pointer<Uint8>);
@@ -251,6 +267,12 @@ class X11Lib {
       freeData = lib
           .lookup<NativeFunction<_XFreeNative>>('XFree')
           .asFunction<XFreeDart>(),
+      sendEvent = lib
+          .lookup<NativeFunction<_XSendEventNative>>('XSendEvent')
+          .asFunction<XSendEventDart>(),
+      flush = lib
+          .lookup<NativeFunction<_XFlushNative>>('XFlush')
+          .asFunction<XFlushDart>(),
       // libc, for the small scratch buffer the out-parameter calls need.
       malloc = DynamicLibrary.process()
           .lookup<NativeFunction<_MallocNative>>('malloc')
@@ -284,6 +306,8 @@ class X11Lib {
 
   /// `XFree` — releases buffers Xlib allocated (property data, window lists).
   final XFreeDart freeData;
+  final XSendEventDart sendEvent;
+  final XFlushDart flush;
   final MallocDart malloc;
   final FreeDart free;
 
