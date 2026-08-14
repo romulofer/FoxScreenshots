@@ -65,13 +65,30 @@ void main() {
       displayReachable: false,
     ).check();
 
+    // Capture still works there, through the portal — so it only degrades.
     expect(issues.first.dependency, SystemDependency.waylandSession);
-    expect(issues.first.severity, DependencySeverity.blocking);
+    expect(issues.first.severity, DependencySeverity.degraded);
+  });
+
+  test('no Wayland o atalho global é dado como perdido', () {
+    final issues = checker(
+      environment: const {'XDG_SESSION_TYPE': 'wayland'},
+    ).check();
+
+    // The library is installed in this scenario and still cannot bind a key.
+    expect(
+      issues.map((i) => i.dependency),
+      containsAll([
+        SystemDependency.waylandSession,
+        SystemDependency.keybinder,
+      ]),
+    );
   });
 
   test('detecta o Wayland só pela WAYLAND_DISPLAY', () {
-    final issues = checker(environment: const {'WAYLAND_DISPLAY': 'wayland-0'})
-        .check();
+    final issues = checker(
+      environment: const {'WAYLAND_DISPLAY': 'wayland-0'},
+    ).check();
 
     expect(
       issues.map((i) => i.dependency),

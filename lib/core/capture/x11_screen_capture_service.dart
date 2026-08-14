@@ -1,4 +1,5 @@
 import 'dart:ffi';
+import 'dart:io';
 import 'dart:isolate';
 import 'dart:typed_data';
 
@@ -8,6 +9,7 @@ import '../image/png_codec.dart';
 import '../image/raw_pixels.dart';
 import 'screen_capture_service.dart';
 import 'x11/x11_bindings.dart';
+import 'x11/x11_properties.dart';
 
 /// Linux/X11 capture backend (SPEC §2.1).
 ///
@@ -16,9 +18,9 @@ import 'x11/x11_bindings.dart';
 /// grab and the PNG encode both run in a background isolate: a 4K frame would
 /// otherwise stall the UI for hundreds of milliseconds.
 ///
-/// Wayland sessions are rejected up front by [defaultScreenCaptureService] —
-/// under Wayland the X root window is not the real desktop, so a grab would
-/// silently produce a black image instead of failing.
+/// Wayland sessions never reach this backend: [defaultScreenCaptureService]
+/// sends them to the portal instead, because the X root window under Wayland is
+/// not the real desktop and a grab there would quietly return a black image.
 class X11ScreenCaptureService implements ScreenCaptureService {
   const X11ScreenCaptureService();
 
@@ -154,10 +156,14 @@ class X11ScreenCaptureService implements ScreenCaptureService {
   }
 }
 
-/// Reads the focused window's geometry, translated to root coordinates.
+/// Reads the active window's geometry, translated to root coordinates.
 ///
-/// Runs inside an isolate. Returns `null` when the focus is the root window,
-/// nothing, or the pointer (`PointerRoot`) — i.e. there is no window to frame.
+/// Runs inside an isolate. Returns `null` when nothing usable is focused.
+///
+/// The window manager's own answer (`_NET_ACTIVE_WINDOW`) is asked for first,
+/// because `XGetInputFocus` frequently reports a 1x1 focus proxy — Muffin,
+/// Metacity and Mutter all park the input focus on one — and framing that
+/// yields an empty region, which the UI reports as "no active window".
 CaptureRegion? _activeWindowRegionSync() {
   const none = 0;
   const pointerRoot = 1;
@@ -170,61 +176,106 @@ CaptureRegion? _activeWindowRegionSync() {
     );
   }
 
-  // One scratch block for every out-parameter below; offsets are 8-byte
-  // aligned where an X `Window` (unsigned long) lands.
-  final scratch = x11.malloc(96);
+  final scratch = x11.malloc(scratchBytes);
   if (scratch == nullptr) {
     throw const X11Exception('malloc failed for X11 scratch buffer');
   }
   try {
-    final focus = scratch.cast<UnsignedLong>();
-    final revertTo = (scratch + 8).cast<Int32>();
-    x11.getInputFocus(display, focus, revertTo);
-
-    final window = focus.value;
     final root = x11.defaultRootWindow(display);
-    if (window == none || window == pointerRoot || window == root) return null;
+    final activeAtom = internAtom(x11, display, scratch, '_NET_ACTIVE_WINDOW');
+    final candidates = [
+      ...readCardinals(x11, display, scratch, root, activeAtom),
+      _focusedWindow(x11, display, scratch),
+    ];
 
-    final rootOut = (scratch + 16).cast<UnsignedLong>();
-    final xOut = (scratch + 24).cast<Int32>();
-    final yOut = (scratch + 28).cast<Int32>();
-    final widthOut = (scratch + 32).cast<Uint32>();
-    final heightOut = (scratch + 36).cast<Uint32>();
-    final borderOut = (scratch + 40).cast<Uint32>();
-    final depthOut = (scratch + 44).cast<Uint32>();
-    final ok = x11.getGeometry(
-      display,
-      window,
-      rootOut,
-      xOut,
-      yOut,
-      widthOut,
-      heightOut,
-      borderOut,
-      depthOut,
-    );
-    if (ok == 0) return null;
+    for (final window in candidates) {
+      if (window == none || window == pointerRoot || window == root) continue;
+      // Our own window is never the answer: the hub is hidden by the time this
+      // runs, and framing where it used to be would capture the desktop
+      // underneath it.
+      if (windowPid(x11, display, scratch, window) == pid) continue;
 
-    // The geometry above is relative to the window's parent, so map (0,0) of
-    // the window onto the root to get virtual-screen coordinates.
-    final absX = (scratch + 48).cast<Int32>();
-    final absY = (scratch + 52).cast<Int32>();
-    final child = (scratch + 56).cast<UnsignedLong>();
-    x11.translateCoordinates(display, window, root, 0, 0, absX, absY, child);
-
-    return CaptureRegion(
-      x: absX.value,
-      y: absY.value,
-      width: widthOut.value,
-      height: heightOut.value,
-    ).clampedTo(
-      x11.displayWidth(display, x11.defaultScreen(display)),
-      x11.displayHeight(display, x11.defaultScreen(display)),
-    );
+      final region = _windowRegionSync(x11, display, scratch, root, window);
+      if (region != null && !region.isEmpty) return region;
+    }
+    return null;
   } finally {
     x11.free(scratch);
     x11.closeDisplay(display);
   }
+}
+
+/// The window holding the input focus, or 0.
+int _focusedWindow(X11Lib x11, Pointer<Void> display, Pointer<Uint8> scratch) {
+  final focus = (scratch + callerScratchOffset).cast<UnsignedLong>();
+  final revertTo = (scratch + callerScratchOffset + 8).cast<Int32>();
+  focus.value = 0;
+  x11.getInputFocus(display, focus, revertTo);
+  return focus.value;
+}
+
+/// Geometry of [window] in root coordinates, clipped to the virtual screen.
+///
+/// A window one pixel wide or tall is a focus proxy rather than something the
+/// user meant to capture, so it is reported as nothing at all.
+CaptureRegion? _windowRegionSync(
+  X11Lib x11,
+  Pointer<Void> display,
+  Pointer<Uint8> scratch,
+  int root,
+  int window,
+) {
+  final base = scratch + callerScratchOffset;
+  final rootOut = (base + 16).cast<UnsignedLong>();
+  final xOut = (base + 24).cast<Int32>();
+  final yOut = (base + 28).cast<Int32>();
+  final widthOut = (base + 32).cast<Uint32>();
+  final heightOut = (base + 36).cast<Uint32>();
+  final borderOut = (base + 40).cast<Uint32>();
+  final depthOut = (base + 44).cast<Uint32>();
+  final ok = x11.getGeometry(
+    display,
+    window,
+    rootOut,
+    xOut,
+    yOut,
+    widthOut,
+    heightOut,
+    borderOut,
+    depthOut,
+  );
+  if (ok == 0) return null;
+  if (widthOut.value <= 1 || heightOut.value <= 1) return null;
+
+  // The geometry above is relative to the window's parent, so map (0,0) of
+  // the window onto the root to get virtual-screen coordinates.
+  final absX = (base + 48).cast<Int32>();
+  final absY = (base + 52).cast<Int32>();
+  final child = (base + 56).cast<UnsignedLong>();
+  if (x11.translateCoordinates(
+        display,
+        window,
+        root,
+        0,
+        0,
+        absX,
+        absY,
+        child,
+      ) ==
+      0) {
+    return null;
+  }
+
+  final screen = x11.defaultScreen(display);
+  return CaptureRegion(
+    x: absX.value,
+    y: absY.value,
+    width: widthOut.value,
+    height: heightOut.value,
+  ).clampedTo(
+    x11.displayWidth(display, screen),
+    x11.displayHeight(display, screen),
+  );
 }
 
 /// Converts an [XImage]'s pixel buffer to tightly-packed RGBA.

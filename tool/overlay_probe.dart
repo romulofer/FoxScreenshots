@@ -68,7 +68,11 @@ Future<void> _probe() async {
   final requested = await window.enterOverlay();
   stdout.writeln('requested=$requested');
   final mapping = ValueNotifier<ScreenMapping>(
-    ScreenMapping.fromPlacement(requested, imageWidth: frozen.width),
+    ScreenMapping.fromPlacement(
+      requested,
+      imageWidth: frozen.width,
+      imageHeight: frozen.height,
+    ),
   );
   stdout.writeln('mapping(requested)=${mapping.value}');
 
@@ -91,6 +95,7 @@ Future<void> _probe() async {
   mapping.value = ScreenMapping.fromPlacement(
     granted,
     imageWidth: frozen.width,
+    imageHeight: frozen.height,
   );
   stdout.writeln('mapping(granted)=${mapping.value}');
 

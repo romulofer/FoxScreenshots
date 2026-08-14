@@ -16,6 +16,8 @@
 
   "selectionHint": "Drag to select an area · Esc cancels",
   "captureFailedWayland": "Capture is not available on Wayland yet. Log in to an X11 session.",
+  "captureFailedPortalDenied": "The system refused the capture. Allow FoxScreenShots to take screenshots and try again.",
+  "captureFailedPortalUnavailable": "No screenshot portal answered. Install your desktop's xdg-desktop-portal.",
   "captureFailedPlatform": "Screen capture is not supported on this system yet.",
   "captureFailedDisplay": "Could not read the screen. Check that the display server is reachable.",
   "captureFailedNoActiveWindow": "No active window to capture.",
@@ -25,7 +27,7 @@
   "dependencyTitleDegraded": "Some features are unavailable on this system",
   "dependencyX11Library": "libX11.so.6 is missing — install it (Debian/Ubuntu: libx11-6).",
   "dependencyXDisplay": "The X display server is unreachable — check the DISPLAY variable.",
-  "dependencyWaylandSession": "This is a Wayland session; capture currently needs X11.",
+  "dependencyWaylandSession": "Wayland session: capture goes through the system portal, which asks for permission; active-window capture and the global hotkey are unavailable here.",
   "dependencyKeybinder": "Global hotkeys are off — libkeybinder-3.0.so.0 is missing (Debian/Ubuntu: libkeybinder-3.0-0).",
   "dependencyAppIndicator": "The tray icon may not show — libayatana-appindicator3.so.1 is missing (Debian/Ubuntu: libayatana-appindicator3-1).",
   "dependencyDismiss": "Dismiss",

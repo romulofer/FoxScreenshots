@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screen_retriever/screen_retriever.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../desktop/session_type.dart';
 import 'window_geometry.dart';
 
 /// Where the overlay window actually ended up, in logical pixels.
@@ -22,26 +23,39 @@ class OverlayPlacement {
     required this.window,
     required this.virtualScreen,
     this.physicalWindow,
-  });
+  }) : fitsImage = false;
+
+  /// An overlay that cannot be lined up with the desktop at all: under Wayland
+  /// a window is given neither a position nor a way to ask for one, so the
+  /// frozen frame is scaled to fit inside [window] instead. The selection is
+  /// still exact — the drag is mapped back through the same scale.
+  const OverlayPlacement.fitted({required this.window})
+    : virtualScreen = window,
+      physicalWindow = null,
+      fitsImage = true;
 
   final Rect window;
   final Rect virtualScreen;
   final Rect? physicalWindow;
+  final bool fitsImage;
 
   @override
   bool operator ==(Object other) =>
       other is OverlayPlacement &&
       other.window == window &&
       other.virtualScreen == virtualScreen &&
-      other.physicalWindow == physicalWindow;
+      other.physicalWindow == physicalWindow &&
+      other.fitsImage == fitsImage;
 
   @override
-  int get hashCode => Object.hash(window, virtualScreen, physicalWindow);
+  int get hashCode =>
+      Object.hash(window, virtualScreen, physicalWindow, fitsImage);
 
   @override
   String toString() =>
       'OverlayPlacement(window: $window, '
-      'virtualScreen: $virtualScreen, physicalWindow: $physicalWindow)';
+      'virtualScreen: $virtualScreen, physicalWindow: $physicalWindow, '
+      'fitsImage: $fitsImage)';
 }
 
 /// Window moves the capture flows need (SPEC §2.1).
@@ -74,7 +88,9 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
   WindowManagerCaptureWindow({
     this.repaintDelay = const Duration(milliseconds: 220),
     WindowGeometryProbe? geometry,
-  }) : _geometry = geometry ?? defaultWindowGeometryProbe();
+    DesktopSession? session,
+  }) : _geometry = geometry ?? defaultWindowGeometryProbe(),
+       _session = session ?? currentDesktopSession();
 
   /// How long to wait after hiding the window before grabbing pixels. Too short
   /// and the disappearing window is still in the frame.
@@ -83,6 +99,13 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
   /// Measures where the overlay really landed, since the window manager is free
   /// to ignore the geometry it was handed.
   final WindowGeometryProbe _geometry;
+
+  /// Wayland gives a window no say in where it goes and no way to ask, so the
+  /// overlay is opened fullscreen there and the frozen frame is fitted into it
+  /// instead of being laid over the desktop 1:1.
+  final DesktopSession _session;
+
+  bool get _placesWindows => _session != DesktopSession.wayland;
 
   /// How long to keep asking for the overlay's placement before giving up and
   /// using the window manager's own numbers.
@@ -118,18 +141,30 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
     await windowManager.setSkipTaskbar(true);
     // Minimum size would otherwise refuse a request smaller than the hub's.
     await windowManager.setMinimumSize(const Size(1, 1));
-    await windowManager.setBounds(_virtualScreen);
+    if (_placesWindows) {
+      await windowManager.setBounds(_virtualScreen);
+    } else {
+      await windowManager.setFullScreen(true);
+    }
 
-    return OverlayPlacement(
-      window: _virtualScreen,
-      virtualScreen: _virtualScreen,
-    );
+    return _placesWindows
+        ? OverlayPlacement(
+            window: _virtualScreen,
+            virtualScreen: _virtualScreen,
+          )
+        : OverlayPlacement.fitted(window: _viewBounds() ?? _virtualScreen);
   }
 
   @override
   Future<OverlayPlacement> revealOverlay() async {
     await windowManager.show();
     await windowManager.focus();
+    if (!_placesWindows) {
+      // Nothing to measure: the compositor chose the monitor and will not say
+      // which. The frozen frame is fitted into whatever surface came back.
+      return OverlayPlacement.fitted(window: _viewBounds() ?? _virtualScreen);
+    }
+
     // Several window managers only honor geometry once the window is mapped,
     // so ask again and then measure what was actually granted.
     await windowManager.setBounds(_virtualScreen);
@@ -140,6 +175,15 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
       virtualScreen: _virtualScreen,
       physicalWindow: await _measurePlacement(),
     );
+  }
+
+  /// The overlay surface in logical pixels, straight from the engine — the one
+  /// size that is right even when nobody will say where the window is.
+  Rect? _viewBounds() {
+    final view = PlatformDispatcher.instance.implicitView;
+    if (view == null) return null;
+    final size = view.physicalSize / view.devicePixelRatio;
+    return Offset.zero & size;
   }
 
   /// Where the overlay ended up according to the display server, in physical

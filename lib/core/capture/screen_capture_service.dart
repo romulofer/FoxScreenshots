@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/capture_region.dart';
 import '../../models/capture_result.dart';
+import '../desktop/session_type.dart';
+import 'portal/screenshot_portal.dart';
+import 'portal_screen_capture_service.dart';
 import 'x11_screen_capture_service.dart';
 
 /// How a capture is framed.
@@ -16,6 +19,13 @@ enum CaptureMode { instant, timer, fullScreen, activeWindow }
 enum CaptureFailure {
   /// The session is Wayland, where the X backend cannot see the desktop.
   waylandUnsupported,
+
+  /// The desktop refused the screenshot, or the user dismissed its permission
+  /// dialog (Wayland, through xdg-desktop-portal).
+  portalDenied,
+
+  /// No screenshot portal answered — nothing can capture on this session.
+  portalUnavailable,
 
   /// No backend is written for this operating system yet.
   platformUnsupported,
@@ -98,31 +108,21 @@ class UnsupportedScreenCaptureService implements ScreenCaptureService {
 
 /// Picks the backend for the current session.
 ///
-/// Linux runs on X11 through Xlib. A Wayland session is refused rather than
-/// served a black frame: the X root window there is not the real desktop, so
-/// the grab would appear to succeed. A Wayland backend (xdg-desktop-portal
-/// `ScreenCast`) is still to come.
+/// X11 reads the root window through Xlib, which is instant and needs no
+/// permission. Wayland forbids that outright, so it goes through
+/// xdg-desktop-portal instead — slower, and gated behind the desktop's own
+/// confirmation, but the only route a client is given.
 ScreenCaptureService defaultScreenCaptureService({
   Map<String, String>? environment,
 }) {
-  final env = environment ?? Platform.environment;
-  if (Platform.isLinux) {
-    final sessionType = env['XDG_SESSION_TYPE']?.toLowerCase();
-    final isWayland =
-        sessionType == 'wayland' ||
-        (env['WAYLAND_DISPLAY']?.isNotEmpty ?? false);
-    if (isWayland) {
-      return const UnsupportedScreenCaptureService(
-        CaptureFailure.waylandUnsupported,
-        details: 'Wayland session: use xdg-desktop-portal (not implemented)',
-      );
-    }
-    return const X11ScreenCaptureService();
-  }
-  return UnsupportedScreenCaptureService(
-    CaptureFailure.platformUnsupported,
-    details: 'No backend for ${Platform.operatingSystem}',
-  );
+  return switch (currentDesktopSession(environment: environment)) {
+    DesktopSession.x11 => const X11ScreenCaptureService(),
+    DesktopSession.wayland => PortalScreenCaptureService(XdgScreenshotPortal()),
+    DesktopSession.other => UnsupportedScreenCaptureService(
+      CaptureFailure.platformUnsupported,
+      details: 'No backend for ${Platform.operatingSystem}',
+    ),
+  };
 }
 
 /// Selects the capture backend for the current OS. Overridden in tests with a

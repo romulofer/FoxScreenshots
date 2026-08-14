@@ -168,7 +168,11 @@ class CaptureController {
     // monitors, and a frozen frame is drawn 1:1 from the start.
     final requested = await _window.enterOverlay();
     final mapping = ValueNotifier<ScreenMapping>(
-      ScreenMapping.fromPlacement(requested, imageWidth: screenWidth),
+      ScreenMapping.fromPlacement(
+        requested,
+        imageWidth: screenWidth,
+        imageHeight: screenHeight,
+      ),
     );
 
     try {
@@ -193,6 +197,7 @@ class CaptureController {
       mapping.value = ScreenMapping.fromPlacement(
         granted,
         imageWidth: screenWidth,
+        imageHeight: screenHeight,
       );
 
       return await pending;

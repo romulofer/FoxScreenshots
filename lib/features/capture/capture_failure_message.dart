@@ -8,6 +8,8 @@ import '../../core/l10n/gen/app_localizations.dart';
 String captureFailureMessage(AppLocalizations l10n, CaptureException error) {
   return switch (error.failure) {
     CaptureFailure.waylandUnsupported => l10n.captureFailedWayland,
+    CaptureFailure.portalDenied => l10n.captureFailedPortalDenied,
+    CaptureFailure.portalUnavailable => l10n.captureFailedPortalUnavailable,
     CaptureFailure.platformUnsupported => l10n.captureFailedPlatform,
     CaptureFailure.displayUnavailable => l10n.captureFailedDisplay,
     CaptureFailure.noActiveWindow => l10n.captureFailedNoActiveWindow,

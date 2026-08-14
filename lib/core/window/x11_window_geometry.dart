@@ -4,6 +4,7 @@ import 'dart:isolate';
 import 'dart:ui';
 
 import '../capture/x11/x11_bindings.dart';
+import '../capture/x11/x11_properties.dart';
 import 'window_geometry.dart';
 
 /// Reads the app's own window position off the X server.
@@ -32,12 +33,6 @@ class X11WindowGeometry implements WindowGeometryProbe {
   }
 }
 
-/// `Success` — the status `XGetWindowProperty` returns when it read something.
-const int _success = 0;
-
-/// `AnyPropertyType` — accept whatever type the property happens to have.
-const int _anyPropertyType = 0;
-
 /// Top-left corner, in root coordinates, of the window owned by [processId]
 /// whose client area measures [width]x[height] physical pixels.
 ///
@@ -53,21 +48,23 @@ Offset? _originSync(int processId, int width, int height) {
     );
   }
 
-  // One scratch block for every out-parameter below; each slot is 8-byte
-  // aligned so an X `Window`/`Atom` (unsigned long) always lands aligned.
-  final scratch = x11.malloc(128);
+  final scratch = x11.malloc(scratchBytes);
   if (scratch == nullptr) {
     throw const X11Exception('malloc failed for X11 scratch buffer');
   }
   try {
     final root = x11.defaultRootWindow(display);
-    final clientList = _atom(x11, display, scratch, '_NET_CLIENT_LIST');
-    final pidAtom = _atom(x11, display, scratch, '_NET_WM_PID');
-    if (clientList == 0 || pidAtom == 0) return null;
+    final clientList = internAtom(x11, display, scratch, '_NET_CLIENT_LIST');
+    if (clientList == 0) return null;
 
-    for (final window in _cardinals(x11, display, scratch, root, clientList)) {
-      final pids = _cardinals(x11, display, scratch, window, pidAtom);
-      if (pids.isEmpty || pids.first != processId) continue;
+    for (final window in readCardinals(
+      x11,
+      display,
+      scratch,
+      root,
+      clientList,
+    )) {
+      if (windowPid(x11, display, scratch, window) != processId) continue;
 
       final origin = _clientOrigin(
         x11,
@@ -87,68 +84,6 @@ Offset? _originSync(int processId, int width, int height) {
   }
 }
 
-/// Interns [name], writing it into [scratch] as a NUL-terminated C string.
-int _atom(
-  X11Lib x11,
-  Pointer<Void> display,
-  Pointer<Uint8> scratch,
-  String name,
-) {
-  const onlyIfExists = 1;
-  final buffer = (scratch + 64).cast<Uint8>();
-  final bytes = name.codeUnits;
-  for (var i = 0; i < bytes.length; i++) {
-    buffer[i] = bytes[i];
-  }
-  buffer[bytes.length] = 0;
-  return x11.internAtom(display, buffer.cast<Char>(), onlyIfExists);
-}
-
-/// Reads a 32-bit-format property as a list of numbers.
-///
-/// X hands `format 32` data back as C `long`s, which are 64 bits wide on the
-/// platforms this backend runs on — hence the `Uint64` view.
-List<int> _cardinals(
-  X11Lib x11,
-  Pointer<Void> display,
-  Pointer<Uint8> scratch,
-  int window,
-  int property,
-) {
-  const noDelete = 0;
-  const maxLongs = 1024;
-
-  final actualType = scratch.cast<UnsignedLong>();
-  final actualFormat = (scratch + 8).cast<Int32>();
-  final itemCount = (scratch + 16).cast<UnsignedLong>();
-  final bytesAfter = (scratch + 24).cast<UnsignedLong>();
-  final data = (scratch + 32).cast<Pointer<Uint8>>();
-  data.value = nullptr;
-
-  final status = x11.getWindowProperty(
-    display,
-    window,
-    property,
-    0,
-    maxLongs,
-    noDelete,
-    _anyPropertyType,
-    actualType,
-    actualFormat,
-    itemCount,
-    bytesAfter,
-    data,
-  );
-  final buffer = data.value;
-  if (status != _success || buffer == nullptr) return const [];
-  try {
-    if (actualFormat.value != 32) return const [];
-    return List<int>.from(buffer.cast<Uint64>().asTypedList(itemCount.value));
-  } finally {
-    x11.freeData(buffer);
-  }
-}
-
 /// Root-relative origin of [window]'s client area, or `null` when it is not the
 /// [width]x[height] surface being looked for.
 Offset? _clientOrigin(
@@ -160,13 +95,14 @@ Offset? _clientOrigin(
   int width,
   int height,
 ) {
-  final rootOut = (scratch + 40).cast<UnsignedLong>();
-  final xOut = (scratch + 48).cast<Int32>();
-  final yOut = (scratch + 52).cast<Int32>();
-  final widthOut = (scratch + 56).cast<Uint32>();
-  final heightOut = (scratch + 60).cast<Uint32>();
-  final borderOut = (scratch + 80).cast<Uint32>();
-  final depthOut = (scratch + 84).cast<Uint32>();
+  final base = scratch + callerScratchOffset;
+  final rootOut = base.cast<UnsignedLong>();
+  final xOut = (base + 8).cast<Int32>();
+  final yOut = (base + 12).cast<Int32>();
+  final widthOut = (base + 16).cast<Uint32>();
+  final heightOut = (base + 20).cast<Uint32>();
+  final borderOut = (base + 24).cast<Uint32>();
+  final depthOut = (base + 28).cast<Uint32>();
   final ok = x11.getGeometry(
     display,
     window,
@@ -184,9 +120,9 @@ Offset? _clientOrigin(
   // The geometry above is relative to the window's parent — the window
   // manager's frame — so map (0,0) of the window onto the root to get the
   // position the screenshot is indexed by.
-  final absX = (scratch + 88).cast<Int32>();
-  final absY = (scratch + 92).cast<Int32>();
-  final child = (scratch + 96).cast<UnsignedLong>();
+  final absX = (base + 32).cast<Int32>();
+  final absY = (base + 36).cast<Int32>();
+  final child = (base + 40).cast<UnsignedLong>();
   final translated = x11.translateCoordinates(
     display,
     window,

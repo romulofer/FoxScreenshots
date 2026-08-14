@@ -36,6 +36,32 @@ void main() {
     });
   });
 
+  group('pngSize', () {
+    test('lê as dimensões do cabeçalho, sem decodificar', () async {
+      final png = await codec.encodeRgba(
+        rgbaGradient(7, 3),
+        width: 7,
+        height: 3,
+      );
+
+      expect(pngSize(png), (width: 7, height: 3));
+    });
+
+    test('recusa bytes que não são PNG', () {
+      expect(
+        () => pngSize(Uint8List.fromList(List.filled(64, 0x42))),
+        throwsFormatException,
+      );
+    });
+
+    test('recusa um arquivo curto demais para ter cabeçalho', () {
+      expect(
+        () => pngSize(Uint8List.fromList(const [0x89, 0x50, 0x4E, 0x47])),
+        throwsFormatException,
+      );
+    });
+  });
+
   group('crop', () {
     late Uint8List source;
 

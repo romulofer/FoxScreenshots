@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import '../../core/window/capture_window_controller.dart';
@@ -32,7 +33,15 @@ class ScreenMapping {
   factory ScreenMapping.fromPlacement(
     OverlayPlacement placement, {
     required int imageWidth,
+    required int imageHeight,
   }) {
+    if (placement.fitsImage) {
+      return ScreenMapping.fitted(
+        image: Size(imageWidth.toDouble(), imageHeight.toDouble()),
+        window: placement.window.size,
+      );
+    }
+
     final virtual = placement.virtualScreen;
     final scale = virtual.width > 0 ? imageWidth / virtual.width : 1.0;
     final measured = placement.physicalWindow;
@@ -43,6 +52,36 @@ class ScreenMapping {
               (placement.window.left - virtual.left) * scale,
               (placement.window.top - virtual.top) * scale,
             ),
+      imagePixelsPerLogical: scale,
+    );
+  }
+
+  /// Fits the whole screenshot inside the overlay window, centred.
+  ///
+  /// For sessions where the overlay cannot be laid over the desktop 1:1 —
+  /// Wayland, where a window has no position it may ask for or set. The frozen
+  /// frame is shown shrunk instead of aligned, so the user picks the region on
+  /// a scaled-down desktop; the drag still maps back to exact pixels.
+  factory ScreenMapping.fitted({required Size image, required Size window}) {
+    if (image.isEmpty || window.isEmpty) {
+      return const ScreenMapping(
+        imageOrigin: Offset.zero,
+        imagePixelsPerLogical: 1,
+      );
+    }
+
+    // Whichever axis runs out first sets the scale, so nothing is cropped.
+    final scale = math.max(
+      image.width / window.width,
+      image.height / window.height,
+    );
+    final drawn = image / scale;
+    final margin = Offset(
+      (window.width - drawn.width) / 2,
+      (window.height - drawn.height) / 2,
+    );
+    return ScreenMapping(
+      imageOrigin: -margin * scale,
       imagePixelsPerLogical: scale,
     );
   }

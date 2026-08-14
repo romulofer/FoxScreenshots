@@ -92,8 +92,13 @@ sudo apt install libx11-6 libkeybinder-3.0-0 libayatana-appindicator3-1
 O app verifica todas na inicialização e mostra um aviso nomeando a que estiver
 faltando — ninguém fica com um botão que não faz nada em silêncio.
 
-**Wayland** ainda não é suportado: a captura precisa de uma sessão X11 por
-enquanto (um backend `xdg-desktop-portal` está planejado).
+**Wayland** captura pelo `xdg-desktop-portal`: a área de trabalho pede
+autorização na primeira captura e o portal entrega a imagem pronta. Em troca,
+capturar a *janela ativa* e o *atalho global* não funcionam — o Wayland não
+deixa um aplicativo saber nada sobre as janelas dos outros nem prender uma
+tecla do sistema. A seleção de região continua funcionando: o quadro congelado
+é encaixado dentro da janela em tela cheia, já que ali nenhuma janela pode
+escolher onde ficar.
 
 ```bash
 # habilitar desktop (uma vez)
@@ -229,8 +234,12 @@ sudo apt install libx11-6 libkeybinder-3.0-0 libayatana-appindicator3-1
 The app checks all of these at startup and shows a banner naming whatever is
 missing, so users are never left with a button that silently does nothing.
 
-**Wayland** is not supported yet — capture needs an X11 session for now
-(a `xdg-desktop-portal` backend is planned).
+**Wayland** captures through `xdg-desktop-portal`: the desktop asks for
+permission on the first capture and hands back a finished image. In exchange,
+*active window* capture and the *global hotkey* do not work there — Wayland
+lets an app know nothing about other windows and grab no system-wide key.
+Region selection still works: the frozen frame is fitted inside the fullscreen
+overlay, since no window there may choose where it goes.
 
 ```bash
 # enable desktop (once)

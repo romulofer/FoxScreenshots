@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../capture/x11/x11_bindings.dart';
+import '../desktop/session_type.dart';
 
 /// A system component the app needs at runtime.
 enum SystemDependency {
@@ -14,7 +15,8 @@ enum SystemDependency {
   /// connection).
   xDisplay,
 
-  /// The session is Wayland, where the X backend cannot see the desktop.
+  /// The session is Wayland: capture goes through xdg-desktop-portal, which
+  /// asks the user for permission and cannot frame another window.
   waylandSession,
 
   /// `libkeybinder-3.0.so.0` — global hotkeys.
@@ -87,16 +89,16 @@ class LinuxDependencyChecker implements DependencyChecker {
   List<DependencyIssue> check() {
     final issues = <DependencyIssue>[];
 
-    final sessionType = _env['XDG_SESSION_TYPE']?.toLowerCase();
     final isWayland =
-        sessionType == 'wayland' ||
-        (_env['WAYLAND_DISPLAY']?.isNotEmpty ?? false);
+        currentDesktopSession(environment: _env) == DesktopSession.wayland;
 
     if (isWayland) {
+      // Capture still works, through the portal — with a permission prompt,
+      // without window framing, and without global hotkeys.
       issues.add(
         const DependencyIssue(
           SystemDependency.waylandSession,
-          DependencySeverity.blocking,
+          DependencySeverity.degraded,
         ),
       );
     } else if (!_canLoadLibrary(x11Soname)) {
@@ -116,7 +118,9 @@ class LinuxDependencyChecker implements DependencyChecker {
       );
     }
 
-    if (!_canLoadLibrary(keybinderSoname)) {
+    // Wayland has no way for a client to grab a key globally — the library may
+    // well be installed, and it still cannot bind anything.
+    if (isWayland || !_canLoadLibrary(keybinderSoname)) {
       issues.add(
         const DependencyIssue(
           SystemDependency.keybinder,

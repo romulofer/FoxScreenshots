@@ -14,7 +14,11 @@ void main() {
         virtualScreen: Rect.fromLTWH(0, 0, 3520, 1080),
       );
 
-      final mapping = ScreenMapping.fromPlacement(placement, imageWidth: 3520);
+      final mapping = ScreenMapping.fromPlacement(
+        placement,
+        imageWidth: 3520,
+        imageHeight: 1080,
+      );
 
       expect(mapping.imageOrigin, Offset.zero);
       expect(mapping.imagePixelsPerLogical, 1);
@@ -33,6 +37,7 @@ void main() {
         final mapping = ScreenMapping.fromPlacement(
           placement,
           imageWidth: 3520,
+          imageHeight: 1080,
         );
 
         // Overlay pixel (0,0) is screenshot pixel (1760,0) — without this the
@@ -49,7 +54,11 @@ void main() {
         virtualScreen: Rect.fromLTWH(0, 0, 1920, 1080),
       );
 
-      final mapping = ScreenMapping.fromPlacement(placement, imageWidth: 3840);
+      final mapping = ScreenMapping.fromPlacement(
+        placement,
+        imageWidth: 3840,
+        imageHeight: 2160,
+      );
 
       expect(mapping.imagePixelsPerLogical, 2);
       expect(mapping.toImage(const Offset(10, 20)), const Offset(20, 40));
@@ -62,7 +71,11 @@ void main() {
         virtualScreen: Rect.fromLTWH(-1920, 0, 3840, 1080),
       );
 
-      final mapping = ScreenMapping.fromPlacement(placement, imageWidth: 3840);
+      final mapping = ScreenMapping.fromPlacement(
+        placement,
+        imageWidth: 3840,
+        imageHeight: 2160,
+      );
 
       expect(mapping.imageOrigin, Offset.zero);
     });
@@ -83,6 +96,7 @@ void main() {
         final mapping = ScreenMapping.fromPlacement(
           placement,
           imageWidth: 3520,
+          imageHeight: 1080,
         );
 
         expect(mapping.imageOrigin, Offset.zero);
@@ -99,7 +113,11 @@ void main() {
         physicalWindow: Rect.fromLTWH(1920, 0, 1920, 1080),
       );
 
-      final mapping = ScreenMapping.fromPlacement(placement, imageWidth: 3840);
+      final mapping = ScreenMapping.fromPlacement(
+        placement,
+        imageWidth: 3840,
+        imageHeight: 2160,
+      );
 
       expect(mapping.imagePixelsPerLogical, 2);
       expect(mapping.imageOrigin, const Offset(1920, 0));
@@ -115,7 +133,11 @@ void main() {
         physicalWindow: Rect.fromLTWH(-1920, 0, 3840, 1080),
       );
 
-      final mapping = ScreenMapping.fromPlacement(placement, imageWidth: 3840);
+      final mapping = ScreenMapping.fromPlacement(
+        placement,
+        imageWidth: 3840,
+        imageHeight: 2160,
+      );
 
       expect(mapping.imageOrigin, Offset.zero);
     });
@@ -130,9 +152,74 @@ void main() {
         ScreenMapping.fromPlacement(
           placement,
           imageWidth: 100,
+          imageHeight: 100,
         ).imagePixelsPerLogical,
         1,
       );
+    });
+  });
+
+  group('fitted', () {
+    test('encaixa a tela virtual inteira dentro da janela, centralizada', () {
+      // Wayland: the overlay is fullscreen on one 1600x900 monitor and has to
+      // show a 3520x1080 desktop.
+      final mapping = ScreenMapping.fitted(
+        image: const Size(3520, 1080),
+        window: const Size(1600, 900),
+      );
+
+      expect(mapping.imagePixelsPerLogical, 2.2);
+      // Letterboxed: the drawn frame is shorter than the window, so the top
+      // edge of the window sits 450 screenshot pixels above the image.
+      expect(mapping.imageOrigin.dx, closeTo(0, 1e-9));
+      expect(mapping.imageOrigin.dy, closeTo(-450, 1e-9));
+      // The middle of the window is the middle of the desktop.
+      final centre = mapping.toImage(const Offset(800, 450));
+      expect(centre.dx, closeTo(1760, 1e-9));
+      expect(centre.dy, closeTo(540, 1e-9));
+    });
+
+    test('o arrasto volta para pixels exatos do screenshot', () {
+      final mapping = ScreenMapping.fitted(
+        image: const Size(1000, 500),
+        window: const Size(500, 500),
+      );
+
+      final region = mapping.toRegion(
+        const Offset(100, 125),
+        const Offset(200, 200),
+        imageWidth: 1000,
+        imageHeight: 500,
+      );
+
+      expect(
+        region,
+        const CaptureRegion(x: 200, y: 0, width: 200, height: 150),
+      );
+    });
+
+    test('uma janela ou imagem degenerada não quebra o mapeamento', () {
+      final mapping = ScreenMapping.fitted(
+        image: Size.zero,
+        window: const Size(800, 600),
+      );
+
+      expect(mapping.imagePixelsPerLogical, 1);
+      expect(mapping.imageOrigin, Offset.zero);
+    });
+
+    test('a sobreposição sem posição usa o encaixe, não a geometria', () {
+      const placement = OverlayPlacement.fitted(
+        window: Rect.fromLTWH(0, 0, 1600, 900),
+      );
+
+      final mapping = ScreenMapping.fromPlacement(
+        placement,
+        imageWidth: 3520,
+        imageHeight: 1080,
+      );
+
+      expect(mapping.imagePixelsPerLogical, 2.2);
     });
   });
 

@@ -67,6 +67,34 @@ class CroppedPng {
   final int height;
 }
 
+/// Dimensions of a PNG, read straight from its header.
+///
+/// A screen-sized frame costs tens of milliseconds to decode, and callers that
+/// only need the size (the portal backend, which is handed finished PNG bytes)
+/// should not pay it. Throws [FormatException] when [pngBytes] is not a PNG.
+({int width, int height}) pngSize(Uint8List pngBytes) {
+  const signature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+  // Signature, then the IHDR chunk: 4-byte length, 4-byte type, then width and
+  // height as big-endian 32-bit integers.
+  const widthOffset = 16;
+  if (pngBytes.length < widthOffset + 8) {
+    throw const FormatException('Not a valid PNG');
+  }
+  for (var i = 0; i < signature.length; i++) {
+    if (pngBytes[i] != signature[i]) {
+      throw const FormatException('Not a valid PNG');
+    }
+  }
+
+  final header = ByteData.sublistView(pngBytes, widthOffset, widthOffset + 8);
+  final width = header.getUint32(0);
+  final height = header.getUint32(4);
+  if (width <= 0 || height <= 0) {
+    throw const FormatException('PNG header reports an empty image');
+  }
+  return (width: width, height: height);
+}
+
 /// Synchronous body of [PngCodec.encodeRgba]; top-level so it can run inside an
 /// isolate. Prefer the [PngCodec] wrapper in app code.
 Uint8List encodeRgbaSync(Uint8List rgba, int width, int height, int level) {
