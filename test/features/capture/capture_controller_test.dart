@@ -7,6 +7,7 @@ import 'package:foxscreenshots/app.dart';
 import 'package:foxscreenshots/core/capture/screen_capture_service.dart';
 import 'package:foxscreenshots/core/desktop/desktop_integration.dart';
 import 'package:foxscreenshots/core/image/png_codec.dart';
+import 'package:foxscreenshots/core/storage/clipboard_service.dart';
 import 'package:foxscreenshots/core/storage/settings_service.dart';
 import 'package:foxscreenshots/core/window/capture_window_controller.dart';
 import 'package:foxscreenshots/features/capture/capture_controller.dart';
@@ -17,10 +18,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../helpers/fake_capture_service.dart';
 import '../../helpers/fake_capture_window.dart';
+import '../../helpers/fake_clipboard.dart';
 
 void main() {
   late FakeScreenCaptureService service;
   late FakeCaptureWindow window;
+  late RecordingClipboardService clipboard;
   late ProviderContainer container;
 
   /// Boots the real app widget tree so the flows can push the overlay through
@@ -34,6 +37,7 @@ void main() {
         settingsServiceProvider.overrideWithValue(SettingsService(prefs)),
         screenCaptureServiceProvider.overrideWithValue(service),
         captureWindowControllerProvider.overrideWithValue(window),
+        clipboardServiceProvider.overrideWithValue(clipboard),
         desktopIntegrationProvider.overrideWithValue(
           const NoopDesktopIntegration(),
         ),
@@ -70,6 +74,7 @@ void main() {
   setUp(() {
     service = FakeScreenCaptureService(screenWidth: 400, screenHeight: 300);
     window = FakeCaptureWindow();
+    clipboard = RecordingClipboardService();
   });
 
   group('instant capture', () {
@@ -91,6 +96,35 @@ void main() {
       // The freeze is cropped locally: no second grab hits the backend.
       expect(service.fullScreenCalls, 1);
       expect(service.regionCalls, 0);
+    });
+
+    testWidgets('lands on the clipboard straight away', (tester) async {
+      await pumpApp(tester);
+      final pending = container
+          .read(captureControllerProvider)
+          .captureInstant();
+      await tester.pumpAndSettle();
+      await dragSelection(tester, const Offset(20, 40), const Offset(220, 240));
+      final result = await pending;
+
+      // Hit the hotkey, then paste: the capture is copied without a second
+      // trip through the gallery.
+      expect(clipboard.writes.single, same(result!.pngBytes));
+    });
+
+    testWidgets('a clipboard-less session still keeps the capture', (
+      tester,
+    ) async {
+      clipboard.available = false;
+      await pumpApp(tester);
+      final pending = container
+          .read(captureControllerProvider)
+          .captureInstant();
+      await tester.pumpAndSettle();
+      await dragSelection(tester, const Offset(20, 40), const Offset(220, 240));
+
+      expect(await pending, isNotNull);
+      expect(container.read(sessionControllerProvider), hasLength(1));
     });
 
     testWidgets('adds the capture to the session', (tester) async {
@@ -186,10 +220,9 @@ void main() {
       final result = await pending;
 
       expect(result!.width, 100);
-      expect(service.fullScreenCalls, 0);
-      expect(service.virtualScreenSizeCalls, 1);
-      expect(window.lastTransparent, isTrue);
-      // Timer mode captures the *live* screen after framing over it.
+      // Framing happens over a frozen snapshot (a see-through window needs a
+      // compositor), but the shot itself is grabbed live after the delay.
+      expect(service.fullScreenCalls, 1);
       expect(service.regionCalls, 1);
       expect(
         service.lastRegion,

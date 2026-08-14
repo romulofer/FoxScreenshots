@@ -44,11 +44,7 @@ abstract interface class CaptureWindowController {
   /// the whole virtual screen, while staying hidden. The overlay route is
   /// pushed against the returned placement before anything is shown, so the
   /// hub is never seen stretched across the monitors.
-  ///
-  /// With [transparent] the window is cleared to nothing instead of a solid
-  /// color, so the user selects over the *live* desktop — that is what timer
-  /// mode needs, since freezing the screen would defeat the delay.
-  Future<OverlayPlacement> enterOverlay({bool transparent = false});
+  Future<OverlayPlacement> enterOverlay();
 
   /// Shows the overlay and reports where it truly landed.
   Future<OverlayPlacement> revealOverlay();
@@ -85,14 +81,11 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
   }
 
   @override
-  Future<OverlayPlacement> enterOverlay({bool transparent = false}) async {
+  Future<OverlayPlacement> enterOverlay() async {
     _restoreBounds ??= await windowManager.getBounds();
     _virtualScreen = await virtualScreenBounds();
 
-    await windowManager.setBackgroundColor(
-      transparent ? const Color(0x00000000) : const Color(0xFF000000),
-    );
-
+    await windowManager.setBackgroundColor(const Color(0xFF000000));
     await windowManager.setTitleBarStyle(
       TitleBarStyle.hidden,
       windowButtonVisibility: false,
@@ -124,9 +117,11 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
 
   @override
   Future<void> leaveOverlay() async {
+    // Un-pin first: these two are what keep the window above everything and
+    // out of the alt-tab list, so they must be undone even if a later call in
+    // this teardown throws.
+    await _unpin();
     await windowManager.setBackgroundColor(const Color(0xFF000000));
-    await windowManager.setAlwaysOnTop(false);
-    await windowManager.setSkipTaskbar(false);
     await windowManager.setTitleBarStyle(TitleBarStyle.normal);
     await windowManager.setResizable(true);
     await windowManager.setMinimumSize(const Size(640, 480));
@@ -137,6 +132,9 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
 
   @override
   Future<void> restore() async {
+    // Belt and braces: a teardown that failed halfway must not leave the hub
+    // pinned on top of the user's desktop and unreachable by alt-tab.
+    await _unpin();
     final bounds = _restoreBounds;
     if (bounds != null) await windowManager.setBounds(bounds);
     _restoreBounds = null;
@@ -144,6 +142,12 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
       await windowManager.show();
       await windowManager.focus();
     }
+  }
+
+  /// Drops the always-on-top and skip-taskbar flags the overlay sets.
+  Future<void> _unpin() async {
+    await windowManager.setAlwaysOnTop(false);
+    await windowManager.setSkipTaskbar(false);
   }
 
   /// Union of every display, in logical pixels — the area the overlay must

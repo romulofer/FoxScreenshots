@@ -20,12 +20,8 @@ class FakeCaptureWindow implements CaptureWindowController {
   @override
   Future<void> hideForCapture() async => calls.add('hideForCapture');
 
-  /// Whether the last [enterOverlay] asked for a see-through window.
-  bool? lastTransparent;
-
   @override
-  Future<OverlayPlacement> enterOverlay({bool transparent = false}) async {
-    lastTransparent = transparent;
+  Future<OverlayPlacement> enterOverlay() async {
     calls.add('enterOverlay');
     return OverlayPlacement(
       window: virtualScreen,

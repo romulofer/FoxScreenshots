@@ -43,6 +43,11 @@ void main() {
     final shot = app.container.read(sessionControllerProvider).single;
     expect(shot.width, 100);
     expect(shot.height, 100);
+    expect(
+      app.clipboard.writes.single,
+      same(shot.pngBytes),
+      reason: 'a capture is on the clipboard without a further click',
+    );
   });
 
   testWidgets('instant capture: Esc leaves the gallery empty', (tester) async {
@@ -69,11 +74,9 @@ void main() {
     await tester.tap(find.text('Temporizador'));
     await tester.pumpAndSettle();
 
-    // Timer mode frames the *live* desktop, so the overlay is see-through.
-    expect(app.window.lastTransparent, isTrue);
     await dragRect(tester, const Offset(100, 100), const Offset(300, 200));
 
-    // Still nothing: the delay is what lets the user open a menu first.
+    // Framed, but not shot yet: the delay is what lets the user open a menu.
     expect(app.capture.regionCalls, 0);
 
     await tester.pump(const Duration(seconds: 2));

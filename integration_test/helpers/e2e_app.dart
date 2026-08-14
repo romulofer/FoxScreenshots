@@ -21,6 +21,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../test/helpers/fake_capture_service.dart';
 import '../../test/helpers/fake_capture_window.dart';
+import '../../test/helpers/fake_clipboard.dart';
 
 /// The app booted end to end with every OS-facing edge replaced by a fake
 /// (SPEC §6: e2e flows run against a mocked capture service, with no real
@@ -149,21 +150,6 @@ Future<FlattenedImage> markerFlattener({
   required TextDirection textDirection,
 }) async {
   return FlattenedImage(image: base, pngBytes: flattenedMarkerBytes);
-}
-
-/// Records clipboard writes instead of touching the system clipboard.
-class RecordingClipboardService implements ClipboardService {
-  final List<Uint8List> writes = <Uint8List>[];
-
-  /// Set to make the next copy report failure, as a headless session would.
-  bool available = true;
-
-  @override
-  Future<bool> copyPng(Uint8List pngBytes) async {
-    if (!available) return false;
-    writes.add(pngBytes);
-    return true;
-  }
 }
 
 /// Writes to a temp directory instead of opening a save dialog (which needs a

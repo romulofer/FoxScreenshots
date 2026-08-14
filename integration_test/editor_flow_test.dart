@@ -126,7 +126,8 @@ void main() {
     await tester.tap(find.byTooltip('Copiar'));
     await tester.pumpAndSettle();
 
-    expect(app.clipboard.writes.single, flattenedMarkerBytes);
+    // The capture copied itself when it was taken; this is the edited version.
+    expect(app.clipboard.writes.last, flattenedMarkerBytes);
     expect(find.text('Copiado para a área de transferência'), findsOneWidget);
   });
 

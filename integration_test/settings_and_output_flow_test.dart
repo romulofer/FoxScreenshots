@@ -137,7 +137,8 @@ void main() {
     await tester.tap(find.byTooltip('Copiar'));
     await tester.pumpAndSettle();
 
-    expect(app.clipboard.writes, hasLength(1));
+    // Two writes: the capture copies itself, then the button copies it again.
+    expect(app.clipboard.writes, hasLength(2));
     expect(find.text('Copiado para a área de transferência'), findsOneWidget);
   });
 

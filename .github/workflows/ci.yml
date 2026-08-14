@@ -12,11 +12,15 @@ env:
   FLUTTER_VERSION: "3.45.0-0.1.pre"
   FLUTTER_CHANNEL: "beta"
 
+# Nothing here publishes anything; checkout is all the token is needed for.
+permissions:
+  contents: read
+
 jobs:
   analyze-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: subosito/flutter-action@v2
         with:

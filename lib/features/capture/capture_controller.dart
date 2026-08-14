@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/capture/screen_capture_service.dart';
 import '../../core/image/png_codec.dart';
 import '../../core/navigation/app_navigator.dart';
+import '../../core/storage/clipboard_service.dart';
 import '../../core/window/capture_window_controller.dart';
 import '../../models/capture_region.dart';
 import '../../models/capture_result.dart';
@@ -71,17 +71,22 @@ class CaptureController {
     });
   });
 
-  /// Timer mode: frame a region over the *live* desktop, wait, then grab that
-  /// region so menus/tooltips opened during the delay appear in the shot
-  /// (SPEC §2.1).
+  /// Timer mode: frame a region, wait, then grab that region live so
+  /// menus/tooltips opened during the delay appear in the shot (SPEC §2.1).
+  ///
+  /// The framing step runs over a frozen snapshot rather than a see-through
+  /// window: a transparent overlay needs a compositing window manager, and on a
+  /// plain X11 session it comes out solid black, leaving the user to draw a
+  /// rectangle over nothing. The snapshot is only a backdrop — the pixels that
+  /// end up in the file are grabbed after the delay.
   Future<CaptureResult?> captureWithTimer({Duration? delay}) => _guarded(
     () async {
       return _run(() async {
-        final size = await _service.virtualScreenSize();
+        final frozen = await _service.grabFullVirtualScreen();
         final region = await _selectRegion(
-          screenWidth: size.width,
-          screenHeight: size.height,
-          transparent: true,
+          screenWidth: frozen.width,
+          screenHeight: frozen.height,
+          pngBytes: frozen.pngBytes,
         );
         if (region == null) return null;
 
@@ -143,31 +148,25 @@ class CaptureController {
     return _service.activeWindowRegion();
   }
 
-  /// Shows a fullscreen selection overlay and resolves with the region the
-  /// user dragged (screen pixels), or `null` if they cancelled.
-  ///
-  /// Pass [pngBytes] for instant (frozen) mode. Omit it and set
-  /// [transparent] for timer (live) mode.
+  /// Shows a fullscreen selection overlay over the frozen frame in [pngBytes]
+  /// and resolves with the region the user dragged (screen pixels), or `null`
+  /// if they cancelled.
   Future<CaptureRegion?> _selectRegion({
     required int screenWidth,
     required int screenHeight,
-    Uint8List? pngBytes,
-    bool transparent = false,
+    required Uint8List pngBytes,
   }) async {
     final navigator = _ref.read(navigatorKeyProvider).currentState;
     if (navigator == null) {
       throw const CaptureException(CaptureFailure.windowNotReady);
     }
 
-    ui.Image? backdrop;
-    if (pngBytes != null) {
-      backdrop = await _ref.read(imageDecoderProvider)(pngBytes);
-    }
+    final backdrop = await _ref.read(imageDecoderProvider)(pngBytes);
 
     // Size and position the window first, then push the overlay against that
     // placement, then show it: the hub is never seen stretched across the
     // monitors, and a frozen frame is drawn 1:1 from the start.
-    final requested = await _window.enterOverlay(transparent: transparent);
+    final requested = await _window.enterOverlay();
     final mapping = ValueNotifier<ScreenMapping>(
       ScreenMapping.fromPlacement(requested, imageWidth: screenWidth),
     );
@@ -175,8 +174,6 @@ class CaptureController {
     try {
       final pending = navigator.push<CaptureRegion>(
         PageRouteBuilder<CaptureRegion>(
-          opaque: !transparent,
-          barrierColor: transparent ? Colors.transparent : null,
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
           pageBuilder: (context, _, _) => CaptureSelectionOverlay(
@@ -206,12 +203,23 @@ class CaptureController {
         // Still tear down mapping/image even if the window restore fails.
       }
       mapping.dispose();
-      backdrop?.dispose();
+      backdrop.dispose();
     }
   }
 
-  CaptureResult _record(CaptureResult result) {
+  /// Files the capture in the session and puts it on the clipboard.
+  ///
+  /// Copying straight away is what makes the hotkey useful on its own: hit
+  /// PrintScreen, then paste. A clipboard-less session (no portal, headless)
+  /// must not lose the capture, so the failure is swallowed — the shot is still
+  /// in the gallery, where Copy can be retried.
+  Future<CaptureResult> _record(CaptureResult result) async {
     _ref.read(sessionControllerProvider.notifier).add(result);
+    try {
+      await _ref.read(clipboardServiceProvider).copyPng(result.pngBytes);
+    } catch (_) {
+      // Nothing to report from here: no BuildContext, and the capture is safe.
+    }
     return result;
   }
 
