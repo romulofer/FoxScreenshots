@@ -111,8 +111,12 @@ class HomeScreen extends ConsumerWidget {
   ) async {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    await ref.read(clipboardServiceProvider).copyPng(pngBytes);
-    messenger.showSnackBar(SnackBar(content: Text(l10n.copiedToClipboard)));
+    final ok = await ref.read(clipboardServiceProvider).copyPng(pngBytes);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(ok ? l10n.copiedToClipboard : l10n.copyToClipboardFailed),
+      ),
+    );
   }
 
   Future<void> _onSave(
@@ -122,11 +126,15 @@ class HomeScreen extends ConsumerWidget {
   ) async {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
-    final path = await ref
-        .read(outputServiceProvider)
-        .savePngWithDialog(pngBytes);
-    if (path != null) {
-      messenger.showSnackBar(SnackBar(content: Text(l10n.savedTo(path))));
+    try {
+      final path = await ref
+          .read(outputServiceProvider)
+          .savePngWithDialog(pngBytes);
+      if (path != null) {
+        messenger.showSnackBar(SnackBar(content: Text(l10n.savedTo(path))));
+      }
+    } catch (_) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.saveFailed)));
     }
   }
 }

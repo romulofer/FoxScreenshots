@@ -56,11 +56,13 @@
   "settingsOutputFolder": "Pasta de saída",
 
   "copiedToClipboard": "Copiado para a área de transferência",
+  "copyToClipboardFailed": "Não foi possível copiar para a área de transferência",
   "savedTo": "Salvo em {path}",
   "@savedTo": {
     "description": "Confirmation after saving a screenshot to disk.",
     "placeholders": { "path": { "type": "String" } }
   },
+  "saveFailed": "Não foi possível salvar o arquivo",
 
   "editorTitle": "Editor",
   "toolCrop": "Recortar",
@@ -70,8 +72,22 @@
   "toolText": "Texto",
   "toolHighlight": "Marca-texto",
   "toolBlur": "Desfoque",
+  "toolPixelate": "Pixelar",
   "toolPen": "Caneta",
   "toolNumber": "Marcador numerado",
   "undo": "Desfazer",
-  "redo": "Refazer"
+  "redo": "Refazer",
+
+  "editorColor": "Cor",
+  "editorThickness": "Espessura",
+  "editorTextTitle": "Adicionar texto",
+  "editorTextHint": "Digite o texto",
+  "editorApply": "Aplicar na captura",
+  "editorApplied": "Alterações aplicadas",
+  "editorExportFailed": "Não foi possível gerar a imagem editada",
+  "editorDiscardTitle": "Descartar alterações?",
+  "editorDiscardMessage": "As edições feitas nesta captura serão perdidas.",
+  "actionDiscard": "Descartar",
+  "actionCancel": "Cancelar",
+  "actionConfirm": "OK"
 }

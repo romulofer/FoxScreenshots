@@ -52,6 +52,15 @@ class FakeScreenCaptureService implements ScreenCaptureService {
     return activeWindow;
   }
 
+  int virtualScreenSizeCalls = 0;
+
+  @override
+  Future<({int width, int height})> virtualScreenSize() async {
+    _maybeFail();
+    virtualScreenSizeCalls++;
+    return (width: screenWidth, height: screenHeight);
+  }
+
   void _maybeFail() {
     if (failure != null) throw CaptureException(failure!);
   }

@@ -1,0 +1,48 @@
+name: CI
+
+# Static analysis, formatting, unit/widget tests, and the e2e suite under xvfb
+# (SPEC §6). Runs on every push and pull request. No network access is needed
+# by the app or its tests.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: "3.45.0-0.1.pre"
+  FLUTTER_CHANNEL: "beta"
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+
+      # Build deps for the Linux desktop target, plus the tray and global-hotkey
+      # libraries the app links against (see README).
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config \
+            libgtk-3-dev libkeybinder-3.0-dev libayatana-appindicator3-dev \
+            xvfb
+
+      - run: flutter config --enable-linux-desktop
+      - run: flutter pub get
+
+      - run: dart format --output=none --set-exit-if-changed lib test integration_test tool
+      - run: flutter analyze
+
+      - run: flutter test
+
+      # The e2e suite drives the real widget tree against fake OS edges, but it
+      # still launches the Linux embedder, so it needs a display. One entry
+      # point keeps it to a single app launch (see integration_test/all_tests.dart).
+      - name: End-to-end tests
+        run: xvfb-run -a flutter test integration_test/all_tests.dart -d linux

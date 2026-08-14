@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -25,6 +28,9 @@ class CaptureController {
 
   final Ref _ref;
 
+  /// Guards against overlapping captures from toolbar, tray and hotkey.
+  bool _busy = false;
+
   ScreenCaptureService get _service => _ref.read(screenCaptureServiceProvider);
   CaptureWindowController get _window =>
       _ref.read(captureWindowControllerProvider);
@@ -41,10 +47,14 @@ class CaptureController {
   /// Instant mode: freeze every screen, drag a region, crop it out of the
   /// frozen frame (SPEC §2.1). Cropping the freeze — rather than re-grabbing —
   /// is what makes open menus and tooltips survive in the shot.
-  Future<CaptureResult?> captureInstant() async {
+  Future<CaptureResult?> captureInstant() => _guarded(() async {
     return _run(() async {
       final frozen = await _service.grabFullVirtualScreen();
-      final region = await _selectRegion(frozen);
+      final region = await _selectRegion(
+        screenWidth: frozen.width,
+        screenHeight: frozen.height,
+        pngBytes: frozen.pngBytes,
+      );
       if (region == null) return null;
 
       final cropped = await _codec.crop(frozen.pngBytes, region);
@@ -59,41 +69,60 @@ class CaptureController {
         ),
       );
     });
-  }
+  });
 
-  /// Timer mode: pick the region on a frozen frame first, then grab that same
-  /// region live after the configured delay, leaving the user free to open
-  /// menus or hover states in the meantime (SPEC §2.1).
-  Future<CaptureResult?> captureWithTimer({Duration? delay}) async {
-    return _run(() async {
-      final frozen = await _service.grabFullVirtualScreen();
-      final region = await _selectRegion(frozen);
-      if (region == null) return null;
+  /// Timer mode: frame a region over the *live* desktop, wait, then grab that
+  /// region so menus/tooltips opened during the delay appear in the shot
+  /// (SPEC §2.1).
+  Future<CaptureResult?> captureWithTimer({Duration? delay}) => _guarded(
+    () async {
+      return _run(() async {
+        final size = await _service.virtualScreenSize();
+        final region = await _selectRegion(
+          screenWidth: size.width,
+          screenHeight: size.height,
+          transparent: true,
+        );
+        if (region == null) return null;
 
-      final wait =
-          delay ??
-          Duration(
-            seconds: _ref.read(settingsControllerProvider).timerDelaySeconds,
-          );
-      await Future<void>.delayed(wait);
-      return _record(await _service.grabRegion(region));
-    });
-  }
+        final wait =
+            delay ??
+            Duration(
+              seconds: _ref.read(settingsControllerProvider).timerDelaySeconds,
+            );
+        await Future<void>.delayed(wait);
+        return _record(await _service.grabRegion(region));
+      });
+    },
+  );
 
   /// Whole virtual screen, no selection step.
-  Future<CaptureResult?> captureFullScreen() async {
+  Future<CaptureResult?> captureFullScreen() => _guarded(() async {
     return _run(() async => _record(await _service.grabFullVirtualScreen()));
-  }
+  });
 
-  /// The window that had focus before the hub was hidden.
-  Future<CaptureResult?> captureActiveWindow() async {
+  /// The window that had focus after the hub was hidden.
+  Future<CaptureResult?> captureActiveWindow() => _guarded(() async {
     return _run(() async {
-      final region = await _service.activeWindowRegion();
+      final region = await _resolveActiveWindow();
       if (region == null || region.isEmpty) {
         throw const CaptureException(CaptureFailure.noActiveWindow);
       }
       return _record(await _service.grabRegion(region));
     });
+  });
+
+  /// Rejects overlapping captures from toolbar, tray and hotkey.
+  Future<CaptureResult?> _guarded(
+    Future<CaptureResult?> Function() body,
+  ) async {
+    if (_busy) return null;
+    _busy = true;
+    try {
+      return await body();
+    } finally {
+      _busy = false;
+    }
   }
 
   /// Hides the hub for the duration of [body] and always brings it back.
@@ -106,32 +135,54 @@ class CaptureController {
     }
   }
 
-  /// Shows [frozen] fullscreen and resolves with the region the user dragged,
-  /// in image pixels, or `null` if they cancelled.
-  Future<CaptureRegion?> _selectRegion(CaptureResult frozen) async {
+  /// Prefer a non-empty focus after hide; call twice in case the first read
+  /// still sees nothing focused.
+  Future<CaptureRegion?> _resolveActiveWindow() async {
+    final first = await _service.activeWindowRegion();
+    if (first != null && !first.isEmpty) return first;
+    return _service.activeWindowRegion();
+  }
+
+  /// Shows a fullscreen selection overlay and resolves with the region the
+  /// user dragged (screen pixels), or `null` if they cancelled.
+  ///
+  /// Pass [pngBytes] for instant (frozen) mode. Omit it and set
+  /// [transparent] for timer (live) mode.
+  Future<CaptureRegion?> _selectRegion({
+    required int screenWidth,
+    required int screenHeight,
+    Uint8List? pngBytes,
+    bool transparent = false,
+  }) async {
     final navigator = _ref.read(navigatorKeyProvider).currentState;
     if (navigator == null) {
       throw const CaptureException(CaptureFailure.windowNotReady);
     }
 
-    final backdrop = await _ref.read(imageDecoderProvider)(frozen.pngBytes);
+    ui.Image? backdrop;
+    if (pngBytes != null) {
+      backdrop = await _ref.read(imageDecoderProvider)(pngBytes);
+    }
 
     // Size and position the window first, then push the overlay against that
     // placement, then show it: the hub is never seen stretched across the
-    // monitors, and the frozen frame is drawn 1:1 from the start.
-    final requested = await _window.enterOverlay();
+    // monitors, and a frozen frame is drawn 1:1 from the start.
+    final requested = await _window.enterOverlay(transparent: transparent);
     final mapping = ValueNotifier<ScreenMapping>(
-      ScreenMapping.fromPlacement(requested, imageWidth: backdrop.width),
+      ScreenMapping.fromPlacement(requested, imageWidth: screenWidth),
     );
 
     try {
       final pending = navigator.push<CaptureRegion>(
         PageRouteBuilder<CaptureRegion>(
-          opaque: true,
+          opaque: !transparent,
+          barrierColor: transparent ? Colors.transparent : null,
           transitionDuration: Duration.zero,
           reverseTransitionDuration: Duration.zero,
           pageBuilder: (context, _, _) => CaptureSelectionOverlay(
             backdrop: backdrop,
+            screenWidth: screenWidth,
+            screenHeight: screenHeight,
             mapping: mapping,
             onSelected: (region) => Navigator.of(context).pop(region),
             onCancel: () => Navigator.of(context).pop(),
@@ -144,15 +195,18 @@ class CaptureController {
       final granted = await _window.revealOverlay();
       mapping.value = ScreenMapping.fromPlacement(
         granted,
-        imageWidth: backdrop.width,
+        imageWidth: screenWidth,
       );
 
-      final region = await pending;
-      await _window.leaveOverlay();
-      return region;
+      return await pending;
     } finally {
+      try {
+        await _window.leaveOverlay();
+      } catch (_) {
+        // Still tear down mapping/image even if the window restore fails.
+      }
       mapping.dispose();
-      backdrop.dispose();
+      backdrop?.dispose();
     }
   }
 

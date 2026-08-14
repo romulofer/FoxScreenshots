@@ -26,10 +26,20 @@ class SettingsService {
   String get hotkey => _prefs.getString(_kHotkey) ?? 'PrintScreen';
   Future<void> setHotkey(String value) => _prefs.setString(_kHotkey, value);
 
+  static const int minTimerDelaySeconds = 1;
+  static const int maxTimerDelaySeconds = 60;
+  static const int defaultTimerDelaySeconds = 3;
+
   /// Seconds between the region being chosen and the shot being taken.
-  int get timerDelaySeconds => _prefs.getInt(_kDelaySeconds) ?? 5;
-  Future<void> setTimerDelaySeconds(int value) =>
-      _prefs.setInt(_kDelaySeconds, value);
+  int get timerDelaySeconds {
+    final raw = _prefs.getInt(_kDelaySeconds) ?? defaultTimerDelaySeconds;
+    return raw.clamp(minTimerDelaySeconds, maxTimerDelaySeconds);
+  }
+
+  Future<void> setTimerDelaySeconds(int value) => _prefs.setInt(
+    _kDelaySeconds,
+    value.clamp(minTimerDelaySeconds, maxTimerDelaySeconds),
+  );
 
   String? get outputDir => _prefs.getString(_kOutputDir);
   Future<void> setOutputDir(String value) =>

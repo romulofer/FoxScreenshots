@@ -19,6 +19,7 @@ class FoxScreenShotsApp extends ConsumerWidget {
 
     return MaterialApp(
       navigatorKey: ref.watch(navigatorKeyProvider),
+      scaffoldMessengerKey: ref.watch(scaffoldMessengerKeyProvider),
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),

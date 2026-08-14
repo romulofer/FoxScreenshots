@@ -1,7 +1,6 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foxscreenshots/app.dart';
@@ -142,6 +141,62 @@ void main() {
       expect(window.calls.last, 'restore');
     });
 
+    testWidgets('a stray click is not a selection', (tester) async {
+      await pumpApp(tester);
+
+      final pending = container
+          .read(captureControllerProvider)
+          .captureInstant();
+      await tester.pumpAndSettle();
+      await dragSelection(tester, const Offset(50, 50), const Offset(51, 51));
+      // Still waiting for a real drag.
+      expect(container.read(sessionControllerProvider), isEmpty);
+
+      await dragSelection(tester, const Offset(10, 10), const Offset(110, 90));
+      expect(await pending, isNotNull);
+    });
+
+    testWidgets('ignores a second capture while one is in progress', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+      final controller = container.read(captureControllerProvider);
+
+      final first = controller.captureInstant();
+      await tester.pumpAndSettle();
+      final second = await controller.captureInstant();
+      expect(second, isNull);
+
+      await dragSelection(tester, const Offset(10, 10), const Offset(110, 90));
+      expect(await first, isNotNull);
+    });
+  });
+
+  group('timer capture', () {
+    testWidgets('selects live then re-grabs after the delay', (tester) async {
+      await pumpApp(tester);
+
+      final pending = container
+          .read(captureControllerProvider)
+          .captureWithTimer(delay: const Duration(milliseconds: 20));
+      await tester.pumpAndSettle();
+      await dragSelection(tester, const Offset(20, 40), const Offset(220, 240));
+      // Advance the fake clock past the timer delay.
+      await tester.pump(const Duration(milliseconds: 30));
+      final result = await pending;
+
+      expect(result!.width, 100);
+      expect(service.fullScreenCalls, 0);
+      expect(service.virtualScreenSizeCalls, 1);
+      expect(window.lastTransparent, isTrue);
+      // Timer mode captures the *live* screen after framing over it.
+      expect(service.regionCalls, 1);
+      expect(
+        service.lastRegion,
+        const CaptureRegion(x: 10, y: 20, width: 100, height: 100),
+      );
+    });
+
     testWidgets('maps the selection through the granted window bounds', (
       tester,
     ) async {
@@ -165,42 +220,6 @@ void main() {
       expect(
         service.lastRegion,
         const CaptureRegion(x: 810, y: 20, width: 100, height: 100),
-      );
-    });
-
-    testWidgets('a stray click is not a selection', (tester) async {
-      await pumpApp(tester);
-
-      final pending = container
-          .read(captureControllerProvider)
-          .captureInstant();
-      await tester.pumpAndSettle();
-      await dragSelection(tester, const Offset(50, 50), const Offset(51, 51));
-      // Still waiting for a real drag.
-      expect(container.read(sessionControllerProvider), isEmpty);
-
-      await dragSelection(tester, const Offset(10, 10), const Offset(110, 90));
-      expect(await pending, isNotNull);
-    });
-  });
-
-  group('timer capture', () {
-    testWidgets('re-grabs the selected region after the delay', (tester) async {
-      await pumpApp(tester);
-
-      final pending = container
-          .read(captureControllerProvider)
-          .captureWithTimer(delay: const Duration(milliseconds: 20));
-      await tester.pumpAndSettle();
-      await dragSelection(tester, const Offset(20, 40), const Offset(220, 240));
-      final result = await pending;
-
-      expect(result!.width, 100);
-      // Timer mode captures the *live* screen, not the freeze it selected on.
-      expect(service.regionCalls, 1);
-      expect(
-        service.lastRegion,
-        const CaptureRegion(x: 10, y: 20, width: 100, height: 100),
       );
     });
   });

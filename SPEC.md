@@ -122,7 +122,9 @@ flutter run -d linux                # run (dev env); -d windows / -d macos
 flutter analyze                     # static analysis / lints
 dart format .                       # format
 flutter test                        # unit + widget tests
-flutter test integration_test       # e2e (needs a display / xvfb on CI)
+# e2e (needs a display / xvfb on CI). One entry point: the desktop runner
+# cannot relaunch the app for a second file in the same run.
+flutter test integration_test/all_tests.dart -d linux
 flutter build linux                 # release build; also windows / macos
 ```
 

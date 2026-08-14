@@ -173,6 +173,9 @@ CaptureRegion? _activeWindowRegionSync() {
   // One scratch block for every out-parameter below; offsets are 8-byte
   // aligned where an X `Window` (unsigned long) lands.
   final scratch = x11.malloc(96);
+  if (scratch == nullptr) {
+    throw const X11Exception('malloc failed for X11 scratch buffer');
+  }
   try {
     final focus = scratch.cast<UnsignedLong>();
     final revertTo = (scratch + 8).cast<Int32>();
@@ -227,8 +230,27 @@ CaptureRegion? _activeWindowRegionSync() {
 /// Converts an [XImage]'s pixel buffer to tightly-packed RGBA.
 Uint8List _toRgba(XImage image) {
   const lsbFirst = 0;
+  const maxDimension = 16384;
   if (image.byteOrder != lsbFirst) {
     throw const X11Exception('Unsupported X server byte order (MSBFirst)');
+  }
+  if (image.width <= 0 ||
+      image.height <= 0 ||
+      image.width > maxDimension ||
+      image.height > maxDimension) {
+    throw X11Exception(
+      'XImage dimensions out of range (${image.width}x${image.height})',
+    );
+  }
+  if (image.data == nullptr) {
+    throw const X11Exception('XImage has a null data pointer');
+  }
+  if (image.bytesPerLine < image.width * (image.bitsPerPixel ~/ 8)) {
+    throw const X11Exception('XImage bytesPerLine shorter than a scanline');
+  }
+  final byteLength = image.bytesPerLine * image.height;
+  if (byteLength <= 0) {
+    throw const X11Exception('XImage byte length overflow or empty');
   }
 
   // With LSBFirst byte order the low mask byte is the first byte in memory.
@@ -241,7 +263,7 @@ Uint8List _toRgba(XImage image) {
     ),
   };
 
-  final bytes = image.data.asTypedList(image.bytesPerLine * image.height);
+  final bytes = image.data.asTypedList(byteLength);
   return rgbaFromRaw(
     source: bytes,
     width: image.width,

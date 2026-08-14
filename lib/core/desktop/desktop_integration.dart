@@ -12,7 +12,7 @@ import '../tray/tray_service.dart';
 /// override the provider with [NoopDesktopIntegration].
 abstract interface class DesktopIntegration {
   /// Installs the tray icon and the global hotkey. Safe to call again to
-  /// refresh [labels] after a locale change.
+  /// refresh [labels] after a locale change, or [hotkey] after a rebind.
   Future<void> attach({
     required String iconPath,
     required String tooltip,
@@ -20,6 +20,7 @@ abstract interface class DesktopIntegration {
     required VoidCallback onOpenWindow,
     required void Function(TrayAction action) onTrayAction,
     required VoidCallback onHotkey,
+    String hotkey = 'PrintScreen',
   });
 
   /// Hides the window instead of closing it, keeping the app in the tray.
@@ -49,6 +50,7 @@ class WindowManagerDesktopIntegration implements DesktopIntegration {
     required VoidCallback onOpenWindow,
     required void Function(TrayAction action) onTrayAction,
     required VoidCallback onHotkey,
+    String hotkey = 'PrintScreen',
   }) async {
     await _tray.init(
       iconPath: iconPath,
@@ -57,13 +59,13 @@ class WindowManagerDesktopIntegration implements DesktopIntegration {
       onOpenWindow: onOpenWindow,
       onAction: onTrayAction,
     );
-    if (_attached) return;
-
-    // Closing the window must not end the session: the app keeps running in
-    // the tray until Quit is chosen explicitly (SPEC §1).
-    await windowManager.setPreventClose(true);
-    await _hotkeys.registerCapture(onHotkey);
-    _attached = true;
+    if (!_attached) {
+      // Closing the window must not end the session: the app keeps running in
+      // the tray until Quit is chosen explicitly (SPEC §1).
+      await windowManager.setPreventClose(true);
+      _attached = true;
+    }
+    await _hotkeys.registerCapture(onHotkey, binding: hotkey);
   }
 
   @override
@@ -96,6 +98,7 @@ class NoopDesktopIntegration implements DesktopIntegration {
     required VoidCallback onOpenWindow,
     required void Function(TrayAction action) onTrayAction,
     required VoidCallback onHotkey,
+    String hotkey = 'PrintScreen',
   }) async {}
 
   @override

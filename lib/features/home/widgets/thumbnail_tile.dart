@@ -30,7 +30,14 @@ class ThumbnailTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(child: Image.memory(capture.pngBytes, fit: BoxFit.cover)),
+          Expanded(
+            child: Image.memory(
+              capture.pngBytes,
+              fit: BoxFit.cover,
+              // Decode at gallery size — full 4K frames blow GPU memory otherwise.
+              cacheWidth: 480,
+            ),
+          ),
           // Each action takes an equal share of the tile width: four fixed-size
           // icon buttons overflow once the grid packs tiles below ~200px.
           Padding(

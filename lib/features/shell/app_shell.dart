@@ -5,11 +5,13 @@ import 'package:window_manager/window_manager.dart';
 import '../../core/capture/screen_capture_service.dart';
 import '../../core/desktop/desktop_integration.dart';
 import '../../core/l10n/gen/app_localizations.dart';
+import '../../core/navigation/app_navigator.dart';
 import '../../core/tray/tray_service.dart';
 import '../capture/capture_controller.dart';
 import '../capture/capture_failure_message.dart';
 import '../home/home_screen.dart';
 import '../menu/tray_menu.dart';
+import '../settings/settings_controller.dart';
 import '../settings/settings_screen.dart';
 
 /// Hosts the hub window and owns the desktop-level wiring (SPEC §1): tray icon,
@@ -18,7 +20,8 @@ import '../settings/settings_screen.dart';
 ///
 /// Captures triggered from the tray or the hotkey have no `BuildContext` of
 /// their own, so they run through the same [CaptureController] as the toolbar
-/// and report failures on this screen's messenger.
+/// and report failures on the app-wide messenger (see
+/// [scaffoldMessengerKeyProvider]), which outlives any single route.
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
@@ -30,9 +33,8 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> with WindowListener {
-  final GlobalKey<ScaffoldMessengerState> _messengerKey =
-      GlobalKey<ScaffoldMessengerState>();
   Locale? _wiredFor;
+  String? _wiredHotkey;
 
   @override
   void initState() {
@@ -46,9 +48,11 @@ class _AppShellState extends ConsumerState<AppShell> with WindowListener {
     // Re-attach on the first build and after every locale change, so the tray
     // menu is never left in the previous language (SPEC §2.6).
     final locale = Localizations.localeOf(context);
-    if (_wiredFor == locale) return;
+    final hotkey = ref.read(settingsControllerProvider).hotkey;
+    if (_wiredFor == locale && _wiredHotkey == hotkey) return;
     _wiredFor = locale;
-    _attach(AppLocalizations.of(context));
+    _wiredHotkey = hotkey;
+    _attach(AppLocalizations.of(context), hotkey);
   }
 
   @override
@@ -57,7 +61,7 @@ class _AppShellState extends ConsumerState<AppShell> with WindowListener {
     super.dispose();
   }
 
-  Future<void> _attach(AppLocalizations l10n) {
+  Future<void> _attach(AppLocalizations l10n, String hotkey) {
     return ref
         .read(desktopIntegrationProvider)
         .attach(
@@ -67,6 +71,7 @@ class _AppShellState extends ConsumerState<AppShell> with WindowListener {
           onOpenWindow: _openWindow,
           onTrayAction: _onTrayAction,
           onHotkey: () => _capture(CaptureMode.instant),
+          hotkey: hotkey,
         );
   }
 
@@ -105,14 +110,25 @@ class _AppShellState extends ConsumerState<AppShell> with WindowListener {
     try {
       await ref.read(captureControllerProvider).capture(mode);
     } on CaptureException catch (e) {
-      _messengerKey.currentState?.showSnackBar(
-        SnackBar(content: Text(captureFailureMessage(l10n, e))),
-      );
+      ref
+          .read(scaffoldMessengerKeyProvider)
+          .currentState
+          ?.showSnackBar(
+            SnackBar(content: Text(captureFailureMessage(l10n, e))),
+          );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return ScaffoldMessenger(key: _messengerKey, child: const HomeScreen());
+    ref.listen(settingsControllerProvider.select((s) => s.hotkey), (
+      previous,
+      next,
+    ) {
+      if (previous == next || _wiredHotkey == next) return;
+      _wiredHotkey = next;
+      _attach(AppLocalizations.of(context), next);
+    });
+    return const HomeScreen();
   }
 }

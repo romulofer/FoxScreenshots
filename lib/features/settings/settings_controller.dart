@@ -61,8 +61,17 @@ class SettingsController extends Notifier<SettingsState> {
   }
 
   Future<void> setTimerDelaySeconds(int seconds) async {
-    await _service.setTimerDelaySeconds(seconds);
-    state = state.copyWith(timerDelaySeconds: seconds);
+    final clamped = seconds.clamp(
+      SettingsService.minTimerDelaySeconds,
+      SettingsService.maxTimerDelaySeconds,
+    );
+    await _service.setTimerDelaySeconds(clamped);
+    state = state.copyWith(timerDelaySeconds: clamped);
+  }
+
+  Future<void> setHotkey(String hotkey) async {
+    await _service.setHotkey(hotkey);
+    state = state.copyWith(hotkey: hotkey);
   }
 
   static ThemeMode _themeModeFromString(String value) => switch (value) {

@@ -82,10 +82,31 @@ class SettingsScreen extends ConsumerWidget {
           ),
           ListTile(
             title: Text(l10n.settingsHotkey),
-            trailing: Text(settings.hotkey),
+            trailing: DropdownButton<String>(
+              value: _hotkeyOptions.contains(settings.hotkey)
+                  ? settings.hotkey
+                  : 'PrintScreen',
+              onChanged: (value) {
+                if (value != null) controller.setHotkey(value);
+              },
+              items: [
+                for (final option in _hotkeyOptions)
+                  DropdownMenuItem(value: option, child: Text(option)),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 }
+
+const _hotkeyOptions = <String>[
+  'PrintScreen',
+  'F8',
+  'F9',
+  'F10',
+  'F12',
+  'Ctrl+Shift+S',
+  'Ctrl+Shift+X',
+];

@@ -52,7 +52,9 @@
   "settingsOutputFolder": "Output folder",
 
   "copiedToClipboard": "Copied to clipboard",
+  "copyToClipboardFailed": "Could not copy to the clipboard",
   "savedTo": "Saved to {path}",
+  "saveFailed": "Could not save the file",
 
   "editorTitle": "Editor",
   "toolCrop": "Crop",
@@ -62,8 +64,22 @@
   "toolText": "Text",
   "toolHighlight": "Highlight",
   "toolBlur": "Blur",
+  "toolPixelate": "Pixelate",
   "toolPen": "Pen",
   "toolNumber": "Numbered marker",
   "undo": "Undo",
-  "redo": "Redo"
+  "redo": "Redo",
+
+  "editorColor": "Color",
+  "editorThickness": "Thickness",
+  "editorTextTitle": "Add text",
+  "editorTextHint": "Type the caption",
+  "editorApply": "Apply to capture",
+  "editorApplied": "Changes applied",
+  "editorExportFailed": "Could not render the edited image",
+  "editorDiscardTitle": "Discard changes?",
+  "editorDiscardMessage": "The edits made to this capture will be lost.",
+  "actionDiscard": "Discard",
+  "actionCancel": "Cancel",
+  "actionConfirm": "OK"
 }
