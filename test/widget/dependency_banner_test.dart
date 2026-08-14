@@ -31,7 +31,9 @@ void main() {
     expect(find.byType(Card), findsNothing);
   });
 
-  testWidgets('avisa sobre uma dependência bloqueante em pt-BR', (tester) async {
+  testWidgets('avisa sobre uma dependência bloqueante em pt-BR', (
+    tester,
+  ) async {
     await pumpBanner(tester, const [
       DependencyIssue(SystemDependency.x11Library, DependencySeverity.blocking),
     ]);

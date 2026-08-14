@@ -41,7 +41,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   for (final locale in const ['pt', 'en']) {
-    group('screenshots ($locale)', () {
+    group('telas ($locale)', () {
       testWidgets('janela principal, seleção, editor e configurações', (
         tester,
       ) async {

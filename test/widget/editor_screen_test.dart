@@ -80,7 +80,9 @@ void main() {
   EditorState stateOf(ProviderContainer container) =>
       container.read(editorControllerProvider(capture));
 
-  testWidgets('mostra o trilho de ferramentas com dicas localizadas', (tester) async {
+  testWidgets('mostra o trilho de ferramentas com dicas localizadas', (
+    tester,
+  ) async {
     final container = makeContainer();
     await pumpEditor(tester, container);
 
@@ -112,7 +114,9 @@ void main() {
     expect(stateOf(container).annotations.single, isA<ArrowAnnotation>());
   });
 
-  testWidgets('o desfazer fica desabilitado até algo ser desenhado', (tester) async {
+  testWidgets('o desfazer fica desabilitado até algo ser desenhado', (
+    tester,
+  ) async {
     final container = makeContainer();
     await pumpEditor(tester, container);
 
@@ -168,20 +172,23 @@ void main() {
     expect(stateOf(container).annotations, isEmpty);
   });
 
-  testWidgets('a ferramenta de marcador numerado coloca as bolinhas por toque', (tester) async {
-    final container = makeContainer();
-    await pumpEditor(tester, container);
+  testWidgets(
+    'a ferramenta de marcador numerado coloca as bolinhas por toque',
+    (tester) async {
+      final container = makeContainer();
+      await pumpEditor(tester, container);
 
-    // Last tool on the rail: off-screen in a short window until scrolled to.
-    await tester.ensureVisible(find.byTooltip('Numbered marker'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Numbered marker'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byType(EditorCanvas));
-    await tester.pumpAndSettle();
+      // Last tool on the rail: off-screen in a short window until scrolled to.
+      await tester.ensureVisible(find.byTooltip('Numbered marker'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Numbered marker'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(EditorCanvas));
+      await tester.pumpAndSettle();
 
-    expect(stateOf(container).annotations.single, isA<StepAnnotation>());
-  });
+      expect(stateOf(container).annotations.single, isA<StepAnnotation>());
+    },
+  );
 
   testWidgets('aplicar grava a imagem achatada de volta na sessão', (
     tester,

@@ -78,7 +78,9 @@ void main() {
   });
 
   group('captura instantânea', () {
-    testWidgets('recorta o quadro congelado na região arrastada', (tester) async {
+    testWidgets('recorta o quadro congelado na região arrastada', (
+      tester,
+    ) async {
       await pumpApp(tester);
       // The test window is 800x600 and the fake screen is 400x300, so overlay
       // coordinates map to image pixels at half scale.
@@ -140,7 +142,9 @@ void main() {
       expect(container.read(sessionControllerProvider), hasLength(1));
     });
 
-    testWidgets('esconde a janela principal e sempre a restaura', (tester) async {
+    testWidgets('esconde a janela principal e sempre a restaura', (
+      tester,
+    ) async {
       await pumpApp(tester);
 
       final pending = container
@@ -207,7 +211,9 @@ void main() {
   });
 
   group('captura com temporizador', () {
-    testWidgets('seleciona antes e captura de novo depois do atraso', (tester) async {
+    testWidgets('seleciona antes e captura de novo depois do atraso', (
+      tester,
+    ) async {
       await pumpApp(tester);
 
       final pending = container
@@ -308,9 +314,7 @@ void main() {
   });
 
   group('falha do backend', () {
-    testWidgets('propaga a falha e restaura a janela', (
-      tester,
-    ) async {
+    testWidgets('propaga a falha e restaura a janela', (tester) async {
       service = FakeScreenCaptureService(
         failure: CaptureFailure.displayUnavailable,
       );

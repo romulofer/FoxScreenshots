@@ -25,13 +25,16 @@ void main() {
       );
 
   group('anotações de forma', () {
-    test('normalizam os cantos, para qualquer lado que o arrasto tenha ido', () {
-      final downRight = rectangle(const Offset(10, 20), const Offset(40, 60));
-      final upLeft = rectangle(const Offset(40, 60), const Offset(10, 20));
+    test(
+      'normalizam os cantos, para qualquer lado que o arrasto tenha ido',
+      () {
+        final downRight = rectangle(const Offset(10, 20), const Offset(40, 60));
+        final upLeft = rectangle(const Offset(40, 60), const Offset(10, 20));
 
-      expect(downRight.rect, const Rect.fromLTRB(10, 20, 40, 60));
-      expect(upLeft.rect, downRight.rect);
-    });
+        expect(downRight.rect, const Rect.fromLTRB(10, 20, 40, 60));
+        expect(upLeft.rect, downRight.rect);
+      },
+    );
 
     test('dragTo move o canto final e mantém o inicial', () {
       final dragged = rectangle(
@@ -111,23 +114,26 @@ void main() {
       expect(pen.points, const [Offset(1, 1), Offset(5, 5), Offset(9, 2)]);
     });
 
-    test('funde movimentos menores que cerca de um pixel no ponto anterior', () {
-      const start = PenAnnotation(
-        id: 'p',
-        color: color,
-        strokeWidth: 3,
-        points: [Offset(10, 10)],
-      );
+    test(
+      'funde movimentos menores que cerca de um pixel no ponto anterior',
+      () {
+        const start = PenAnnotation(
+          id: 'p',
+          color: color,
+          strokeWidth: 3,
+          points: [Offset(10, 10)],
+        );
 
-      // A pointer that hardly moves must not grow the polyline.
-      final jitter = start
-          .dragTo(const Offset(10.4, 10.2))
-          .dragTo(const Offset(10.8, 10.1));
-      expect(jitter.points, hasLength(1));
+        // A pointer that hardly moves must not grow the polyline.
+        final jitter = start
+            .dragTo(const Offset(10.4, 10.2))
+            .dragTo(const Offset(10.8, 10.1));
+        expect(jitter.points, hasLength(1));
 
-      // A real move is still recorded.
-      expect(start.dragTo(const Offset(14, 10)).points, hasLength(2));
-    });
+        // A real move is still recorded.
+        expect(start.dragTo(const Offset(14, 10)).points, hasLength(2));
+      },
+    );
 
     test('um ponto só já é uma marca legítima', () {
       final dot = PenAnnotation(

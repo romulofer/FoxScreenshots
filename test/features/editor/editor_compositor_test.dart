@@ -13,7 +13,11 @@ void main() {
   /// Decodes the export so pixels can be inspected the way a viewer would.
   img.Image decode(Uint8List pngBytes) {
     final decoded = img.decodePng(pngBytes);
-    expect(decoded, isNotNull, reason: 'a exportação precisa ser um PNG válido');
+    expect(
+      decoded,
+      isNotNull,
+      reason: 'a exportação precisa ser um PNG válido',
+    );
     return decoded!;
   }
 
@@ -181,28 +185,29 @@ void main() {
     });
   });
 
-  testWidgets('o recorte corta em pixels inteiros e reposiciona a origem do conteúdo', (
-    tester,
-  ) async {
-    await tester.runAsync(() async {
-      final base = splitImage(width: 100, height: 80);
-      addTearDown(base.dispose);
+  testWidgets(
+    'o recorte corta em pixels inteiros e reposiciona a origem do conteúdo',
+    (tester) async {
+      await tester.runAsync(() async {
+        final base = splitImage(width: 100, height: 80);
+        addTearDown(base.dispose);
 
-      final cropped = await cropImage(
-        base: base,
-        rect: const ui.Rect.fromLTWH(60, 20, 30, 30),
-      );
-      addTearDown(cropped.image.dispose);
+        final cropped = await cropImage(
+          base: base,
+          rect: const ui.Rect.fromLTWH(60, 20, 30, 30),
+        );
+        addTearDown(cropped.image.dispose);
 
-      expect(cropped.width, 30);
-      expect(cropped.height, 30);
-      expect(
-        luminanceAt(decode(cropped.pngBytes), 2, 2),
-        greaterThan(235),
-        reason: 'o recorte começou dentro da metade branca',
-      );
-    });
-  });
+        expect(cropped.width, 30);
+        expect(cropped.height, 30);
+        expect(
+          luminanceAt(decode(cropped.pngBytes), 2, 2),
+          greaterThan(235),
+          reason: 'o recorte começou dentro da metade branca',
+        );
+      });
+    },
+  );
 
   testWidgets('um recorte arrastado além da borda é limitado à imagem', (
     tester,

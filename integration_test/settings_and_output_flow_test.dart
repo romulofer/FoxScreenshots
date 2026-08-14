@@ -60,7 +60,9 @@ void main() {
     expect(prefs.getString('locale_tag'), 'en');
   });
 
-  testWidgets('trocar para o tema escuro repinta a janela principal', (tester) async {
+  testWidgets('trocar para o tema escuro repinta a janela principal', (
+    tester,
+  ) async {
     await pumpE2EApp(tester);
     expect(
       Theme.of(tester.element(find.text('Instantâneo'))).brightness,
@@ -80,33 +82,35 @@ void main() {
     expect(prefs.getString('theme_mode'), 'dark');
   });
 
-  testWidgets('o atraso escolhido nas configurações comanda a captura com temporizador', (
-    tester,
-  ) async {
-    final app = await pumpE2EApp(tester);
+  testWidgets(
+    'o atraso escolhido nas configurações comanda a captura com temporizador',
+    (tester) async {
+      final app = await pumpE2EApp(tester);
 
-    await openSettings(tester);
-    // Drag the slider to its minimum, one second.
-    await tester.drag(find.byType(Slider), const Offset(-400, 0));
-    await tester.pumpAndSettle();
-    expect(app.container.read(settingsControllerProvider).timerDelaySeconds, 1);
+      await openSettings(tester);
+      // Drag the slider to its minimum, one second.
+      await tester.drag(find.byType(Slider), const Offset(-400, 0));
+      await tester.pumpAndSettle();
+      expect(
+        app.container.read(settingsControllerProvider).timerDelaySeconds,
+        1,
+      );
 
-    await tester.tap(find.byTooltip('Voltar'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Voltar'));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Temporizador'));
-    await tester.pumpAndSettle();
-    await dragRect(tester, const Offset(100, 100), const Offset(300, 200));
+      await tester.tap(find.text('Temporizador'));
+      await tester.pumpAndSettle();
+      await dragRect(tester, const Offset(100, 100), const Offset(300, 200));
 
-    expect(app.capture.regionCalls, 0);
-    await tester.pump(const Duration(seconds: 1));
-    await tester.pumpAndSettle();
-    expect(app.capture.regionCalls, 1);
-  });
+      expect(app.capture.regionCalls, 0);
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+      expect(app.capture.regionCalls, 1);
+    },
+  );
 
-  testWidgets('trocar o atalho o registra de novo no sistema', (
-    tester,
-  ) async {
+  testWidgets('trocar o atalho o registra de novo no sistema', (tester) async {
     final app = await pumpE2EApp(tester);
     expect(app.desktop.attachedHotkey, 'PrintScreen');
 
@@ -142,7 +146,9 @@ void main() {
     expect(find.text('Copiado para a área de transferência'), findsOneWidget);
   });
 
-  testWidgets('uma sessão sem área de transferência acusa a falha', (tester) async {
+  testWidgets('uma sessão sem área de transferência acusa a falha', (
+    tester,
+  ) async {
     final app = await pumpE2EApp(tester);
     app.clipboard.available = false;
 

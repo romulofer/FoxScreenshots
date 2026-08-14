@@ -74,7 +74,11 @@ void main() {
     final state = stateOf(container);
     expect(state.annotations, hasLength(1));
     expect(state.annotations.single, isA<RectangleAnnotation>());
-    expect(state.draft, isNull, reason: 'o rascunho é confirmado, não guardado');
+    expect(
+      state.draft,
+      isNull,
+      reason: 'o rascunho é confirmado, não guardado',
+    );
     expect(state.canUndo, isTrue);
     expect(state.canRedo, isFalse);
     expect(state.isDirty, isTrue);
@@ -92,7 +96,11 @@ void main() {
     final state = stateOf(container);
     expect(state.annotations, isEmpty);
     expect(state.visibleAnnotations, hasLength(1));
-    expect(state.canUndo, isFalse, reason: 'um arrasto em andamento ainda não é histórico');
+    expect(
+      state.canUndo,
+      isFalse,
+      reason: 'um arrasto em andamento ainda não é histórico',
+    );
   });
 
   test('um clique solto não deixa nada para trás', () async {
@@ -172,23 +180,26 @@ void main() {
     expect(stateOf(container).annotations, hasLength(1));
   });
 
-  test('os marcadores numerados seguem a ordem em que foram colocados', () async {
-    final container = makeContainer();
-    final controller = controllerOf(container)..selectTool(EditorTool.step);
-    await pumpEventQueue();
+  test(
+    'os marcadores numerados seguem a ordem em que foram colocados',
+    () async {
+      final container = makeContainer();
+      final controller = controllerOf(container)..selectTool(EditorTool.step);
+      await pumpEventQueue();
 
-    controller
-      ..addStep(const Offset(10, 10))
-      ..addStep(const Offset(30, 30))
-      ..addStep(const Offset(50, 50));
+      controller
+        ..addStep(const Offset(10, 10))
+        ..addStep(const Offset(30, 30))
+        ..addStep(const Offset(50, 50));
 
-    expect(
-      stateOf(
-        container,
-      ).annotations.cast<StepAnnotation>().map((a) => a.number),
-      [1, 2, 3],
-    );
-  });
+      expect(
+        stateOf(
+          container,
+        ).annotations.cast<StepAnnotation>().map((a) => a.number),
+        [1, 2, 3],
+      );
+    },
+  );
 
   test('desfazer um marcador libera o número dele para o próximo', () async {
     final container = makeContainer();
@@ -240,22 +251,25 @@ void main() {
     expect(annotation.strokeWidth, 9);
   });
 
-  test('o achatamento reaproveita os bytes originais quando nada foi desenhado', () async {
-    final container = makeContainer();
-    controllerOf(container);
-    await pumpEventQueue();
+  test(
+    'o achatamento reaproveita os bytes originais quando nada foi desenhado',
+    () async {
+      final container = makeContainer();
+      controllerOf(container);
+      await pumpEventQueue();
 
-    final flattened = await container
-        .read(editorControllerProvider(capture).notifier)
-        .flatten();
+      final flattened = await container
+          .read(editorControllerProvider(capture).notifier)
+          .flatten();
 
-    expect(flattened, isNotNull);
-    expect(
-      identical(flattened!.pngBytes, capture.pngBytes),
-      isTrue,
-      reason: 'uma captura sem alteração não deve ser recodificada',
-    );
-  });
+      expect(flattened, isNotNull);
+      expect(
+        identical(flattened!.pngBytes, capture.pngBytes),
+        isTrue,
+        reason: 'uma captura sem alteração não deve ser recodificada',
+      );
+    },
+  );
 
   test('o achatamento passa as anotações pelo compositor', () async {
     late List<Annotation> seen;
@@ -333,28 +347,29 @@ void main() {
     expect(state.isBusy, isFalse);
   });
 
-  testWidgets('um recorte arrastado para cima e para a esquerda mantém a âncora', (
-    tester,
-  ) async {
-    late ProviderContainer container;
-    await tester.runAsync(() async {
-      container = makeContainer(width: 100, height: 80);
-      final controller = controllerOf(container)..selectTool(EditorTool.crop);
-      await pumpEventQueue();
+  testWidgets(
+    'um recorte arrastado para cima e para a esquerda mantém a âncora',
+    (tester) async {
+      late ProviderContainer container;
+      await tester.runAsync(() async {
+        container = makeContainer(width: 100, height: 80);
+        final controller = controllerOf(container)..selectTool(EditorTool.crop);
+        await pumpEventQueue();
 
-      // Drag from the bottom-right corner back towards the origin, passing
-      // through points that keep moving the rectangle's own top-left.
-      controller
-        ..startDraft(const Offset(90, 70))
-        ..updateDraft(const Offset(50, 40))
-        ..updateDraft(const Offset(30, 20));
-      await controller.endDraft();
-    });
+        // Drag from the bottom-right corner back towards the origin, passing
+        // through points that keep moving the rectangle's own top-left.
+        controller
+          ..startDraft(const Offset(90, 70))
+          ..updateDraft(const Offset(50, 40))
+          ..updateDraft(const Offset(30, 20));
+        await controller.endDraft();
+      });
 
-    final state = stateOf(container);
-    expect(state.document.width, 60, reason: '90 - 30, ancorado no início');
-    expect(state.document.height, 50);
-  });
+      final state = stateOf(container);
+      expect(state.document.width, 60, reason: '90 - 30, ancorado no início');
+      expect(state.document.height, 50);
+    },
+  );
 
   testWidgets('um ramo de refazer descartado libera o bitmap que segurava', (
     tester,
@@ -388,7 +403,9 @@ void main() {
     );
   });
 
-  testWidgets('desfazer restaura a imagem que o recorte substituiu', (tester) async {
+  testWidgets('desfazer restaura a imagem que o recorte substituiu', (
+    tester,
+  ) async {
     late ProviderContainer container;
     late EditorController controller;
     await tester.runAsync(() async {

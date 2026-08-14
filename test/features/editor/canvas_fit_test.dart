@@ -21,7 +21,11 @@ void main() {
       viewport: const Size(1000, 1000),
     );
 
-    expect(fit.scale, 1.0, reason: 'ampliar uma captura pequena só deixa ela borrada');
+    expect(
+      fit.scale,
+      1.0,
+      reason: 'ampliar uma captura pequena só deixa ela borrada',
+    );
   });
 
   test('traduz um ponto do widget de volta para pixels da imagem', () {

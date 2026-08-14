@@ -47,7 +47,11 @@ void main() {
     expect(find.text('Alterações aplicadas'), findsOneWidget);
 
     final edited = app.container.read(sessionControllerProvider).single;
-    expect(edited.id, original.id, reason: 'a entrada da galeria é substituída');
+    expect(
+      edited.id,
+      original.id,
+      reason: 'a entrada da galeria é substituída',
+    );
     expect(edited.pngBytes, flattenedMarkerBytes);
   });
 
@@ -77,7 +81,9 @@ void main() {
     );
   });
 
-  testWidgets('o texto é digitado em um diálogo antes de ser colocado', (tester) async {
+  testWidgets('o texto é digitado em um diálogo antes de ser colocado', (
+    tester,
+  ) async {
     await captureAndEdit(tester);
 
     await tester.tap(find.byTooltip('Texto'));
@@ -97,7 +103,9 @@ void main() {
     expect((annotations.single as TextAnnotation).text, 'olhe aqui');
   });
 
-  testWidgets('as ferramentas de tarja cobrem uma região da captura', (tester) async {
+  testWidgets('as ferramentas de tarja cobrem uma região da captura', (
+    tester,
+  ) async {
     await captureAndEdit(tester);
 
     await tester.tap(find.byTooltip('Pixelar'));

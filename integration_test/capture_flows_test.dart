@@ -46,7 +46,8 @@ void main() {
     expect(
       app.clipboard.writes.single,
       same(shot.pngBytes),
-      reason: 'a captura vai para a área de transferência sem mais nenhum clique',
+      reason:
+          'a captura vai para a área de transferência sem mais nenhum clique',
     );
   });
 
@@ -63,46 +64,48 @@ void main() {
     expect(find.byType(ThumbnailTile), findsNothing);
   });
 
-  testWidgets('captura com temporizador: região primeiro, foto depois do atraso', (
-    tester,
-  ) async {
-    final app = await pumpE2EApp(
-      tester,
-      preferences: {'timer_delay_seconds': 2},
-    );
+  testWidgets(
+    'captura com temporizador: região primeiro, foto depois do atraso',
+    (tester) async {
+      final app = await pumpE2EApp(
+        tester,
+        preferences: {'timer_delay_seconds': 2},
+      );
 
-    await tester.tap(find.text('Temporizador'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Temporizador'));
+      await tester.pumpAndSettle();
 
-    await dragRect(tester, const Offset(100, 100), const Offset(300, 200));
+      await dragRect(tester, const Offset(100, 100), const Offset(300, 200));
 
-    // Framed, but not shot yet: the delay is what lets the user open a menu.
-    expect(app.capture.regionCalls, 0);
+      // Framed, but not shot yet: the delay is what lets the user open a menu.
+      expect(app.capture.regionCalls, 0);
 
-    await tester.pump(const Duration(seconds: 2));
-    await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pumpAndSettle();
 
-    expect(app.capture.regionCalls, 1);
-    expect(
-      app.capture.lastRegion,
-      const CaptureRegion(x: 50, y: 50, width: 100, height: 50),
-    );
-    expect(find.byType(ThumbnailTile), findsOneWidget);
-  });
+      expect(app.capture.regionCalls, 1);
+      expect(
+        app.capture.lastRegion,
+        const CaptureRegion(x: 50, y: 50, width: 100, height: 50),
+      );
+      expect(find.byType(ThumbnailTile), findsOneWidget);
+    },
+  );
 
-  testWidgets('captura de tela cheia pega a área de trabalho inteira, sem sobreposição', (
-    tester,
-  ) async {
-    final app = await pumpE2EApp(tester);
+  testWidgets(
+    'captura de tela cheia pega a área de trabalho inteira, sem sobreposição',
+    (tester) async {
+      final app = await pumpE2EApp(tester);
 
-    await tester.tap(find.text('Tela cheia'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Tela cheia'));
+      await tester.pumpAndSettle();
 
-    expect(find.byType(CaptureSelectionOverlay), findsNothing);
-    final shot = app.container.read(sessionControllerProvider).single;
-    expect(shot.width, 400);
-    expect(shot.height, 300);
-  });
+      expect(find.byType(CaptureSelectionOverlay), findsNothing);
+      final shot = app.container.read(sessionControllerProvider).single;
+      expect(shot.width, 400);
+      expect(shot.height, 300);
+    },
+  );
 
   testWidgets('captura de janela ativa acusa falha quando nada está em foco', (
     tester,
@@ -179,23 +182,24 @@ void main() {
     expect(app.container.read(sessionControllerProvider), isEmpty);
   });
 
-  testWidgets('as capturas se acumulam, da mais nova para a mais velha, e podem ser excluídas', (
-    tester,
-  ) async {
-    final app = await pumpE2EApp(tester);
+  testWidgets(
+    'as capturas se acumulam, da mais nova para a mais velha, e podem ser excluídas',
+    (tester) async {
+      final app = await pumpE2EApp(tester);
 
-    await tester.tap(find.text('Tela cheia'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Tela cheia'));
-    await tester.pumpAndSettle();
-    expect(find.byType(ThumbnailTile), findsNWidgets(2));
+      await tester.tap(find.text('Tela cheia'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Tela cheia'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ThumbnailTile), findsNWidgets(2));
 
-    final newest = app.container.read(sessionControllerProvider).first;
-    await tester.tap(find.byTooltip('Excluir').first);
-    await tester.pumpAndSettle();
+      final newest = app.container.read(sessionControllerProvider).first;
+      await tester.tap(find.byTooltip('Excluir').first);
+      await tester.pumpAndSettle();
 
-    final left = app.container.read(sessionControllerProvider);
-    expect(left, hasLength(1));
-    expect(left.single.id, isNot(newest.id));
-  });
+      final left = app.container.read(sessionControllerProvider);
+      expect(left, hasLength(1));
+      expect(left.single.id, isNot(newest.id));
+    },
+  );
 }
