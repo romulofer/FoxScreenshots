@@ -30,8 +30,12 @@ A desktop tool to capture and quickly annotate screenshots.
 
 ## Status
 
-🚧 Early development. See [`SPEC.md`](SPEC.md) for the full specification and
-[`PLAN.md`](PLAN.md) for the build plan.
+🚧 Early development — **0.1.0** is the first tagged release. Capture (instant,
+timer, full screen, active window), the session gallery, the annotation editor,
+tray and global hotkey all work on Linux/X11; Windows and macOS build from the
+same code but are not yet exercised on real hardware.
+
+See [`SPEC.md`](SPEC.md) for the full specification.
 
 ## Getting started
 
