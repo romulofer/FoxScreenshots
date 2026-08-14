@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tray_manager/tray_manager.dart';
 
 /// Actions the tray context menu can raise (SPEC §1).
-enum TrayAction { instant, timer, settings, quit }
+enum TrayAction { show, instant, timer, settings, quit }
 
 /// Manages the system-tray icon and its context menu. Left-click opens the main
 /// window; right-click shows the menu. Wraps `tray_manager`.
@@ -45,6 +45,11 @@ class TrayService with TrayListener {
   Menu _buildMenu(Map<TrayAction, String> labels) {
     return Menu(
       items: [
+        // First item, and the only way back to the hub on Linux: the
+        // AppIndicator backend turns a left click into this same menu, so
+        // `onTrayIconMouseDown` never fires there.
+        MenuItem(key: TrayAction.show.name, label: labels[TrayAction.show]),
+        MenuItem.separator(),
         MenuItem(
           key: TrayAction.instant.name,
           label: labels[TrayAction.instant],

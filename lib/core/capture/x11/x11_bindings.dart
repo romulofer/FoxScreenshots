@@ -144,6 +144,46 @@ typedef XTranslateCoordinatesDart = int Function(
   Pointer<Int32> destY,
   Pointer<UnsignedLong> child,
 );
+typedef _XInternAtomNative = UnsignedLong Function(
+  Pointer<Void> display,
+  Pointer<Char> name,
+  Int32 onlyIfExists,
+);
+typedef XInternAtomDart = int Function(
+  Pointer<Void> display,
+  Pointer<Char> name,
+  int onlyIfExists,
+);
+typedef _XGetWindowPropertyNative = Int32 Function(
+  Pointer<Void> display,
+  UnsignedLong window,
+  UnsignedLong property,
+  Long offset,
+  Long length,
+  Int32 delete,
+  UnsignedLong requestedType,
+  Pointer<UnsignedLong> actualType,
+  Pointer<Int32> actualFormat,
+  Pointer<UnsignedLong> itemCount,
+  Pointer<UnsignedLong> bytesAfter,
+  Pointer<Pointer<Uint8>> data,
+);
+typedef XGetWindowPropertyDart = int Function(
+  Pointer<Void> display,
+  int window,
+  int property,
+  int offset,
+  int length,
+  int delete,
+  int requestedType,
+  Pointer<UnsignedLong> actualType,
+  Pointer<Int32> actualFormat,
+  Pointer<UnsignedLong> itemCount,
+  Pointer<UnsignedLong> bytesAfter,
+  Pointer<Pointer<Uint8>> data,
+);
+typedef _XFreeNative = Int32 Function(Pointer<Uint8>);
+typedef XFreeDart = int Function(Pointer<Uint8>);
 typedef _MallocNative = Pointer<Uint8> Function(IntPtr);
 typedef MallocDart = Pointer<Uint8> Function(int);
 typedef _FreeNative = Void Function(Pointer<Uint8>);
@@ -200,6 +240,17 @@ class X11Lib {
             'XTranslateCoordinates',
           )
           .asFunction<XTranslateCoordinatesDart>(),
+      internAtom = lib
+          .lookup<NativeFunction<_XInternAtomNative>>('XInternAtom')
+          .asFunction<XInternAtomDart>(),
+      getWindowProperty = lib
+          .lookup<NativeFunction<_XGetWindowPropertyNative>>(
+            'XGetWindowProperty',
+          )
+          .asFunction<XGetWindowPropertyDart>(),
+      freeData = lib
+          .lookup<NativeFunction<_XFreeNative>>('XFree')
+          .asFunction<XFreeDart>(),
       // libc, for the small scratch buffer the out-parameter calls need.
       malloc = DynamicLibrary.process()
           .lookup<NativeFunction<_MallocNative>>('malloc')
@@ -228,6 +279,11 @@ class X11Lib {
   final XGetInputFocusDart getInputFocus;
   final XGetGeometryDart getGeometry;
   final XTranslateCoordinatesDart translateCoordinates;
+  final XInternAtomDart internAtom;
+  final XGetWindowPropertyDart getWindowProperty;
+
+  /// `XFree` — releases buffers Xlib allocated (property data, window lists).
+  final XFreeDart freeData;
   final MallocDart malloc;
   final FreeDart free;
 

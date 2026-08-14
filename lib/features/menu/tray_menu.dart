@@ -5,6 +5,7 @@ import '../../core/tray/tray_service.dart';
 /// the core actions). Rebuilt whenever the locale changes.
 Map<TrayAction, String> trayMenuLabels(AppLocalizations l10n) {
   return {
+    TrayAction.show: l10n.showWindow,
     TrayAction.instant: l10n.captureInstant,
     TrayAction.timer: l10n.captureTimer,
     TrayAction.settings: l10n.settingsTitle,

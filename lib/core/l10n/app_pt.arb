@@ -7,6 +7,8 @@
   "menuEdit": "Editar",
   "menuSettings": "Configurações",
   "menuHelp": "Ajuda",
+  "showWindow": "Mostrar janela",
+  "@showWindow": { "description": "Tray menu entry that brings the hub window back." },
   "quit": "Sair",
 
   "captureInstant": "Instantâneo",

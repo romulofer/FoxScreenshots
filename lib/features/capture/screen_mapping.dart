@@ -26,17 +26,23 @@ class ScreenMapping {
   ///
   /// [imageWidth] is the screenshot width in physical pixels; the virtual
   /// screen width is in logical pixels, so their ratio is the scale factor.
+  ///
+  /// A measured placement is used as-is — it is already in screenshot pixels
+  /// and, unlike the window manager's own answer, it is never stale.
   factory ScreenMapping.fromPlacement(
     OverlayPlacement placement, {
     required int imageWidth,
   }) {
     final virtual = placement.virtualScreen;
     final scale = virtual.width > 0 ? imageWidth / virtual.width : 1.0;
+    final measured = placement.physicalWindow;
     return ScreenMapping(
-      imageOrigin: Offset(
-        (placement.window.left - virtual.left) * scale,
-        (placement.window.top - virtual.top) * scale,
-      ),
+      imageOrigin: measured != null
+          ? measured.topLeft - virtual.topLeft * scale
+          : Offset(
+              (placement.window.left - virtual.left) * scale,
+              (placement.window.top - virtual.top) * scale,
+            ),
       imagePixelsPerLogical: scale,
     );
   }

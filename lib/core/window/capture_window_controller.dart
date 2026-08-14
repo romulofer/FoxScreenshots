@@ -4,31 +4,44 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screen_retriever/screen_retriever.dart';
 import 'package:window_manager/window_manager.dart';
 
+import 'window_geometry.dart';
+
 /// Where the overlay window actually ended up, in logical pixels.
 ///
 /// [window] is what the window manager granted, which is not always what was
 /// asked for: some WMs clamp a window to a single monitor. Keeping both rects
 /// lets the overlay draw the frozen frame 1:1 with the desktop underneath
 /// instead of stretching it, however the request was honored.
+///
+/// [physicalWindow] is the same rect measured at the display server, in
+/// screenshot pixels. When it is there it wins: on Linux [window] is whatever
+/// the toolkit last asked for, which is stale as soon as the window manager
+/// places the window somewhere else (see [WindowGeometryProbe]).
 class OverlayPlacement {
-  const OverlayPlacement({required this.window, required this.virtualScreen});
+  const OverlayPlacement({
+    required this.window,
+    required this.virtualScreen,
+    this.physicalWindow,
+  });
 
   final Rect window;
   final Rect virtualScreen;
+  final Rect? physicalWindow;
 
   @override
   bool operator ==(Object other) =>
       other is OverlayPlacement &&
       other.window == window &&
-      other.virtualScreen == virtualScreen;
+      other.virtualScreen == virtualScreen &&
+      other.physicalWindow == physicalWindow;
 
   @override
-  int get hashCode => Object.hash(window, virtualScreen);
+  int get hashCode => Object.hash(window, virtualScreen, physicalWindow);
 
   @override
   String toString() =>
       'OverlayPlacement(window: $window, '
-      'virtualScreen: $virtualScreen)';
+      'virtualScreen: $virtualScreen, physicalWindow: $physicalWindow)';
 }
 
 /// Window moves the capture flows need (SPEC §2.1).
@@ -60,11 +73,21 @@ abstract interface class CaptureWindowController {
 class WindowManagerCaptureWindow implements CaptureWindowController {
   WindowManagerCaptureWindow({
     this.repaintDelay = const Duration(milliseconds: 220),
-  });
+    WindowGeometryProbe? geometry,
+  }) : _geometry = geometry ?? defaultWindowGeometryProbe();
 
   /// How long to wait after hiding the window before grabbing pixels. Too short
   /// and the disappearing window is still in the frame.
   final Duration repaintDelay;
+
+  /// Measures where the overlay really landed, since the window manager is free
+  /// to ignore the geometry it was handed.
+  final WindowGeometryProbe _geometry;
+
+  /// How long to keep asking for the overlay's placement before giving up and
+  /// using the window manager's own numbers.
+  static const Duration _placementTimeout = Duration(milliseconds: 600);
+  static const Duration _placementPoll = Duration(milliseconds: 30);
 
   Rect? _restoreBounds;
   Rect _virtualScreen = Rect.zero;
@@ -112,7 +135,37 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
     await windowManager.setBounds(_virtualScreen);
     final granted = await windowManager.getBounds();
 
-    return OverlayPlacement(window: granted, virtualScreen: _virtualScreen);
+    return OverlayPlacement(
+      window: granted,
+      virtualScreen: _virtualScreen,
+      physicalWindow: await _measurePlacement(),
+    );
+  }
+
+  /// Where the overlay ended up according to the display server, in physical
+  /// pixels, or `null` when it cannot be confirmed.
+  ///
+  /// A window manager resizes and moves a freshly mapped window in stages, so a
+  /// single reading is easily taken between the two — the overlay is already
+  /// the size of the virtual screen while still sitting where the hub was. Two
+  /// readings in a row have to agree before the placement counts as settled.
+  Future<Rect?> _measurePlacement() async {
+    final view = PlatformDispatcher.instance.implicitView;
+    if (view == null) return null;
+
+    final deadline = DateTime.now().add(_placementTimeout);
+    Rect? previous;
+    while (true) {
+      final size = view.physicalSize;
+      final origin = await _geometry.ownWindowOrigin(size);
+      final measured = origin == null ? null : origin & size;
+      if (measured != null && measured == previous) return measured;
+      previous = measured;
+      // Out of time: a recent reading still beats the stale one the window
+      // manager reports, so hand back whatever the last one was.
+      if (!DateTime.now().isBefore(deadline)) return measured;
+      await Future<void>.delayed(_placementPoll);
+    }
   }
 
   @override
