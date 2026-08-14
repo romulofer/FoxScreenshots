@@ -4,13 +4,13 @@ import 'package:foxscreenshots/core/hotkey/hotkey_service.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 
 void main() {
-  test('defaults unknown bindings to PrintScreen', () {
+  test('usa PrintScreen para combinações desconhecidas', () {
     final parsed = parseCaptureHotkey('???');
     expect(parsed.key, PhysicalKeyboardKey.printScreen);
     expect(parsed.modifiers, isEmpty);
   });
 
-  test('parses modifier chords', () {
+  test('entende combinações com modificadores', () {
     final parsed = parseCaptureHotkey('Ctrl+Shift+S');
     expect(parsed.key, PhysicalKeyboardKey.keyS);
     expect(
@@ -19,7 +19,7 @@ void main() {
     );
   });
 
-  test('parses function keys', () {
+  test('entende as teclas de função', () {
     expect(parseCaptureHotkey('F9').key, PhysicalKeyboardKey.f9);
   });
 }

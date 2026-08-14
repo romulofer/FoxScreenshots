@@ -25,13 +25,13 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('shows nothing when the machine has everything', (tester) async {
+  testWidgets('não mostra nada quando a máquina tem tudo', (tester) async {
     await pumpBanner(tester, const []);
 
     expect(find.byType(Card), findsNothing);
   });
 
-  testWidgets('warns about a blocking dependency in pt-BR', (tester) async {
+  testWidgets('avisa sobre uma dependência bloqueante em pt-BR', (tester) async {
     await pumpBanner(tester, const [
       DependencyIssue(SystemDependency.x11Library, DependencySeverity.blocking),
     ]);
@@ -44,7 +44,7 @@ void main() {
     expect(find.byIcon(Icons.error_outline), findsOneWidget);
   });
 
-  testWidgets('uses the milder wording when only features degrade', (
+  testWidgets('usa o texto mais brando quando só há degradação', (
     tester,
   ) async {
     await pumpBanner(tester, const [
@@ -58,7 +58,7 @@ void main() {
     expect(find.byIcon(Icons.info_outline), findsOneWidget);
   });
 
-  testWidgets('lists every issue and localizes to en-US', (tester) async {
+  testWidgets('lista todos os problemas e localiza para en-US', (tester) async {
     await pumpBanner(tester, const [
       DependencyIssue(
         SystemDependency.waylandSession,
@@ -78,7 +78,7 @@ void main() {
     expect(find.textContaining('libayatana-appindicator3'), findsOneWidget);
   });
 
-  testWidgets('can be dismissed', (tester) async {
+  testWidgets('pode ser dispensado', (tester) async {
     await pumpBanner(tester, const [
       DependencyIssue(SystemDependency.keybinder, DependencySeverity.degraded),
     ]);

@@ -8,9 +8,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Same SDK the release builds use, so CI cannot pass on a version nobody ships.
 env:
-  FLUTTER_VERSION: "3.45.0-0.1.pre"
-  FLUTTER_CHANNEL: "beta"
+  FLUTTER_VERSION: "3.47.0"
+  FLUTTER_CHANNEL: "stable"
 
 # Nothing here publishes anything; checkout is all the token is needed for.
 permissions:

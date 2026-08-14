@@ -5,7 +5,7 @@ import 'package:foxscreenshots/models/capture_region.dart';
 
 void main() {
   group('CaptureRegion.fromPoints', () {
-    test('normalizes corners regardless of drag direction', () {
+    test('normaliza os cantos independente da direção do arrasto', () {
       final downRight = CaptureRegion.fromPoints(
         const Offset(10, 20),
         const Offset(110, 220),
@@ -22,7 +22,7 @@ void main() {
       expect(upLeft.height, 200);
     });
 
-    test('a zero-area drag is empty', () {
+    test('um arrasto de área zero é vazio', () {
       final region = CaptureRegion.fromPoints(
         const Offset(5, 5),
         const Offset(5, 5),
@@ -30,19 +30,19 @@ void main() {
       expect(region.isEmpty, isTrue);
     });
 
-    test('toRect round-trips the bounds', () {
+    test('toRect leva e traz os limites sem perda', () {
       const region = CaptureRegion(x: 3, y: 4, width: 7, height: 9);
       expect(region.toRect(), const Rect.fromLTWH(3, 4, 7, 9));
     });
   });
 
   group('clampedTo', () {
-    test('leaves a region already inside the bounds alone', () {
+    test('deixa em paz a região que já está dentro dos limites', () {
       const region = CaptureRegion(x: 10, y: 10, width: 20, height: 20);
       expect(region.clampedTo(100, 100), region);
     });
 
-    test('trims the part hanging off the right and bottom edges', () {
+    test('apara o que sobra nas bordas direita e inferior', () {
       const region = CaptureRegion(x: 90, y: 95, width: 40, height: 40);
 
       expect(
@@ -51,7 +51,7 @@ void main() {
       );
     });
 
-    test('trims negative origins', () {
+    test('apara origens negativas', () {
       const region = CaptureRegion(x: -10, y: -20, width: 40, height: 60);
 
       expect(
@@ -60,14 +60,14 @@ void main() {
       );
     });
 
-    test('is empty when the region misses the bounds entirely', () {
+    test('fica vazia quando a região erra os limites por completo', () {
       const region = CaptureRegion(x: 200, y: 200, width: 10, height: 10);
       expect(region.clampedTo(100, 100).isEmpty, isTrue);
     });
   });
 
   group('scaled', () {
-    test('scales origin and size by the device pixel ratio', () {
+    test('escala origem e tamanho pela razão de pixels do dispositivo', () {
       const region = CaptureRegion(x: 10, y: 20, width: 30, height: 40);
 
       expect(

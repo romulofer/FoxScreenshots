@@ -13,7 +13,7 @@ void main() {
   /// Decodes the export so pixels can be inspected the way a viewer would.
   img.Image decode(Uint8List pngBytes) {
     final decoded = img.decodePng(pngBytes);
-    expect(decoded, isNotNull, reason: 'export must be a valid PNG');
+    expect(decoded, isNotNull, reason: 'a exportação precisa ser um PNG válido');
     return decoded!;
   }
 
@@ -29,7 +29,7 @@ void main() {
         textDirection: TextDirection.ltr,
       );
 
-  testWidgets('export keeps the base size and encodes a valid PNG', (
+  testWidgets('a exportação mantém o tamanho base e gera um PNG válido', (
     tester,
   ) async {
     await tester.runAsync(() async {
@@ -45,7 +45,7 @@ void main() {
     });
   });
 
-  testWidgets('annotations are baked into the exported pixels', (tester) async {
+  testWidgets('as anotações entram nos pixels exportados', (tester) async {
     await tester.runAsync(() async {
       final base = solidImage(
         width: 100,
@@ -69,17 +69,17 @@ void main() {
       expect(
         luminanceAt(exported, 20, 40),
         greaterThan(200),
-        reason: 'the stroke should be on the left edge of the rectangle',
+        reason: 'o traço deve estar na borda esquerda do retângulo',
       );
       expect(
         luminanceAt(exported, 90, 70),
         lessThan(20),
-        reason: 'untouched areas keep the original pixels',
+        reason: 'as áreas intocadas mantêm os pixels originais',
       );
     });
   });
 
-  testWidgets('a highlight tints without hiding what is underneath', (
+  testWidgets('o marca-texto tinge sem esconder o que está embaixo', (
     tester,
   ) async {
     await tester.runAsync(() async {
@@ -103,16 +103,16 @@ void main() {
 
       final exported = decode(flattened.pngBytes);
       final tinted = luminanceAt(exported, 10, 10);
-      expect(tinted, greaterThan(0), reason: 'the marker must be visible');
+      expect(tinted, greaterThan(0), reason: 'o marca-texto precisa aparecer');
       expect(
         tinted,
         lessThan(200),
-        reason: 'a marker is translucent, not opaque paint',
+        reason: 'o marca-texto é translúcido, não tinta opaca',
       );
     });
   });
 
-  testWidgets('a blur redaction destroys the hard edge underneath', (
+  testWidgets('a tarja de desfoque destrói a borda nítida que estava embaixo', (
     tester,
   ) async {
     await tester.runAsync(() async {
@@ -136,17 +136,17 @@ void main() {
       expect(
         atSeam,
         allOf(greaterThan(40), lessThan(215)),
-        reason: 'the black/white seam should have smeared into grey',
+        reason: 'a emenda preto/branco devia ter borrado para cinza',
       );
       expect(
         luminanceAt(exported, 5, 40),
         lessThan(20),
-        reason: 'pixels outside the redaction are untouched',
+        reason: 'os pixels fora da tarja ficam intocados',
       );
     });
   });
 
-  testWidgets('a pixelate redaction merges detail across the seam', (
+  testWidgets('a tarja de pixelagem funde o detalhe através da emenda', (
     tester,
   ) async {
     await tester.runAsync(() async {
@@ -171,17 +171,17 @@ void main() {
       expect(
         luminanceAt(exported, 47, 40),
         luminanceAt(exported, 52, 40),
-        reason: 'both sides of the seam fall in the same block',
+        reason: 'os dois lados da emenda caem no mesmo bloco',
       );
       expect(
         luminanceAt(exported, 95, 40),
         greaterThan(235),
-        reason: 'the untouched right half stays white',
+        reason: 'a metade direita, intocada, continua branca',
       );
     });
   });
 
-  testWidgets('crop trims to whole pixels and re-origins the content', (
+  testWidgets('o recorte corta em pixels inteiros e reposiciona a origem do conteúdo', (
     tester,
   ) async {
     await tester.runAsync(() async {
@@ -199,12 +199,12 @@ void main() {
       expect(
         luminanceAt(decode(cropped.pngBytes), 2, 2),
         greaterThan(235),
-        reason: 'the crop started inside the white half',
+        reason: 'o recorte começou dentro da metade branca',
       );
     });
   });
 
-  testWidgets('a crop dragged past the edge is clipped to the image', (
+  testWidgets('um recorte arrastado além da borda é limitado à imagem', (
     tester,
   ) async {
     await tester.runAsync(() async {

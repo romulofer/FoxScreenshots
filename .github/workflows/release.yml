@@ -8,10 +8,12 @@ on:
     types: [published]
   workflow_dispatch:
 
-# Keep the Flutter SDK pinned to the version used in development.
+# Pinned to stable: the 3.45 beta crashes the AOT snapshotter on macOS
+# ("Unexpected object ... package:flutter/src/widgets/_window_macos.dart"), and a
+# release build has no reason to sit on a pre-release SDK anyway.
 env:
-  FLUTTER_VERSION: "3.45.0-0.1.pre"
-  FLUTTER_CHANNEL: "beta"
+  FLUTTER_VERSION: "3.47.0"
+  FLUTTER_CHANNEL: "stable"
 
 permissions:
   contents: write # needed to upload assets to the Release

@@ -29,7 +29,7 @@ void main() {
     return app;
   }
 
-  testWidgets('annotate, apply, and the gallery shows the edited image', (
+  testWidgets('anotar, aplicar, e a galeria mostra a imagem editada', (
     tester,
   ) async {
     final app = await captureAndEdit(tester);
@@ -47,11 +47,11 @@ void main() {
     expect(find.text('Alterações aplicadas'), findsOneWidget);
 
     final edited = app.container.read(sessionControllerProvider).single;
-    expect(edited.id, original.id, reason: 'the gallery entry is replaced');
+    expect(edited.id, original.id, reason: 'a entrada da galeria é substituída');
     expect(edited.pngBytes, flattenedMarkerBytes);
   });
 
-  testWidgets('undo and redo walk back through the marks', (tester) async {
+  testWidgets('desfazer e refazer percorrem as marcas', (tester) async {
     await captureAndEdit(tester);
 
     await tester.tap(find.byTooltip('Seta'));
@@ -77,7 +77,7 @@ void main() {
     );
   });
 
-  testWidgets('a caption is typed in a dialog before it lands', (tester) async {
+  testWidgets('o texto é digitado em um diálogo antes de ser colocado', (tester) async {
     await captureAndEdit(tester);
 
     await tester.tap(find.byTooltip('Texto'));
@@ -97,7 +97,7 @@ void main() {
     expect((annotations.single as TextAnnotation).text, 'olhe aqui');
   });
 
-  testWidgets('redaction tools cover a region of the capture', (tester) async {
+  testWidgets('as ferramentas de tarja cobrem uma região da captura', (tester) async {
     await captureAndEdit(tester);
 
     await tester.tap(find.byTooltip('Pixelar'));
@@ -114,7 +114,7 @@ void main() {
     );
   });
 
-  testWidgets('copy from the editor puts the flattened PNG on the clipboard', (
+  testWidgets('copiar do editor põe o PNG achatado na área de transferência', (
     tester,
   ) async {
     final app = await captureAndEdit(tester);
@@ -131,7 +131,7 @@ void main() {
     expect(find.text('Copiado para a área de transferência'), findsOneWidget);
   });
 
-  testWidgets('save from the editor writes a PNG and reports the path', (
+  testWidgets('salvar do editor grava um PNG e informa o caminho', (
     tester,
   ) async {
     final app = await captureAndEdit(tester);
@@ -147,7 +147,7 @@ void main() {
     expect(find.textContaining('Salvo em '), findsOneWidget);
   });
 
-  testWidgets('leaving with unsaved marks asks first', (tester) async {
+  testWidgets('sair com marcas não salvas pergunta antes', (tester) async {
     final app = await captureAndEdit(tester);
     final original = app.container.read(sessionControllerProvider).single;
 
@@ -172,11 +172,11 @@ void main() {
     expect(
       app.container.read(sessionControllerProvider).single.pngBytes,
       original.pngBytes,
-      reason: 'a discarded edit must not reach the gallery',
+      reason: 'uma edição descartada não pode chegar à galeria',
     );
   });
 
-  testWidgets('an untouched capture leaves the editor without a prompt', (
+  testWidgets('uma captura intocada sai do editor sem perguntar nada', (
     tester,
   ) async {
     await captureAndEdit(tester);

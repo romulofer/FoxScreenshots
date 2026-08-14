@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:foxscreenshots/features/editor/widgets/canvas_fit.dart';
 
 void main() {
-  test('letterboxes a wide image and centers it', () {
+  test('centraliza uma imagem larga com tarjas nas bordas', () {
     final fit = CanvasFit.contain(
       imageSize: const Size(800, 400),
       viewport: const Size(400, 400),
@@ -15,16 +15,16 @@ void main() {
     expect(fit.destination, const Rect.fromLTWH(0, 100, 400, 200));
   });
 
-  test('never magnifies past 1:1', () {
+  test('nunca amplia além de 1:1', () {
     final fit = CanvasFit.contain(
       imageSize: const Size(100, 50),
       viewport: const Size(1000, 1000),
     );
 
-    expect(fit.scale, 1.0, reason: 'a small capture blown up is just blurry');
+    expect(fit.scale, 1.0, reason: 'ampliar uma captura pequena só deixa ela borrada');
   });
 
-  test('maps a widget point back to image pixels', () {
+  test('traduz um ponto do widget de volta para pixels da imagem', () {
     final fit = CanvasFit.contain(
       imageSize: const Size(800, 400),
       viewport: const Size(400, 400),
@@ -35,7 +35,7 @@ void main() {
     expect(fit.toImage(const Offset(0, 100)), Offset.zero);
   });
 
-  test('clamps points dragged off the image', () {
+  test('limita pontos arrastados para fora da imagem', () {
     final fit = CanvasFit.contain(
       imageSize: const Size(800, 400),
       viewport: const Size(400, 400),
@@ -46,7 +46,7 @@ void main() {
     expect(fit.toImage(const Offset(900, 900)), const Offset(800, 400));
   });
 
-  test('survives a zero-sized viewport during the first layout', () {
+  test('sobrevive a um viewport de tamanho zero no primeiro layout', () {
     final fit = CanvasFit.contain(
       imageSize: const Size(800, 400),
       viewport: Size.zero,

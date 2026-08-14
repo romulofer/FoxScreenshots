@@ -5,7 +5,7 @@ import 'package:foxscreenshots/core/theme/app_theme.dart';
 
 void main() {
   group('AppTheme', () {
-    test('light theme exposes the light FoxColors tokens', () {
+    test('o tema claro expõe os tokens claros de FoxColors', () {
       final theme = AppTheme.light();
       final tokens = theme.extension<FoxColors>();
 
@@ -16,7 +16,7 @@ void main() {
       expect(tokens.appBackground, const Color(0xFFFFFCF9));
     });
 
-    test('dark theme exposes the dark FoxColors tokens', () {
+    test('o tema escuro expõe os tokens escuros de FoxColors', () {
       final theme = AppTheme.dark();
       final tokens = theme.extension<FoxColors>();
 

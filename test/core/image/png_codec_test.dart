@@ -20,7 +20,7 @@ void main() {
   }
 
   group('encodeRgba', () {
-    test('produces a PNG that decodes back to the same pixels', () async {
+    test('produz um PNG que decodifica de volta nos mesmos pixels', () async {
       final rgba = rgbaGradient(4, 2);
 
       final png = await codec.encodeRgba(rgba, width: 4, height: 2);
@@ -47,7 +47,7 @@ void main() {
       );
     });
 
-    test('returns the requested rectangle', () async {
+    test('devolve o retângulo pedido', () async {
       final cropped = await codec.crop(
         source,
         const CaptureRegion(x: 2, y: 3, width: 4, height: 5),
@@ -59,7 +59,7 @@ void main() {
       expect(img.decodePng(cropped.pngBytes)?.width, 4);
     });
 
-    test('clamps a region that overflows the image', () async {
+    test('limita uma região que transborda a imagem', () async {
       final cropped = await codec.crop(
         source,
         const CaptureRegion(x: 8, y: 8, width: 50, height: 50),
@@ -69,7 +69,7 @@ void main() {
       expect(cropped.height, 2);
     });
 
-    test('returns null when the region misses the image entirely', () async {
+    test('devolve null quando a região erra a imagem por completo', () async {
       final cropped = await codec.crop(
         source,
         const CaptureRegion(x: 20, y: 20, width: 5, height: 5),
@@ -78,7 +78,7 @@ void main() {
       expect(cropped, isNull);
     });
 
-    test('crops from the right offset', () async {
+    test('recorta a partir do deslocamento certo', () async {
       // Row 0 of the gradient runs 0,1,2… in the red channel, so a crop at
       // x = 3 must start at red = 3.
       final cropped = await codec.crop(
@@ -90,7 +90,7 @@ void main() {
       expect(decoded.getPixel(0, 0).r, 3);
     });
 
-    test('rejects bytes that are not a PNG', () async {
+    test('rejeita bytes que não são um PNG', () async {
       expect(
         () => codec.crop(
           Uint8List.fromList([1, 2, 3, 4]),

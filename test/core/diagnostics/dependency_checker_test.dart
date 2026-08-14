@@ -19,11 +19,11 @@ void main() {
     );
   }
 
-  test('reports nothing on a fully equipped X11 machine', () {
+  test('não reporta nada em uma máquina X11 completa', () {
     expect(checker().check(), isEmpty);
   });
 
-  test('flags a missing libX11 as blocking', () {
+  test('aponta a falta da libX11 como bloqueante', () {
     final issues = checker(
       present: const {
         LinuxDependencyChecker.keybinderSoname,
@@ -39,7 +39,7 @@ void main() {
     ]);
   });
 
-  test('flags an unreachable display once the library itself loaded', () {
+  test('aponta um display inacessível quando a biblioteca em si carregou', () {
     final issues = checker(displayReachable: false).check();
 
     expect(issues, [
@@ -50,7 +50,7 @@ void main() {
     ]);
   });
 
-  test('does not also blame the display when libX11 is missing', () {
+  test('não culpa também o display quando a libX11 está faltando', () {
     final issues = checker(present: const {}, displayReachable: false).check();
 
     expect(
@@ -59,7 +59,7 @@ void main() {
     );
   });
 
-  test('flags a Wayland session instead of probing X', () {
+  test('aponta a sessão Wayland em vez de sondar o X', () {
     final issues = checker(
       environment: const {'XDG_SESSION_TYPE': 'wayland'},
       displayReachable: false,
@@ -69,7 +69,7 @@ void main() {
     expect(issues.first.severity, DependencySeverity.blocking);
   });
 
-  test('detects Wayland from WAYLAND_DISPLAY alone', () {
+  test('detecta o Wayland só pela WAYLAND_DISPLAY', () {
     final issues = checker(
       environment: const {'WAYLAND_DISPLAY': 'wayland-0'},
     ).check();
@@ -80,7 +80,7 @@ void main() {
     );
   });
 
-  test('missing keybinder only degrades, it does not block', () {
+  test('a falta do keybinder só degrada, não bloqueia', () {
     final issues = checker(
       present: const {
         LinuxDependencyChecker.x11Soname,
@@ -96,7 +96,7 @@ void main() {
     ]);
   });
 
-  test('missing appindicator only degrades', () {
+  test('a falta do appindicator só degrada', () {
     final issues = checker(
       present: const {
         LinuxDependencyChecker.x11Soname,
@@ -112,7 +112,7 @@ void main() {
     ]);
   });
 
-  test('lists every missing component at once', () {
+  test('lista de uma vez tudo o que está faltando', () {
     final issues = checker(present: const {}).check();
 
     expect(issues.map((i) => i.dependency), [
@@ -122,7 +122,7 @@ void main() {
     ]);
   });
 
-  test('the no-op checker never reports anything', () {
+  test('o verificador vazio nunca reporta nada', () {
     expect(const NoDependencyChecker().check(), isEmpty);
   });
 }

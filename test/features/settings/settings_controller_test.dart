@@ -21,7 +21,7 @@ void main() {
     addTearDown(container.dispose);
   }
 
-  test('defaults to system theme and OS locale', () async {
+  test('começa com o tema do sistema e o idioma do sistema', () async {
     await makeContainer();
     final state = container.read(settingsControllerProvider);
     expect(state.themeMode, ThemeMode.system);
@@ -29,7 +29,7 @@ void main() {
     expect(state.timerDelaySeconds, 3);
   });
 
-  test('setThemeMode updates state and persists', () async {
+  test('setThemeMode atualiza o estado e persiste', () async {
     await makeContainer();
     final controller = container.read(settingsControllerProvider.notifier);
 
@@ -42,7 +42,7 @@ void main() {
     expect(container.read(settingsServiceProvider).themeMode, 'dark');
   });
 
-  test('setLocale null clears back to OS locale', () async {
+  test('setLocale nulo volta para o idioma do sistema', () async {
     await makeContainer();
     final controller = container.read(settingsControllerProvider.notifier);
 

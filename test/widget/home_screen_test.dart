@@ -10,7 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../helpers/fake_capture_service.dart';
 
 void main() {
-  testWidgets('home falls back to pt-BR for an unsupported OS locale', (
+  testWidgets('a tela inicial cai para pt-BR quando o idioma do sistema não é suportado', (
     tester,
   ) async {
     // French is neither pt nor en, so the app must fall back to pt-BR

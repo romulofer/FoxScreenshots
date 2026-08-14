@@ -5,7 +5,7 @@ import 'package:foxscreenshots/core/image/raw_pixels.dart';
 
 void main() {
   group('rgbaFromRaw', () {
-    test('reorders BGRA pixels and forces an opaque alpha', () {
+    test('reordena pixels BGRA e força o alfa opaco', () {
       // Two pixels: pure red, pure blue — stored blue-first, with a junk pad
       // byte like X11 leaves behind on a depth-24 visual.
       final source = Uint8List.fromList([
@@ -24,7 +24,7 @@ void main() {
       expect(rgba, [255, 0, 0, 255, 0, 0, 255, 255]);
     });
 
-    test('keeps RGBA sources untouched apart from alpha', () {
+    test('mantém a origem RGBA intacta, fora o alfa', () {
       final source = Uint8List.fromList([10, 20, 30, 0]);
 
       final rgba = rgbaFromRaw(
@@ -39,7 +39,7 @@ void main() {
       expect(rgba, [10, 20, 30, 255]);
     });
 
-    test('skips row padding when the stride is wider than the row', () {
+    test('pula o preenchimento quando o stride é maior que a linha', () {
       // 1 pixel per row, but rows are padded to 8 bytes.
       final source = Uint8List.fromList([
         1, 2, 3, 0, 99, 99, 99, 99, //
@@ -57,7 +57,7 @@ void main() {
       expect(rgba, [3, 2, 1, 255, 6, 5, 4, 255]);
     });
 
-    test('handles 24-bit packed pixels', () {
+    test('lida com pixels compactados de 24 bits', () {
       final source = Uint8List.fromList([1, 2, 3, 4, 5, 6]);
 
       final rgba = rgbaFromRaw(
@@ -71,7 +71,7 @@ void main() {
       expect(rgba, [3, 2, 1, 255, 6, 5, 4, 255]);
     });
 
-    test('rejects an unsupported pixel depth', () {
+    test('rejeita profundidade de pixel não suportada', () {
       expect(
         () => rgbaFromRaw(
           source: Uint8List(8),
@@ -84,7 +84,7 @@ void main() {
       );
     });
 
-    test('rejects a buffer too short for the stated size', () {
+    test('rejeita um buffer curto demais para o tamanho declarado', () {
       expect(
         () => rgbaFromRaw(
           source: Uint8List(8),
@@ -97,7 +97,7 @@ void main() {
       );
     });
 
-    test('rejects a stride narrower than one row', () {
+    test('rejeita um stride menor que uma linha', () {
       expect(
         () => rgbaFromRaw(
           source: Uint8List(64),

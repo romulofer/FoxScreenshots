@@ -24,8 +24,8 @@ void main() {
         end: end,
       );
 
-  group('shape annotations', () {
-    test('normalize the dragged corners whichever way the drag went', () {
+  group('anotações de forma', () {
+    test('normalizam os cantos, para qualquer lado que o arrasto tenha ido', () {
       final downRight = rectangle(const Offset(10, 20), const Offset(40, 60));
       final upLeft = rectangle(const Offset(40, 60), const Offset(10, 20));
 
@@ -33,7 +33,7 @@ void main() {
       expect(upLeft.rect, downRight.rect);
     });
 
-    test('dragTo moves the end corner and keeps the start', () {
+    test('dragTo move o canto final e mantém o inicial', () {
       final dragged = rectangle(
         const Offset(10, 10),
         const Offset(20, 20),
@@ -43,7 +43,7 @@ void main() {
       expect(dragged.end, const Offset(50, 70));
     });
 
-    test('a click that never moved is not meaningful', () {
+    test('um clique que não andou não vira marca', () {
       expect(
         rectangle(const Offset(10, 10), const Offset(10, 10)).isMeaningful,
         isFalse,
@@ -55,13 +55,13 @@ void main() {
       expect(
         rectangle(const Offset(10, 10), const Offset(30, 10)).isMeaningful,
         isTrue,
-        reason: 'a wide but flat drag is still a deliberate shape',
+        reason: 'um arrasto largo e achatado ainda é uma forma proposital',
       );
     });
   });
 
-  group('arrow', () {
-    test('counts its length, not its bounding box', () {
+  group('seta', () {
+    test('conta o comprimento, não a caixa delimitadora', () {
       // A horizontal arrow has zero height; measuring the box would discard it.
       expect(
         arrow(const Offset(0, 50), const Offset(80, 50)).isMeaningful,
@@ -73,7 +73,7 @@ void main() {
       );
     });
 
-    test('head grows with the stroke width', () {
+    test('a ponta cresce junto com a espessura', () {
       final thin = ArrowAnnotation(
         id: 'a',
         color: color,
@@ -92,14 +92,14 @@ void main() {
       expect(thick.headLength, greaterThan(thin.headLength));
     });
 
-    test('bounds cover the head, which sticks out past the line', () {
+    test('os limites cobrem a ponta, que passa da linha', () {
       final horizontal = arrow(const Offset(0, 50), const Offset(80, 50));
       expect(horizontal.bounds.height, greaterThan(0));
     });
   });
 
-  group('pen', () {
-    test('collects every point of the drag', () {
+  group('caneta', () {
+    test('coleta todos os pontos do arrasto', () {
       var pen = PenAnnotation(
         id: 'p',
         color: color,
@@ -111,7 +111,7 @@ void main() {
       expect(pen.points, const [Offset(1, 1), Offset(5, 5), Offset(9, 2)]);
     });
 
-    test('folds moves shorter than a pixel-ish into the previous point', () {
+    test('funde movimentos menores que cerca de um pixel no ponto anterior', () {
       const start = PenAnnotation(
         id: 'p',
         color: color,
@@ -129,7 +129,7 @@ void main() {
       expect(start.dragTo(const Offset(14, 10)).points, hasLength(2));
     });
 
-    test('a single dot is a legitimate mark', () {
+    test('um ponto só já é uma marca legítima', () {
       final dot = PenAnnotation(
         id: 'p',
         color: color,
@@ -139,7 +139,7 @@ void main() {
       expect(dot.isMeaningful, isTrue);
     });
 
-    test('bounds wrap every point plus the stroke', () {
+    test('os limites envolvem todos os pontos mais a espessura', () {
       final pen = PenAnnotation(
         id: 'p',
         color: color,
@@ -150,8 +150,8 @@ void main() {
     });
   });
 
-  group('text', () {
-    test('blank text is dropped', () {
+  group('texto', () {
+    test('texto em branco é descartado', () {
       TextAnnotation withText(String text) => TextAnnotation(
         id: 't',
         color: color,
@@ -165,11 +165,11 @@ void main() {
       expect(withText('hello').isMeaningful, isTrue);
     });
 
-    test('font size follows the stroke slider', () {
+    test('o tamanho da fonte acompanha o controle de espessura', () {
       expect(TextAnnotation.fontSizeFor(4), 4 * TextAnnotation.fontScale);
     });
 
-    test('is placed by a tap, so dragging does not move it', () {
+    test('é colocado por um toque, então arrastar não o move', () {
       final text = TextAnnotation(
         id: 't',
         color: color,
@@ -182,7 +182,7 @@ void main() {
     });
   });
 
-  group('redaction', () {
+  group('tarja', () {
     RedactionAnnotation redaction(RedactionStyle style, double strokeWidth) =>
         RedactionAnnotation(
           id: 'x',
@@ -193,18 +193,18 @@ void main() {
           style: style,
         );
 
-    test('strength follows the stroke width', () {
+    test('a intensidade acompanha a espessura', () {
       expect(
         redaction(RedactionStyle.blur, 4).sigma,
         4 * RedactionAnnotation.strengthScale,
       );
     });
 
-    test('block size never drops below 2, or pixelation is a no-op', () {
+    test('o bloco nunca fica abaixo de 2, senão a pixelagem não faz nada', () {
       expect(redaction(RedactionStyle.pixelate, 0.1).blockSize, 2);
     });
 
-    test('keeps its style through a drag', () {
+    test('mantém o estilo durante o arrasto', () {
       final dragged = redaction(
         RedactionStyle.pixelate,
         4,
@@ -214,15 +214,15 @@ void main() {
     });
   });
 
-  group('editor tools', () {
-    test('text and step place on tap; the rest drag', () {
+  group('ferramentas do editor', () {
+    test('texto e marcador numerado são por toque; o resto é por arrasto', () {
       expect(EditorTool.text.isDragTool, isFalse);
       expect(EditorTool.step.isDragTool, isFalse);
       expect(EditorTool.arrow.isDragTool, isTrue);
       expect(EditorTool.crop.isDragTool, isTrue);
     });
 
-    test('crop is the only tool that does not add a layer', () {
+    test('o recorte é a única ferramenta que não adiciona camada', () {
       expect(EditorTool.crop.createsAnnotation, isFalse);
       for (final tool in EditorTool.values.where((t) => t != EditorTool.crop)) {
         expect(tool.createsAnnotation, isTrue, reason: '$tool');

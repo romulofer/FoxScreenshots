@@ -15,7 +15,7 @@ import 'helpers/e2e_app.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('instant capture: toolbar to a thumbnail in the gallery', (
+  testWidgets('captura instantânea: da barra até a miniatura na galeria', (
     tester,
   ) async {
     final app = await pumpE2EApp(tester);
@@ -46,11 +46,11 @@ void main() {
     expect(
       app.clipboard.writes.single,
       same(shot.pngBytes),
-      reason: 'a capture is on the clipboard without a further click',
+      reason: 'a captura vai para a área de transferência sem mais nenhum clique',
     );
   });
 
-  testWidgets('instant capture: Esc leaves the gallery empty', (tester) async {
+  testWidgets('captura instantânea: Esc deixa a galeria vazia', (tester) async {
     final app = await pumpE2EApp(tester);
 
     await tester.tap(find.text('Instantâneo'));
@@ -63,7 +63,7 @@ void main() {
     expect(find.byType(ThumbnailTile), findsNothing);
   });
 
-  testWidgets('timer capture: region first, shot after the delay', (
+  testWidgets('captura com temporizador: região primeiro, foto depois do atraso', (
     tester,
   ) async {
     final app = await pumpE2EApp(
@@ -90,7 +90,7 @@ void main() {
     expect(find.byType(ThumbnailTile), findsOneWidget);
   });
 
-  testWidgets('full screen capture takes the whole desktop with no overlay', (
+  testWidgets('captura de tela cheia pega a área de trabalho inteira, sem sobreposição', (
     tester,
   ) async {
     final app = await pumpE2EApp(tester);
@@ -104,7 +104,7 @@ void main() {
     expect(shot.height, 300);
   });
 
-  testWidgets('active window capture reports failure when nothing is focused', (
+  testWidgets('captura de janela ativa acusa falha quando nada está em foco', (
     tester,
   ) async {
     final app = await pumpE2EApp(tester);
@@ -116,7 +116,7 @@ void main() {
     expect(app.container.read(sessionControllerProvider), isEmpty);
   });
 
-  testWidgets('the global hotkey captures without touching the hub', (
+  testWidgets('o atalho global captura sem passar pela janela principal', (
     tester,
   ) async {
     final app = await pumpE2EApp(tester);
@@ -131,7 +131,7 @@ void main() {
     expect(find.byType(ThumbnailTile), findsOneWidget);
   });
 
-  testWidgets('the tray menu mirrors the capture actions', (tester) async {
+  testWidgets('o menu da bandeja espelha as ações de captura', (tester) async {
     final app = await pumpE2EApp(tester);
 
     expect(app.desktop.labels[TrayAction.instant], 'Instantâneo');
@@ -148,7 +148,7 @@ void main() {
     expect(find.text('Configurações'), findsWidgets);
   });
 
-  testWidgets('quitting from the tray tears the integration down', (
+  testWidgets('sair pela bandeja desmonta a integração com o sistema', (
     tester,
   ) async {
     final app = await pumpE2EApp(tester);
@@ -159,7 +159,7 @@ void main() {
     expect(app.desktop.calls, contains('quit'));
   });
 
-  testWidgets('a backend failure surfaces as a localized message', (
+  testWidgets('uma falha do backend aparece como mensagem localizada', (
     tester,
   ) async {
     final app = await pumpE2EApp(
@@ -179,7 +179,7 @@ void main() {
     expect(app.container.read(sessionControllerProvider), isEmpty);
   });
 
-  testWidgets('captures stack up, newest first, and can be deleted', (
+  testWidgets('as capturas se acumulam, da mais nova para a mais velha, e podem ser excluídas', (
     tester,
   ) async {
     final app = await pumpE2EApp(tester);

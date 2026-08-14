@@ -39,7 +39,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('switching the language updates the whole UI live', (
+  testWidgets('trocar o idioma atualiza a interface inteira na hora', (
     tester,
   ) async {
     await pumpE2EApp(tester);
@@ -60,7 +60,7 @@ void main() {
     expect(prefs.getString('locale_tag'), 'en');
   });
 
-  testWidgets('switching to the dark theme repaints the hub', (tester) async {
+  testWidgets('trocar para o tema escuro repinta a janela principal', (tester) async {
     await pumpE2EApp(tester);
     expect(
       Theme.of(tester.element(find.text('Instantâneo'))).brightness,
@@ -80,7 +80,7 @@ void main() {
     expect(prefs.getString('theme_mode'), 'dark');
   });
 
-  testWidgets('the timer delay chosen in settings drives the timer capture', (
+  testWidgets('o atraso escolhido nas configurações comanda a captura com temporizador', (
     tester,
   ) async {
     final app = await pumpE2EApp(tester);
@@ -104,7 +104,7 @@ void main() {
     expect(app.capture.regionCalls, 1);
   });
 
-  testWidgets('rebinding the hotkey re-registers it with the desktop', (
+  testWidgets('trocar o atalho o registra de novo no sistema', (
     tester,
   ) async {
     final app = await pumpE2EApp(tester);
@@ -127,7 +127,7 @@ void main() {
     expect(find.byType(ThumbnailTile), findsOneWidget);
   });
 
-  testWidgets('copy from the gallery writes a PNG to the clipboard', (
+  testWidgets('copiar da galeria grava um PNG na área de transferência', (
     tester,
   ) async {
     final app = await pumpE2EApp(tester);
@@ -142,7 +142,7 @@ void main() {
     expect(find.text('Copiado para a área de transferência'), findsOneWidget);
   });
 
-  testWidgets('a clipboard-less session reports the failure', (tester) async {
+  testWidgets('uma sessão sem área de transferência acusa a falha', (tester) async {
     final app = await pumpE2EApp(tester);
     app.clipboard.available = false;
 
@@ -157,7 +157,7 @@ void main() {
     );
   });
 
-  testWidgets('save from the gallery writes the file to disk', (tester) async {
+  testWidgets('salvar da galeria grava o arquivo em disco', (tester) async {
     final app = await pumpE2EApp(tester);
 
     await tester.tap(find.text('Tela cheia'));
@@ -171,7 +171,7 @@ void main() {
     expect(find.textContaining('Salvo em '), findsOneWidget);
   });
 
-  testWidgets('cancelling the save dialog writes nothing and says nothing', (
+  testWidgets('cancelar o diálogo de salvar não grava nada nem avisa nada', (
     tester,
   ) async {
     final app = await pumpE2EApp(tester);
@@ -186,7 +186,7 @@ void main() {
     expect(find.textContaining('Salvo em '), findsNothing);
   });
 
-  testWidgets('left-clicking the tray icon opens the hub window', (
+  testWidgets('o clique esquerdo no ícone da bandeja abre a janela principal', (
     tester,
   ) async {
     final app = await pumpE2EApp(tester);

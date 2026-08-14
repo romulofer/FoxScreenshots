@@ -2,13 +2,151 @@
 
 # 🦊 FoxScreenShots
 
-**Cross-platform screenshot capture & light editing — Windows · Linux · macOS**
+**Captura e edição rápida de screenshots — Windows · Linux · macOS**
 
-Built with Flutter. Open source under the [MIT License](LICENSE).
+[![CI](https://github.com/romulofer/FoxScreenshots/actions/workflows/ci.yml/badge.svg)](https://github.com/romulofer/FoxScreenshots/actions/workflows/ci.yml)
+[![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-A63F10.svg)](LICENSE)
+
+Feito em Flutter. Código aberto sob a [Licença MIT](LICENSE).
+
+**Português (Brasil)** · [English](#-foxscreenshots--english)
 
 </div>
 
 ---
+
+## O que faz
+
+Ferramenta de desktop para capturar e anotar screenshots rapidamente.
+
+- **Modo instantâneo** — aperte o atalho global; a tela congela e você arrasta
+  um retângulo para recortar.
+- **Modo temporizador** — escolha a região antes; a foto sai depois de alguns
+  segundos, dando tempo de abrir menus, dicas de ferramenta e estados de hover.
+- **Editor** — recorte, seta, retângulo/elipse, texto, marca-texto,
+  desfoque/pixelagem, caneta livre e marcadores numerados. Desfazer/refazer.
+- **Saída** — copia para a área de transferência **e** salva em PNG.
+- **Roda na bandeja do sistema**, com atalho global reconfigurável.
+- **Localizado** em português (pt-BR) e inglês (en-US).
+- **Temas claro e escuro.**
+
+> 🔒 **Privacidade:** tudo roda localmente. O FoxScreenShots **não faz nenhuma
+> chamada de rede** e nunca envia o conteúdo da sua tela para lugar nenhum.
+
+## Telas
+
+**Janela principal** — barra de captura e a galeria da sessão:
+
+![Janela principal do FoxScreenShots](docs/images/janela-principal-pt.png)
+
+**Seleção de região** — a tela congela, com dimensões ao vivo e lupa para
+acertar a borda pixel a pixel:
+
+![Seleção de região sobre a tela congelada](docs/images/selecao.png)
+
+**Editor** — camada de anotação não destrutiva, achatada só na exportação:
+
+![Editor de anotações](docs/images/editor-pt.png)
+
+**Configurações** — tema, idioma, atraso do temporizador e atalho:
+
+![Tela de configurações](docs/images/configuracoes-pt.png)
+
+> As imagens são geradas pelo próprio app, sobre uma área de trabalho sintética:
+> `xvfb-run -a flutter test integration_test/screenshots_test.dart -d linux`.
+
+## Situação atual
+
+🚧 Em desenvolvimento inicial — **0.1.0** é a primeira versão marcada. Captura
+(instantânea, temporizador, tela cheia, janela ativa), galeria da sessão, editor
+de anotações, bandeja e atalho global funcionam no Linux/X11; Windows e macOS
+compilam do mesmo código, mas ainda não foram exercitados em hardware real.
+
+A especificação completa está em [`SPEC.md`](SPEC.md).
+
+## Como começar
+
+Requer o [SDK do Flutter](https://docs.flutter.dev/get-started/install) com
+suporte a desktop habilitado.
+
+### Pacotes de sistema no Linux
+
+A captura fala direto com o X11, e a bandeja e o atalho global vêm de
+bibliotecas GTK, então alguns pacotes são necessários. Debian/Ubuntu/Mint:
+
+```bash
+# para compilar
+sudo apt install clang cmake ninja-build pkg-config libgtk-3-dev \
+                 libkeybinder-3.0-dev libayatana-appindicator3-dev
+
+# para executar (normalmente já instalados)
+sudo apt install libx11-6 libkeybinder-3.0-0 libayatana-appindicator3-1
+```
+
+| Biblioteca | Para quê | Sem ela |
+|---|---|---|
+| `libX11.so.6` | captura de tela | a captura fica indisponível |
+| `libkeybinder-3.0.so.0` | atalho global | o atalho não dispara |
+| `libayatana-appindicator3.so.1` | ícone na bandeja | sem ícone na bandeja |
+
+O app verifica todas na inicialização e mostra um aviso nomeando a que estiver
+faltando — ninguém fica com um botão que não faz nada em silêncio.
+
+**Wayland** ainda não é suportado: a captura precisa de uma sessão X11 por
+enquanto (um backend `xdg-desktop-portal` está planejado).
+
+```bash
+# habilitar desktop (uma vez)
+flutter config --enable-linux-desktop --enable-windows-desktop --enable-macos-desktop
+
+# instalar dependências e rodar
+flutter pub get
+flutter gen-l10n
+flutter run -d linux        # ou: -d windows / -d macos
+```
+
+### Comandos usuais
+
+```bash
+flutter analyze                 # análise estática
+dart format .                   # formatação
+flutter test                    # testes de unidade e de widget
+# e2e (precisa de display; xvfb na CI). Um único ponto de entrada: o runner de
+# desktop não relança o app para um segundo arquivo na mesma execução.
+flutter test integration_test/all_tests.dart -d linux
+flutter build linux             # build de release (também windows / macos)
+```
+
+## Organização do projeto
+
+Detalhes em [`SPEC.md` §4](SPEC.md). Em resumo: `lib/core/` guarda os serviços de
+plataforma (captura, bandeja, atalho, armazenamento, tema, l10n);
+`lib/features/` guarda a sobreposição de captura, o editor e as configurações;
+os testes ficam em `test/` e `integration_test/`.
+
+## Contribuindo
+
+Issues e PRs são bem-vindos. Mantenha os dois idiomas completos, use os tokens
+de tema (nada de cores cruas) e escreva testes para lógica nova. Os limites do
+projeto estão em [`SPEC.md` §7](SPEC.md).
+
+## Licença
+
+[MIT](LICENSE) © 2026 Rômulo Fernandes Evangelista
+
+---
+
+<div align="center">
+
+# 🦊 FoxScreenShots — English
+
+**Cross-platform screenshot capture & light editing — Windows · Linux · macOS**
+
+Built with Flutter. Open source under the [MIT License](LICENSE).
+
+[Português (Brasil)](#-foxscreenshots) · **English**
+
+</div>
 
 ## What it does
 
@@ -28,6 +166,28 @@ A desktop tool to capture and quickly annotate screenshots.
 > 🔒 **Privacy:** everything runs locally. FoxScreenShots makes **no network
 > calls** and never uploads your screen content anywhere.
 
+## Screens
+
+**Main window** — capture toolbar and the session gallery:
+
+![FoxScreenShots main window](docs/images/janela-principal-en.png)
+
+**Region selection** — the screen freezes, with live dimensions and a magnifier
+for pixel-precise edges:
+
+![Region selection over the frozen screen](docs/images/selecao.png)
+
+**Editor** — a non-destructive annotation layer, flattened only on export:
+
+![Annotation editor](docs/images/editor-en.png)
+
+**Settings** — theme, language, timer delay and hotkey:
+
+![Settings screen](docs/images/configuracoes-en.png)
+
+> The images are generated by the app itself, over a synthetic desktop:
+> `xvfb-run -a flutter test integration_test/screenshots_test.dart -d linux`.
+
 ## Status
 
 🚧 Early development — **0.1.0** is the first tagged release. Capture (instant,
@@ -35,7 +195,7 @@ timer, full screen, active window), the session gallery, the annotation editor,
 tray and global hotkey all work on Linux/X11; Windows and macOS build from the
 same code but are not yet exercised on real hardware.
 
-See [`SPEC.md`](SPEC.md) for the full specification.
+See [`SPEC.md`](SPEC.md) for the full specification (written in Portuguese).
 
 ## Getting started
 
@@ -84,7 +244,9 @@ flutter run -d linux        # or: -d windows / -d macos
 flutter analyze                 # lint / static analysis
 dart format .                   # format
 flutter test                    # unit + widget tests
-flutter test integration_test   # e2e (needs a display; xvfb on CI)
+# e2e (needs a display; xvfb on CI). One entry point: the desktop runner cannot
+# relaunch the app for a second file in the same run.
+flutter test integration_test/all_tests.dart -d linux
 flutter build linux             # release build (also windows / macos)
 ```
 

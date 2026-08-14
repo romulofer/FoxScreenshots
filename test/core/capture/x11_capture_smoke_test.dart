@@ -17,7 +17,7 @@ void main() {
       env['XDG_SESSION_TYPE']?.toLowerCase() != 'wayland';
 
   group('X11ScreenCaptureService', () {
-    test('grabs the virtual screen as a decodable PNG', () async {
+    test('captura a tela virtual como um PNG decodificável', () async {
       const service = X11ScreenCaptureService();
 
       final shot = await service.grabFullVirtualScreen();
@@ -32,7 +32,7 @@ void main() {
       expect(decoded.getPixel(0, 0), isNotNull);
     });
 
-    test('grabs a region at exactly the requested size', () async {
+    test('captura a região no tamanho exato pedido', () async {
       const service = X11ScreenCaptureService();
 
       final shot = await service.grabRegion(
@@ -44,7 +44,7 @@ void main() {
       expect(img.decodePng(shot.pngBytes)?.width, 64);
     });
 
-    test('clamps a region that runs past the screen edge', () async {
+    test('limita uma região que passa da borda da tela', () async {
       const service = X11ScreenCaptureService();
       final full = await service.grabFullVirtualScreen();
 

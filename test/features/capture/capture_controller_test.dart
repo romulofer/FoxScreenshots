@@ -77,8 +77,8 @@ void main() {
     clipboard = RecordingClipboardService();
   });
 
-  group('instant capture', () {
-    testWidgets('crops the frozen frame to the dragged region', (tester) async {
+  group('captura instantânea', () {
+    testWidgets('recorta o quadro congelado na região arrastada', (tester) async {
       await pumpApp(tester);
       // The test window is 800x600 and the fake screen is 400x300, so overlay
       // coordinates map to image pixels at half scale.
@@ -98,7 +98,7 @@ void main() {
       expect(service.regionCalls, 0);
     });
 
-    testWidgets('lands on the clipboard straight away', (tester) async {
+    testWidgets('cai na área de transferência na hora', (tester) async {
       await pumpApp(tester);
       final pending = container
           .read(captureControllerProvider)
@@ -112,7 +112,7 @@ void main() {
       expect(clipboard.writes.single, same(result!.pngBytes));
     });
 
-    testWidgets('a clipboard-less session still keeps the capture', (
+    testWidgets('uma sessão sem área de transferência ainda guarda a captura', (
       tester,
     ) async {
       clipboard.available = false;
@@ -127,7 +127,7 @@ void main() {
       expect(container.read(sessionControllerProvider), hasLength(1));
     });
 
-    testWidgets('adds the capture to the session', (tester) async {
+    testWidgets('adiciona a captura à sessão', (tester) async {
       await pumpApp(tester);
 
       final pending = container
@@ -140,7 +140,7 @@ void main() {
       expect(container.read(sessionControllerProvider), hasLength(1));
     });
 
-    testWidgets('hides the hub window and always restores it', (tester) async {
+    testWidgets('esconde a janela principal e sempre a restaura', (tester) async {
       await pumpApp(tester);
 
       final pending = container
@@ -159,7 +159,7 @@ void main() {
       ]);
     });
 
-    testWidgets('Esc cancels without recording a capture', (tester) async {
+    testWidgets('Esc cancela sem registrar captura', (tester) async {
       await pumpApp(tester);
 
       final pending = container
@@ -175,7 +175,7 @@ void main() {
       expect(window.calls.last, 'restore');
     });
 
-    testWidgets('a stray click is not a selection', (tester) async {
+    testWidgets('um clique solto não é uma seleção', (tester) async {
       await pumpApp(tester);
 
       final pending = container
@@ -190,7 +190,7 @@ void main() {
       expect(await pending, isNotNull);
     });
 
-    testWidgets('ignores a second capture while one is in progress', (
+    testWidgets('ignora uma segunda captura enquanto uma está em andamento', (
       tester,
     ) async {
       await pumpApp(tester);
@@ -206,8 +206,8 @@ void main() {
     });
   });
 
-  group('timer capture', () {
-    testWidgets('selects live then re-grabs after the delay', (tester) async {
+  group('captura com temporizador', () {
+    testWidgets('seleciona antes e captura de novo depois do atraso', (tester) async {
       await pumpApp(tester);
 
       final pending = container
@@ -230,7 +230,7 @@ void main() {
       );
     });
 
-    testWidgets('maps the selection through the granted window bounds', (
+    testWidgets('mapeia a seleção pelos limites de janela concedidos', (
       tester,
     ) async {
       // The window manager clamped the overlay to the right-hand half of a
@@ -257,8 +257,8 @@ void main() {
     });
   });
 
-  group('full screen capture', () {
-    testWidgets('records the whole virtual screen with no overlay', (
+  group('captura de tela cheia', () {
+    testWidgets('registra a tela virtual inteira, sem sobreposição', (
       tester,
     ) async {
       await pumpApp(tester);
@@ -274,8 +274,8 @@ void main() {
     });
   });
 
-  group('active window capture', () {
-    testWidgets('grabs the focused window geometry', (tester) async {
+  group('captura de janela ativa', () {
+    testWidgets('pega a geometria da janela em foco', (tester) async {
       service = FakeScreenCaptureService(
         activeWindow: const CaptureRegion(x: 5, y: 6, width: 120, height: 80),
       );
@@ -290,7 +290,7 @@ void main() {
       expect(service.lastRegion?.x, 5);
     });
 
-    testWidgets('reports a failure when nothing is focused', (tester) async {
+    testWidgets('acusa falha quando nada está em foco', (tester) async {
       await pumpApp(tester);
 
       await expectLater(
@@ -307,8 +307,8 @@ void main() {
     });
   });
 
-  group('backend failure', () {
-    testWidgets('propagates the failure and restores the window', (
+  group('falha do backend', () {
+    testWidgets('propaga a falha e restaura a janela', (
       tester,
     ) async {
       service = FakeScreenCaptureService(

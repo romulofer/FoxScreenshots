@@ -80,7 +80,7 @@ void main() {
   EditorState stateOf(ProviderContainer container) =>
       container.read(editorControllerProvider(capture));
 
-  testWidgets('shows the tool rail with localized tooltips', (tester) async {
+  testWidgets('mostra o trilho de ferramentas com dicas localizadas', (tester) async {
     final container = makeContainer();
     await pumpEditor(tester, container);
 
@@ -101,7 +101,7 @@ void main() {
     }
   });
 
-  testWidgets('dragging on the canvas draws an annotation', (tester) async {
+  testWidgets('arrastar na área de desenho cria uma anotação', (tester) async {
     final container = makeContainer();
     await pumpEditor(tester, container);
 
@@ -112,7 +112,7 @@ void main() {
     expect(stateOf(container).annotations.single, isA<ArrowAnnotation>());
   });
 
-  testWidgets('undo is disabled until something is drawn', (tester) async {
+  testWidgets('o desfazer fica desabilitado até algo ser desenhado', (tester) async {
     final container = makeContainer();
     await pumpEditor(tester, container);
 
@@ -133,7 +133,7 @@ void main() {
     expect(stateOf(container).annotations, isEmpty);
   });
 
-  testWidgets('the text tool asks for the caption before placing it', (
+  testWidgets('a ferramenta de texto pede o conteúdo antes de colocá-lo', (
     tester,
   ) async {
     final container = makeContainer();
@@ -154,7 +154,7 @@ void main() {
     expect((annotation as TextAnnotation).text, 'look here');
   });
 
-  testWidgets('cancelling the caption dialog places nothing', (tester) async {
+  testWidgets('cancelar o diálogo de texto não coloca nada', (tester) async {
     final container = makeContainer();
     await pumpEditor(tester, container);
 
@@ -168,7 +168,7 @@ void main() {
     expect(stateOf(container).annotations, isEmpty);
   });
 
-  testWidgets('the numbered marker tool places badges on tap', (tester) async {
+  testWidgets('a ferramenta de marcador numerado coloca as bolinhas por toque', (tester) async {
     final container = makeContainer();
     await pumpEditor(tester, container);
 
@@ -183,7 +183,7 @@ void main() {
     expect(stateOf(container).annotations.single, isA<StepAnnotation>());
   });
 
-  testWidgets('apply writes the flattened image back to the session', (
+  testWidgets('aplicar grava a imagem achatada de volta na sessão', (
     tester,
   ) async {
     final container = makeContainer();
@@ -196,17 +196,17 @@ void main() {
     await tester.pumpAndSettle();
 
     final stored = container.read(sessionControllerProvider).single;
-    expect(stored.id, capture.id, reason: 'the gallery entry is replaced');
+    expect(stored.id, capture.id, reason: 'a entrada da galeria é substituída');
     expect(stored.pngBytes, flattenedBytes);
     expect(find.text('Changes applied'), findsOneWidget);
     expect(
       find.byType(EditorScreen),
       findsNothing,
-      reason: 'applying closes the editor',
+      reason: 'aplicar fecha o editor',
     );
   });
 
-  testWidgets('leaving with unsaved edits asks before discarding them', (
+  testWidgets('sair com edições não salvas pergunta antes de descartar', (
     tester,
   ) async {
     final container = makeContainer();

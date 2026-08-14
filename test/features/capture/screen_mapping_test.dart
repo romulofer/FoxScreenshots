@@ -7,7 +7,7 @@ import 'package:foxscreenshots/models/capture_region.dart';
 
 void main() {
   group('fromPlacement', () {
-    test('is 1:1 when the overlay covers the whole virtual screen', () {
+    test('fica 1:1 quando a sobreposição cobre a tela virtual inteira', () {
       // Two 1760x1080 monitors side by side, no display scaling.
       const placement = OverlayPlacement(
         window: Rect.fromLTWH(0, 0, 3520, 1080),
@@ -22,7 +22,7 @@ void main() {
     });
 
     test(
-      'offsets the backdrop when the WM clamps the overlay to a monitor',
+      'desloca o fundo quando o gerenciador de janelas prende a sobreposição a um monitor',
       () {
         // The window manager only granted the right-hand monitor.
         const placement = OverlayPlacement(
@@ -42,7 +42,7 @@ void main() {
       },
     );
 
-    test('accounts for a display scale factor', () {
+    test('leva em conta o fator de escala do monitor', () {
       // 2x HiDPI: 1920 logical, 3840 physical pixels.
       const placement = OverlayPlacement(
         window: Rect.fromLTWH(0, 0, 1920, 1080),
@@ -55,7 +55,7 @@ void main() {
       expect(mapping.toImage(const Offset(10, 20)), const Offset(20, 40));
     });
 
-    test('handles a virtual screen that starts at a negative origin', () {
+    test('lida com uma tela virtual que começa em origem negativa', () {
       // Second monitor placed to the left of the primary one.
       const placement = OverlayPlacement(
         window: Rect.fromLTWH(-1920, 0, 1920, 1080),
@@ -67,7 +67,7 @@ void main() {
       expect(mapping.imageOrigin, Offset.zero);
     });
 
-    test('falls back to 1:1 for a degenerate virtual screen', () {
+    test('cai para 1:1 em uma tela virtual degenerada', () {
       const placement = OverlayPlacement(
         window: Rect.zero,
         virtualScreen: Rect.zero,
@@ -84,7 +84,7 @@ void main() {
   });
 
   group('toRegion', () {
-    test('maps a drag to screenshot pixels, in any direction', () {
+    test('mapeia o arrasto para pixels do screenshot, em qualquer direção', () {
       const mapping = ScreenMapping(
         imageOrigin: Offset(1760, 0),
         imagePixelsPerLogical: 2,
@@ -103,7 +103,7 @@ void main() {
       );
     });
 
-    test('clips a drag that runs off the screenshot', () {
+    test('corta o arrasto que sai do screenshot', () {
       const mapping = ScreenMapping(
         imageOrigin: Offset(3400, 1000),
         imagePixelsPerLogical: 1,

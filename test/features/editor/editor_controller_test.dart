@@ -49,7 +49,7 @@ void main() {
     await controller.endDraft();
   }
 
-  test('decodes the capture and reports the image size', () async {
+  test('decodifica a captura e informa o tamanho da imagem', () async {
     final container = makeContainer(width: 120, height: 90);
     controllerOf(container);
 
@@ -60,10 +60,10 @@ void main() {
     expect(state.document.image, isNotNull);
     expect(state.document.width, 120);
     expect(state.document.height, 90);
-    expect(state.isDirty, isFalse, reason: 'decoding is not an edit');
+    expect(state.isDirty, isFalse, reason: 'decodificar não é editar');
   });
 
-  test('a drag commits one annotation and enables undo', () async {
+  test('um arrasto confirma uma anotação e libera o desfazer', () async {
     final container = makeContainer();
     final controller = controllerOf(container)
       ..selectTool(EditorTool.rectangle);
@@ -74,13 +74,13 @@ void main() {
     final state = stateOf(container);
     expect(state.annotations, hasLength(1));
     expect(state.annotations.single, isA<RectangleAnnotation>());
-    expect(state.draft, isNull, reason: 'the draft is committed, not kept');
+    expect(state.draft, isNull, reason: 'o rascunho é confirmado, não guardado');
     expect(state.canUndo, isTrue);
     expect(state.canRedo, isFalse);
     expect(state.isDirty, isTrue);
   });
 
-  test('the in-progress draft is visible before it is committed', () async {
+  test('o rascunho em andamento aparece antes de ser confirmado', () async {
     final container = makeContainer();
     final controller = controllerOf(container)..selectTool(EditorTool.arrow);
     await pumpEventQueue();
@@ -92,10 +92,10 @@ void main() {
     final state = stateOf(container);
     expect(state.annotations, isEmpty);
     expect(state.visibleAnnotations, hasLength(1));
-    expect(state.canUndo, isFalse, reason: 'a live drag is not history yet');
+    expect(state.canUndo, isFalse, reason: 'um arrasto em andamento ainda não é histórico');
   });
 
-  test('a stray click leaves nothing behind', () async {
+  test('um clique solto não deixa nada para trás', () async {
     final container = makeContainer();
     final controller = controllerOf(container)..selectTool(EditorTool.ellipse);
     await pumpEventQueue();
@@ -106,7 +106,7 @@ void main() {
     expect(stateOf(container).canUndo, isFalse);
   });
 
-  test('tap tools ignore drags', () async {
+  test('as ferramentas de toque ignoram arrastos', () async {
     final container = makeContainer();
     final controller = controllerOf(container)..selectTool(EditorTool.step);
     await pumpEventQueue();
@@ -116,7 +116,7 @@ void main() {
     expect(stateOf(container).annotations, isEmpty);
   });
 
-  test('switching tools drops the half-drawn shape', () async {
+  test('trocar de ferramenta descarta a forma pela metade', () async {
     final container = makeContainer();
     final controller = controllerOf(container)..selectTool(EditorTool.pen);
     await pumpEventQueue();
@@ -130,7 +130,7 @@ void main() {
     expect(stateOf(container).annotations, isEmpty);
   });
 
-  test('undo and redo walk the history', () async {
+  test('desfazer e refazer percorrem o histórico', () async {
     final container = makeContainer();
     final controller = controllerOf(container)
       ..selectTool(EditorTool.rectangle);
@@ -147,7 +147,7 @@ void main() {
     controller.undo();
     expect(stateOf(container).annotations, isEmpty);
     expect(stateOf(container).canUndo, isFalse);
-    expect(stateOf(container).isDirty, isFalse, reason: 'back to the original');
+    expect(stateOf(container).isDirty, isFalse, reason: 'de volta ao original');
 
     controller.redo();
     expect(stateOf(container).annotations, hasLength(1));
@@ -157,7 +157,7 @@ void main() {
     expect(stateOf(container).canRedo, isFalse);
   });
 
-  test('a new edit after an undo clears the redo branch', () async {
+  test('uma edição nova depois de desfazer limpa o ramo do refazer', () async {
     final container = makeContainer();
     final controller = controllerOf(container)
       ..selectTool(EditorTool.rectangle);
@@ -172,7 +172,7 @@ void main() {
     expect(stateOf(container).annotations, hasLength(1));
   });
 
-  test('step markers are numbered in the order they are placed', () async {
+  test('os marcadores numerados seguem a ordem em que foram colocados', () async {
     final container = makeContainer();
     final controller = controllerOf(container)..selectTool(EditorTool.step);
     await pumpEventQueue();
@@ -190,7 +190,7 @@ void main() {
     );
   });
 
-  test('undoing a step frees its number for the next one', () async {
+  test('desfazer um marcador libera o número dele para o próximo', () async {
     final container = makeContainer();
     final controller = controllerOf(container)..selectTool(EditorTool.step);
     await pumpEventQueue();
@@ -209,7 +209,7 @@ void main() {
     );
   });
 
-  test('empty text is not placed', () async {
+  test('texto vazio não é colocado', () async {
     final container = makeContainer();
     final controller = controllerOf(container);
     await pumpEventQueue();
@@ -225,7 +225,7 @@ void main() {
     );
   });
 
-  test('new annotations take the selected color and stroke width', () async {
+  test('anotações novas assumem a cor e a espessura selecionadas', () async {
     final container = makeContainer();
     final controller = controllerOf(container)
       ..selectTool(EditorTool.arrow)
@@ -240,7 +240,7 @@ void main() {
     expect(annotation.strokeWidth, 9);
   });
 
-  test('flatten reuses the original bytes when nothing was drawn', () async {
+  test('o achatamento reaproveita os bytes originais quando nada foi desenhado', () async {
     final container = makeContainer();
     controllerOf(container);
     await pumpEventQueue();
@@ -253,11 +253,11 @@ void main() {
     expect(
       identical(flattened!.pngBytes, capture.pngBytes),
       isTrue,
-      reason: 'an unchanged capture should not be re-encoded',
+      reason: 'uma captura sem alteração não deve ser recodificada',
     );
   });
 
-  test('flatten runs the annotations through the compositor', () async {
+  test('o achatamento passa as anotações pelo compositor', () async {
     late List<Annotation> seen;
     final container = ProviderContainer(
       overrides: [
@@ -288,7 +288,7 @@ void main() {
     expect(flattened!.pngBytes, [1, 2, 3]);
   });
 
-  test('markApplied clears the unsaved-changes flag', () async {
+  test('markApplied limpa a marca de alterações não salvas', () async {
     final container = makeContainer();
     final controller = controllerOf(container)..selectTool(EditorTool.pen);
     await pumpEventQueue();
@@ -301,11 +301,11 @@ void main() {
     expect(
       stateOf(container).canUndo,
       isTrue,
-      reason: 'applying does not throw the history away',
+      reason: 'aplicar não joga o histórico fora',
     );
   });
 
-  testWidgets('crop trims the base image and moves the annotations with it', (
+  testWidgets('o recorte corta a imagem base e leva as anotações junto', (
     tester,
   ) async {
     // Decoding and rasterization are real engine work: the whole flow has to
@@ -333,7 +333,7 @@ void main() {
     expect(state.isBusy, isFalse);
   });
 
-  testWidgets('a crop dragged up and to the left keeps its anchor', (
+  testWidgets('um recorte arrastado para cima e para a esquerda mantém a âncora', (
     tester,
   ) async {
     late ProviderContainer container;
@@ -352,11 +352,11 @@ void main() {
     });
 
     final state = stateOf(container);
-    expect(state.document.width, 60, reason: '90 - 30, anchored at the start');
+    expect(state.document.width, 60, reason: '90 - 30, ancorado no início');
     expect(state.document.height, 50);
   });
 
-  testWidgets('a discarded redo branch frees the bitmap it held', (
+  testWidgets('um ramo de refazer descartado libera o bitmap que segurava', (
     tester,
   ) async {
     late ProviderContainer container;
@@ -384,11 +384,11 @@ void main() {
     expect(
       original.debugDisposed,
       isFalse,
-      reason: 'the image still on screen must survive',
+      reason: 'a imagem que ainda está na tela precisa sobreviver',
     );
   });
 
-  testWidgets('undo restores the image a crop replaced', (tester) async {
+  testWidgets('desfazer restaura a imagem que o recorte substituiu', (tester) async {
     late ProviderContainer container;
     late EditorController controller;
     await tester.runAsync(() async {

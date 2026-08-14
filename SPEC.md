@@ -1,106 +1,117 @@
-# FoxScreenShots — Specification
+# FoxScreenShots — Especificação
 
-> Living document. Source of truth for scope, architecture, and boundaries.
-> Changes to scope or the color palette require sign-off from the author.
+> Documento vivo. Fonte da verdade para escopo, arquitetura e limites.
+> Mudanças de escopo ou na paleta de cores precisam do aval do autor.
 
-## 1. Objective
+## 1. Objetivo
 
-Cross-platform desktop app (Windows, Linux, macOS) built in Flutter to
-**capture** and do **basic editing** of screenshots.
+App de desktop multiplataforma (Windows, Linux, macOS) feito em Flutter para
+**capturar** e fazer a **edição básica** de screenshots.
 
-**Target user:** anyone on desktop who needs quick, good-looking screenshots
-with light annotation — bug reports, documentation, tutorials, support.
+**Público-alvo:** quem usa desktop e precisa de screenshots rápidos e
+apresentáveis, com anotação leve — relatos de bug, documentação, tutoriais,
+suporte.
 
-**Non-goals:** video/GIF recording, cloud sync, image library management,
-heavy photo editing (layers, filters), OCR. May be revisited later.
+**Fora do escopo:** gravação de vídeo/GIF, sincronização em nuvem, gerência de
+biblioteca de imagens, edição pesada de fotos (camadas, filtros), OCR. Pode ser
+revisto no futuro.
 
-### Operating modes
+### Modos de operação
 
-1. **Instant (primary)** — user triggers via global hotkey; all screens
-   **freeze** (a full-resolution snapshot is shown as a fullscreen always-on-top
-   overlay) and the user drags a selection rectangle of the region to crop.
-2. **Timer** — user selects the region *first*, then the shot is taken after a
-   configurable delay (seconds). Lets the user open menus, tooltips, hover
-   states, etc. before capture.
+1. **Instantâneo (principal)** — o usuário aciona pelo atalho global; todas as
+   telas **congelam** (uma foto em resolução plena é mostrada como sobreposição
+   de tela cheia, sempre no topo) e o usuário arrasta o retângulo da região a
+   recortar.
+2. **Temporizador** — o usuário escolhe a região *antes*; a foto é tirada depois
+   de um atraso configurável (em segundos). Permite abrir menus, dicas de
+   ferramenta, estados de hover etc. antes da captura.
 
-### Runtime & trigger — *decided*
+### Execução e acionamento — *decidido*
 
-- Runs in the **system tray** in the background (`tray_manager`).
-- **Left-click on the tray icon opens the main window** (a Shutter-like hub,
-  see §2.7). Right-click opens a context menu (both modes, Settings, Quit).
-- **Global hotkey** triggers capture (`hotkey_manager`), default `PrintScreen`,
-  rebindable in Settings — works without opening the window.
-- Closing the main window hides it to the tray (app keeps running); Quit is
-  explicit (tray menu / app menu).
+- Roda na **bandeja do sistema**, em segundo plano (`tray_manager`).
+- **Clique esquerdo no ícone da bandeja abre a janela principal** (um hub no
+  estilo do Shutter, veja §2.5). Clique direito abre um menu de contexto (os
+  dois modos, Configurações, Sair).
+- **Atalho global** dispara a captura (`hotkey_manager`), `PrintScreen` por
+  padrão, reconfigurável nas Configurações — funciona sem abrir a janela.
+- Fechar a janela principal a esconde na bandeja (o app continua rodando); sair
+  é explícito (menu da bandeja / menu do app).
 
-## 2. Features & acceptance criteria
+## 2. Funcionalidades e critérios de aceite
 
-### 2.1 Capture — *decided*
-- Freeze-frame overlay across **all monitors**; selection with live dimensions
-  and a magnifier for pixel-precise edges.
-- Timer mode: pick region, choose delay, countdown, then capture.
-- Cross-platform capture backend abstracted behind one service; native per-OS
-  (see §4). **Linux backend research deferred to PLAN** (X11 vs Wayland /
-  xdg-desktop-portal).
+### 2.1 Captura — *decidido*
+- Sobreposição com o quadro congelado em **todos os monitores**; seleção com
+  dimensões ao vivo e lupa para acertar a borda pixel a pixel.
+- Modo temporizador: escolher a região, escolher o atraso, contagem regressiva,
+  captura.
+- Backend de captura multiplataforma atrás de um único serviço; nativo por
+  sistema operacional (veja §4).
 
-**Accept:** both modes produce a correct cropped bitmap on Linux (dev env);
-Windows/macOS behind the same interface with platform tests.
+**Aceite:** os dois modos produzem um bitmap recortado correto no Linux
+(ambiente de desenvolvimento); Windows e macOS atrás da mesma interface, com
+testes de plataforma.
 
-### 2.2 Editor — *decided (all of the below)*
-- **Basic:** crop, arrow, rectangle/ellipse, text.
-- **Highlight** (translucent marker over a region).
-- **Blur / pixelate** (redact sensitive data).
-- **Freehand pen** + **numbered step markers** (1, 2, 3…).
-- Undo/redo. Color + stroke-width picker. Non-destructive annotation layer
-  composited on export.
+### 2.2 Editor — *decidido (tudo abaixo)*
+- **Básico:** recorte, seta, retângulo/elipse, texto.
+- **Marca-texto** (marcador translúcido sobre uma região).
+- **Desfoque / pixelagem** (tarjar dados sensíveis).
+- **Caneta livre** + **marcadores numerados** (1, 2, 3…).
+- Desfazer/refazer. Seletor de cor e de espessura. Camada de anotação não
+  destrutiva, achatada na exportação.
 
-**Accept:** each tool has a unit test for its model/geometry and a widget test
-for its interaction; export composites annotations onto the base image losslessly.
+**Aceite:** cada ferramenta tem teste de unidade do seu modelo/geometria e teste
+de widget da sua interação; a exportação compõe as anotações sobre a imagem base
+sem perda.
 
-### 2.3 Output — *decided*
-- **Copy to clipboard** (image) **and** save to a **file** (PNG).
-- Save via dialog; remember last folder. Auto-save folder + filename pattern is
-  a Settings option (timestamped) — nice-to-have, not blocking.
+### 2.3 Saída — *decidido*
+- **Copiar para a área de transferência** (imagem) **e** salvar em **arquivo**
+  (PNG).
+- Salvar por diálogo; lembrar a última pasta. Pasta de salvamento automático +
+  padrão de nome de arquivo é uma opção das Configurações (com data e hora) —
+  desejável, não bloqueante.
 
-**Accept:** clipboard receives a valid PNG on all three OSes; saved file opens
-in a standard viewer.
+**Aceite:** a área de transferência recebe um PNG válido nos três sistemas
+operacionais; o arquivo salvo abre em um visualizador comum.
 
-### 2.4 Toolbar / menus
-- App menu bar: **Arquivo / File**, **Configurações / Settings**, plus Edit and
-  Help. Tray menu mirrors core actions.
+### 2.4 Barra de ferramentas / menus
+- Barra de menus do app: **Arquivo**, **Configurações**, mais Editar e Ajuda. O
+  menu da bandeja espelha as ações principais.
 
-### 2.5 Main window — *Shutter-like hub — decided*
-Left-clicking the tray icon opens a hub window modeled on the **Shutter** app:
+### 2.5 Janela principal — *hub no estilo do Shutter — decidido*
+O clique esquerdo no ícone da bandeja abre um hub inspirado no app **Shutter**:
 
-- **Capture toolbar** (top): Instant (region), Timer, Full screen, Active
-  window. Each starts the corresponding flow.
-- **Session gallery** (center): thumbnails of screenshots taken this session,
-  most-recent first. Select a thumbnail to preview.
-- **Per-item actions:** Edit (opens the editor §2.2), Copy, Save, Delete,
-  Reveal in file manager.
-- **Footer / toolbar:** Settings, and capture-delay + mode quick-toggles.
-- Session list is in-memory + optionally persisted to the output folder; it is
-  **not** a permanent library (see non-goals).
+- **Barra de captura** (topo): Instantâneo (região), Temporizador, Tela cheia,
+  Janela ativa. Cada botão inicia o fluxo correspondente.
+- **Galeria da sessão** (centro): miniaturas dos screenshots tirados na sessão,
+  do mais recente para o mais antigo. Selecionar uma miniatura mostra a prévia.
+- **Ações por item:** Editar (abre o editor §2.2), Copiar, Salvar, Excluir,
+  Mostrar no gerenciador de arquivos.
+- **Rodapé / barra:** Configurações e atalhos rápidos de atraso e de modo.
+- A lista da sessão fica em memória, opcionalmente persistida na pasta de saída;
+  **não** é uma biblioteca permanente (veja o que está fora do escopo).
 
-**Accept:** tray left-click shows the window; a new capture appears as a
-thumbnail; Edit/Copy/Save/Delete act on the selected item; closing hides to tray.
+**Aceite:** o clique esquerdo na bandeja mostra a janela; uma captura nova
+aparece como miniatura; Editar/Copiar/Salvar/Excluir agem sobre o item
+selecionado; fechar esconde na bandeja.
 
-### 2.6 Localization — *required*
-- **pt-BR (primary)** and **en-US**, `flutter_localizations` + `intl` ARB files.
-- **pt-BR is the default/fallback locale** (used when the OS locale is neither
-  pt-BR nor en-US, and as the base ARB `template-arb-file`). Locale follows OS
-  when it matches a supported one, overridable in Settings. No hardcoded strings.
+### 2.6 Localização — *obrigatório*
+- **pt-BR (principal)** e **en-US**, com `flutter_localizations` + arquivos ARB
+  do `intl`.
+- **pt-BR é o idioma padrão e de fallback** (usado quando o idioma do sistema
+  não é nem pt-BR nem en-US, e como ARB base no `template-arb-file`). O idioma
+  segue o do sistema quando é um dos suportados, e pode ser trocado nas
+  Configurações. Nada de texto fixo no código.
 
-**Accept:** every user-facing string resolves from ARB; switching locale updates
-the UI live; both locales complete (no missing keys).
+**Aceite:** todo texto visível ao usuário vem do ARB; trocar de idioma atualiza
+a interface na hora; os dois idiomas completos (sem chave faltando).
 
-### 2.7 Theming — *required*
-- Light/dark schemes **ported from `~/development/mobile/foxdevelops`**.
-- Follows OS theme by default, overridable in Settings.
+### 2.7 Temas — *obrigatório*
+- Esquemas claro/escuro **portados de `~/development/mobile/foxdevelops`**.
+- Segue o tema do sistema por padrão, com troca nas Configurações.
 
-Palette (from foxdevelops `values/colors.xml` + `values-night`):
+Paleta (do foxdevelops `values/colors.xml` + `values-night`):
 
-| Token          | Light     | Dark      |
+| Token          | Claro     | Escuro    |
 |----------------|-----------|-----------|
 | app_background | `#FFFCF9` | `#000000` |
 | surface        | `#F2EBE5` | `#241C18` |
@@ -109,126 +120,139 @@ Palette (from foxdevelops `values/colors.xml` + `values-night`):
 | brand          | `#A63F10` | `#D9531E` |
 | accent         | `#A65A00` | `#FFB74D` |
 
-Note (from source app): brand orange `#D9531E` reads at 3.6:1 on white — under
-4.5:1 — so the **light** brand is the darker `#A63F10`. Keep this; do not use
-`#D9531E` on light backgrounds for text.
+Observação (vinda do app de origem): o laranja da marca `#D9531E` fica em 3.6:1
+sobre branco — abaixo de 4.5:1 —, então a marca no tema **claro** é o `#A63F10`,
+mais escuro. Manter assim: não usar `#D9531E` para texto sobre fundo claro.
 
-## 3. Commands
+## 3. Comandos
 
 ```bash
-flutter pub get                     # install deps
-flutter gen-l10n                    # generate localizations from ARB
-flutter run -d linux                # run (dev env); -d windows / -d macos
-flutter analyze                     # static analysis / lints
-dart format .                       # format
-flutter test                        # unit + widget tests
-# e2e (needs a display / xvfb on CI). One entry point: the desktop runner
-# cannot relaunch the app for a second file in the same run.
+flutter pub get                     # instalar dependências
+flutter gen-l10n                    # gerar as localizações a partir dos ARB
+flutter run -d linux                # rodar (ambiente de desenvolvimento); -d windows / -d macos
+flutter analyze                     # análise estática / lints
+dart format .                       # formatação
+flutter test                        # testes de unidade e de widget
+# e2e (precisa de display / xvfb na CI). Um único ponto de entrada: o runner de
+# desktop não relança o app para um segundo arquivo na mesma execução.
 flutter test integration_test/all_tests.dart -d linux
-flutter build linux                 # release build; also windows / macos
+# regerar as imagens do README (não faz parte da suíte)
+xvfb-run -a flutter test integration_test/screenshots_test.dart -d linux
+flutter build linux                 # build de release; também windows / macos
 ```
 
-## 4. Project structure
+## 4. Estrutura do projeto
 
 ```
 lib/
-  main.dart                 # bootstrap: window_manager, tray, hotkeys, run app
-  app.dart                  # MaterialApp, theme, locale wiring
+  main.dart                 # bootstrap: window_manager, bandeja, atalhos, roda o app
+  app.dart                  # MaterialApp, tema, ligação do idioma
   core/
-    theme/                  # app_colors.dart, app_theme.dart (light/dark)
-    l10n/                   # app_*.arb + generated
-    capture/                # screen_capture_service.dart (interface) + impls
+    theme/                  # app_colors.dart, app_theme.dart (claro/escuro)
+    l10n/                   # app_*.arb + gerados
+    capture/                # screen_capture_service.dart (interface) + implementações
     hotkey/                 # hotkey_service.dart
     tray/                   # tray_service.dart
     storage/
-      settings_service.dart # shared_preferences wrapper
-      output_service.dart   # save-to-file
-      clipboard_service.dart# image to clipboard
+      settings_service.dart # invólucro do shared_preferences
+      output_service.dart   # salvar em arquivo
+      clipboard_service.dart# imagem para a área de transferência
     utils/
   features/
-    home/                   # Shutter-like hub window (§2.5)
-      home_screen.dart      # capture toolbar + session gallery
-      session_controller.dart# in-memory list of captures this session
+    home/                   # janela hub estilo Shutter (§2.5)
+      home_screen.dart      # barra de captura + galeria da sessão
+      session_controller.dart# lista em memória das capturas da sessão
       widgets/              # thumbnail_tile, capture_toolbar
     capture/
-      selection_overlay.dart# fullscreen frozen overlay + rubber-band select
-      capture_controller.dart# instant, timer, fullscreen, active-window
-      timer_capture.dart
-      widgets/              # magnifier, dimension_badge, dimmer
+      selection_overlay.dart# sobreposição congelada + seleção elástica
+      capture_controller.dart# instantâneo, temporizador, tela cheia, janela ativa
+      widgets/              # lupa, etiqueta de dimensões, escurecimento
     editor/
       editor_screen.dart
-      tools/                # arrow, rect, text, highlight, blur, pen, number
-      models/               # annotation models (immutable)
-      painters/             # CustomPainter per tool + compositor
+      models/               # modelos de anotação (imutáveis)
+      painters/             # CustomPainter das anotações + compositor
+      widgets/              # trilho de ferramentas, barra de estilo, área de desenho
       editor_controller.dart
     settings/
       settings_screen.dart
       settings_controller.dart
-    menu/                   # app menu bar + tray menu builders
-  models/                   # shared value types (capture_result, region…)
-  widgets/                  # shared UI atoms
-test/                       # unit + widget
-integration_test/           # e2e flows
+    menu/                   # construtores do menu do app e da bandeja
+  models/                   # tipos de valor compartilhados (capture_result, region…)
+test/                       # unidade + widget
+integration_test/           # fluxos e2e + gerador das imagens do README
 ```
 
-- **State management:** Riverpod (`flutter_riverpod`) — testable, modular,
-  no BuildContext coupling in logic.
-- **Capture abstraction:** `ScreenCaptureService` interface with per-OS
-  implementations selected at runtime; UI/editor never touch platform code.
+- **Gerência de estado:** Riverpod (`flutter_riverpod`) — testável, modular, sem
+  acoplamento a `BuildContext` na lógica.
+- **Abstração de captura:** interface `ScreenCaptureService` com implementações
+  por sistema operacional escolhidas em tempo de execução; a interface e o
+  editor nunca tocam em código de plataforma.
 
-### Key dependencies (proposed, confirm in PLAN)
+### Dependências principais
 `window_manager`, `tray_manager`, `hotkey_manager`, `screen_retriever`,
 `flutter_riverpod`, `intl` + `flutter_localizations`, `shared_preferences`,
-`image` (raster ops: crop/blur/pixelate/encode), `super_clipboard` (image
-clipboard), `file_selector` + `path_provider`. Linux capture backend TBD in PLAN.
+`image` (operações raster: recorte/codificação), `super_clipboard` (imagem na
+área de transferência), `file_selector` + `path_provider`. No Linux, a captura
+usa FFI direto com a libX11.
 
-## 5. Code style
+## 5. Estilo de código
 
-- **Effective Dart** + `flutter_lints` (or `very_good_analysis`); zero analyzer
-  warnings on merge.
-- `dart format` (default 80 col) enforced.
-- Immutable models; `const` where possible; no logic in `build()`.
-- One primary type per file; `snake_case.dart` filenames; `UpperCamelCase` types.
-- No hardcoded strings (i18n) and no hardcoded colors (theme tokens).
-- Doc comments on public service APIs. Code/identifiers in English; user-facing
-  copy localized.
+- **Effective Dart** + `flutter_lints`; zero aviso do analisador no merge.
+- `dart format` (80 colunas, o padrão) obrigatório.
+- Modelos imutáveis; `const` sempre que possível; nada de lógica no `build()`.
+- Um tipo principal por arquivo; arquivos em `snake_case.dart`, tipos em
+  `UpperCamelCase`.
+- Nada de texto fixo (i18n) nem de cor fixa (tokens de tema).
+- Comentários de documentação nas APIs públicas dos serviços.
+- **Identificadores em inglês** (nomes de classe, método e variável), para não
+  destoar das APIs do Flutter. **Documentação do projeto em português do Brasil:**
+  README, este documento e as descrições dos testes (`group`, `test`,
+  `testWidgets`, `reason:`). Texto visível ao usuário sempre localizado.
 
-## 6. Testing strategy
+## 6. Estratégia de testes
 
-- **Unit** — services (settings, output, clipboard, capture via mock), editor
-  tool geometry/models, image compositor (crop/blur correctness).
-- **Widget** — selection overlay interaction, each editor tool, settings screen,
-  locale + theme switching.
-- **Golden** — light/dark theme snapshots of key screens.
-- **e2e (`integration_test`)** — timer flow and instant flow with a **mocked
-  capture service** (no real display dependency); real-capture smoke test gated
-  to a headed/xvfb runner.
-- **CI:** `flutter analyze` + `flutter test` on every push; e2e under xvfb.
-- **Security review each release** (§7).
+- **Unidade** — serviços (configurações, saída, área de transferência, captura
+  por mock), geometria/modelos das ferramentas do editor, compositor de imagem
+  (correção de recorte/desfoque/pixelagem).
+- **Widget** — interação da sobreposição de seleção, cada ferramenta do editor,
+  tela de configurações, troca de idioma e de tema.
+- **Golden** — instantâneos das telas principais nos temas claro e escuro.
+  *Ainda não implementado;* por enquanto o que existe é o gerador das imagens do
+  README (`integration_test/screenshots_test.dart`), que fotografa as telas mas
+  não compara com um instantâneo de referência.
+- **e2e (`integration_test`)** — fluxos de temporizador e instantâneo com um
+  **serviço de captura mockado** (sem depender de display real); teste de fumaça
+  da captura real limitado a um runner com display/xvfb.
+- **CI:** `flutter analyze` + `flutter test` a cada push; e2e sob xvfb.
+- **Revisão de segurança a cada release** (§7).
 
-## 7. Boundaries
+## 7. Limites
 
-### Always
-- **Single author on commits:** `Rômulo Fernandes Evangelista`
-  (`rfe89@hotmail.com`). No `Co-Authored-By` trailers on this repo.
-- Local-only, offline. Screenshots may contain sensitive data — process and
-  store **only on the user's machine**.
-- Both locales (pt-BR, en-US) kept complete. Theme tokens only, no raw colors.
-- Modular, reusable, well-organized code (per acceptance criteria).
-- Security review before each release.
+### Sempre
+- **Autor único nos commits:** `Rômulo Fernandes Evangelista`
+  (`rfe89@hotmail.com`). Nada de linhas `Co-Authored-By` neste repositório.
+- Local e offline. Screenshots podem conter dados sensíveis — processar e
+  guardar **só na máquina do usuário**.
+- Os dois idiomas (pt-BR, en-US) sempre completos. Só tokens de tema, nada de
+  cor crua.
+- Código modular, reutilizável e bem organizado (conforme os critérios de
+  aceite).
+- Revisão de segurança antes de cada release.
 
-### Ask first
-- Adding a heavy/native dependency, or changing the capture backend approach.
-- Changing the color palette or brand identity.
-- Any feature that touches the filesystem outside the chosen output folder.
+### Perguntar antes
+- Adicionar dependência pesada/nativa, ou mudar a abordagem do backend de
+  captura.
+- Mudar a paleta de cores ou a identidade da marca.
+- Qualquer funcionalidade que toque no sistema de arquivos fora da pasta de
+  saída escolhida.
 
-### Never
-- **No network calls, telemetry, analytics, or crash-reporting that ships image
-  or screen content off-device.** No auto-upload.
-- No secrets committed. No bundled binaries of unknown provenance.
-- Don't break offline operation.
+### Nunca
+- **Nenhuma chamada de rede, telemetria, análise de uso ou relatório de erro que
+  mande imagem ou conteúdo de tela para fora da máquina.** Nada de envio
+  automático.
+- Nenhum segredo no repositório. Nenhum binário de origem desconhecida embutido.
+- Não quebrar o funcionamento offline.
 
 ---
 
-*Open source. License: MIT. Repo scaffolding (README, LICENSE, .gitignore, git)
-initialized alongside this spec.*
+*Código aberto. Licença: MIT.*
