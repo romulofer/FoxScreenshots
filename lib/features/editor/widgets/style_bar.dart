@@ -63,9 +63,8 @@ class StyleBar extends StatelessWidget {
           child: Text(
             '${strokeWidth.round()}',
             textAlign: TextAlign.end,
-            style: Theme.of(
-              context,
-            ).textTheme.labelLarge?.copyWith(color: scheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.labelLarge
+                ?.copyWith(color: scheme.onSurfaceVariant),
           ),
         ),
       ],

@@ -70,9 +70,8 @@ void main() {
   });
 
   test('detecta o Wayland só pela WAYLAND_DISPLAY', () {
-    final issues = checker(
-      environment: const {'WAYLAND_DISPLAY': 'wayland-0'},
-    ).check();
+    final issues = checker(environment: const {'WAYLAND_DISPLAY': 'wayland-0'})
+        .check();
 
     expect(
       issues.map((i) => i.dependency),

@@ -100,9 +100,8 @@ class _AppShellState extends ConsumerState<AppShell> with WindowListener {
   Future<void> _openSettings() async {
     await _openWindow();
     if (!mounted) return;
-    await Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const SettingsScreen()));
+    await Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => const SettingsScreen()));
   }
 
   Future<void> _capture(CaptureMode mode) async {

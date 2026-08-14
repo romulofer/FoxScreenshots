@@ -107,9 +107,13 @@ flutter run -d linux        # ou: -d windows / -d macos
 
 ### Comandos usuais
 
+O SDK usado pela CI e pelas releases está fixado em **Flutter 3.47.0 (stable,
+Dart 3.13.0)**. Use a mesma versão localmente: o `dart format` muda de estilo
+entre versões do Dart, e a CI reprova o que estiver formatado por outra.
+
 ```bash
 flutter analyze                 # análise estática
-dart format .                   # formatação
+dart format .                   # formatação (Dart 3.13.0)
 flutter test                    # testes de unidade e de widget
 # e2e (precisa de display; xvfb na CI). Um único ponto de entrada: o runner de
 # desktop não relança o app para um segundo arquivo na mesma execução.
@@ -240,9 +244,13 @@ flutter run -d linux        # or: -d windows / -d macos
 
 ### Common commands
 
+CI and the release builds are pinned to **Flutter 3.47.0 (stable, Dart
+3.13.0)**. Use the same version locally: `dart format` changes style between
+Dart versions, and CI rejects anything formatted by a different one.
+
 ```bash
 flutter analyze                 # lint / static analysis
-dart format .                   # format
+dart format .                   # format (Dart 3.13.0)
 flutter test                    # unit + widget tests
 # e2e (needs a display; xvfb on CI). One entry point: the desktop runner cannot
 # relaunch the app for a second file in the same run.

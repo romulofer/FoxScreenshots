@@ -198,7 +198,9 @@ usa FFI direto com a libX11.
 ## 5. Estilo de código
 
 - **Effective Dart** + `flutter_lints`; zero aviso do analisador no merge.
-- `dart format` (80 colunas, o padrão) obrigatório.
+- `dart format` (80 colunas, o padrão) obrigatório, com o SDK fixado na CI
+  (Flutter 3.47.0 stable / Dart 3.13.0): o estilo do formatador muda entre
+  versões do Dart e a CI reprova o que veio de outra.
 - Modelos imutáveis; `const` sempre que possível; nada de lógica no `build()`.
 - Um tipo principal por arquivo; arquivos em `snake_case.dart`, tipos em
   `UpperCamelCase`.

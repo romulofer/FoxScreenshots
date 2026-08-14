@@ -21,26 +21,20 @@ void main() {
       expect(mapping.toImage(const Offset(100, 200)), const Offset(100, 200));
     });
 
-    test(
-      'desloca o fundo quando o gerenciador de janelas prende a sobreposição a um monitor',
-      () {
-        // The window manager only granted the right-hand monitor.
-        const placement = OverlayPlacement(
-          window: Rect.fromLTWH(1760, 0, 1760, 1080),
-          virtualScreen: Rect.fromLTWH(0, 0, 3520, 1080),
-        );
+    test('desloca o fundo quando o gerenciador de janelas prende a sobreposição a um monitor', () {
+      // The window manager only granted the right-hand monitor.
+      const placement = OverlayPlacement(
+        window: Rect.fromLTWH(1760, 0, 1760, 1080),
+        virtualScreen: Rect.fromLTWH(0, 0, 3520, 1080),
+      );
 
-        final mapping = ScreenMapping.fromPlacement(
-          placement,
-          imageWidth: 3520,
-        );
+      final mapping = ScreenMapping.fromPlacement(placement, imageWidth: 3520);
 
-        // Overlay pixel (0,0) is screenshot pixel (1760,0) — without this the
-        // frozen frame would look shifted by a whole monitor.
-        expect(mapping.imageOrigin, const Offset(1760, 0));
-        expect(mapping.toImage(const Offset(10, 10)), const Offset(1770, 10));
-      },
-    );
+      // Overlay pixel (0,0) is screenshot pixel (1760,0) — without this the
+      // frozen frame would look shifted by a whole monitor.
+      expect(mapping.imageOrigin, const Offset(1760, 0));
+      expect(mapping.toImage(const Offset(10, 10)), const Offset(1770, 10));
+    });
 
     test('leva em conta o fator de escala do monitor', () {
       // 2x HiDPI: 1920 logical, 3840 physical pixels.
