@@ -57,10 +57,12 @@ acertar a borda pixel a pixel:
 
 ## Situação atual
 
-🚧 Em desenvolvimento inicial — **0.1.0** é a primeira versão marcada. Captura
-(instantânea, temporizador, tela cheia, janela ativa), galeria da sessão, editor
-de anotações, bandeja e atalho global funcionam no Linux/X11; Windows e macOS
-compilam do mesmo código, mas ainda não foram exercitados em hardware real.
+🚧 Em desenvolvimento inicial — **0.2.0** é a versão marcada mais recente.
+Captura (instantânea, temporizador, tela cheia, janela ativa), galeria da
+sessão, editor de anotações, bandeja e atalho global funcionam no Linux/X11,
+inclusive com vários monitores; o Wayland captura pelo xdg-desktop-portal, sem
+janela ativa nem atalho global. Windows e macOS compilam do mesmo código, mas
+ainda não foram exercitados em hardware real.
 
 A especificação completa está em [`SPEC.md`](SPEC.md).
 
@@ -199,10 +201,12 @@ for pixel-precise edges:
 
 ## Status
 
-🚧 Early development — **0.1.0** is the first tagged release. Capture (instant,
+🚧 Early development — **0.2.0** is the latest tagged release. Capture (instant,
 timer, full screen, active window), the session gallery, the annotation editor,
-tray and global hotkey all work on Linux/X11; Windows and macOS build from the
-same code but are not yet exercised on real hardware.
+tray and global hotkey all work on Linux/X11, multiple monitors included;
+Wayland captures through xdg-desktop-portal, without active-window capture or
+the global hotkey. Windows and macOS build from the same code but are not yet
+exercised on real hardware.
 
 See [`SPEC.md`](SPEC.md) for the full specification (written in Portuguese).
 
