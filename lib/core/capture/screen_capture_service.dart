@@ -7,6 +7,7 @@ import '../../models/capture_result.dart';
 import '../desktop/session_type.dart';
 import 'portal/screenshot_portal.dart';
 import 'portal_screen_capture_service.dart';
+import 'windows_screen_capture_service.dart';
 import 'x11_screen_capture_service.dart';
 
 /// How a capture is framed.
@@ -108,13 +109,17 @@ class UnsupportedScreenCaptureService implements ScreenCaptureService {
 
 /// Picks the backend for the current session.
 ///
-/// X11 reads the root window through Xlib, which is instant and needs no
-/// permission. Wayland forbids that outright, so it goes through
-/// xdg-desktop-portal instead — slower, and gated behind the desktop's own
-/// confirmation, but the only route a client is given.
+/// Windows copies the desktop through GDI (`BitBlt`), which needs no permission
+/// and no display-server negotiation. On Linux, X11 reads the root window
+/// through Xlib, which is instant and needs no permission either; Wayland forbids
+/// that outright, so it goes through xdg-desktop-portal instead — slower, and
+/// gated behind the desktop's own confirmation, but the only route a client is
+/// given.
 ScreenCaptureService defaultScreenCaptureService({
   Map<String, String>? environment,
 }) {
+  if (Platform.isWindows) return const WindowsScreenCaptureService();
+
   return switch (currentDesktopSession(environment: environment)) {
     DesktopSession.x11 => const X11ScreenCaptureService(),
     DesktopSession.wayland => PortalScreenCaptureService(XdgScreenshotPortal()),
