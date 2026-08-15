@@ -71,9 +71,8 @@ void main() {
   });
 
   test('no Wayland o atalho global é dado como perdido', () {
-    final issues = checker(
-      environment: const {'XDG_SESSION_TYPE': 'wayland'},
-    ).check();
+    final issues = checker(environment: const {'XDG_SESSION_TYPE': 'wayland'})
+        .check();
 
     // The library is installed in this scenario and still cannot bind a key.
     expect(
@@ -86,9 +85,8 @@ void main() {
   });
 
   test('detecta o Wayland só pela WAYLAND_DISPLAY', () {
-    final issues = checker(
-      environment: const {'WAYLAND_DISPLAY': 'wayland-0'},
-    ).check();
+    final issues = checker(environment: const {'WAYLAND_DISPLAY': 'wayland-0'})
+        .check();
 
     expect(
       issues.map((i) => i.dependency),

@@ -32,9 +32,8 @@ abstract final class AppTheme {
         foregroundColor: c.textPrimary,
         elevation: 0,
       ),
-      textTheme: Typography.material2021(
-        platform: TargetPlatform.linux,
-      ).black.apply(bodyColor: c.textPrimary, displayColor: c.textPrimary),
+      textTheme: Typography.material2021(platform: TargetPlatform.linux).black
+          .apply(bodyColor: c.textPrimary, displayColor: c.textPrimary),
     );
   }
 }

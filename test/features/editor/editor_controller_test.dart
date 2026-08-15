@@ -193,9 +193,9 @@ void main() {
         ..addStep(const Offset(50, 50));
 
       expect(
-        stateOf(
-          container,
-        ).annotations.cast<StepAnnotation>().map((a) => a.number),
+        stateOf(container).annotations
+            .cast<StepAnnotation>()
+            .map((a) => a.number),
         [1, 2, 3],
       );
     },
@@ -213,9 +213,9 @@ void main() {
       ..addStep(const Offset(60, 60));
 
     expect(
-      stateOf(
-        container,
-      ).annotations.cast<StepAnnotation>().map((a) => a.number),
+      stateOf(container).annotations
+          .cast<StepAnnotation>()
+          .map((a) => a.number),
       [1, 2],
     );
   });

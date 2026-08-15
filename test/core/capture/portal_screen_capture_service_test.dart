@@ -47,9 +47,8 @@ void main() {
   test('uma região é recortada de um quadro novo', () async {
     final portal = _FakePortal(png: frame);
 
-    final result = await serviceFor(
-      portal,
-    ).grabRegion(const CaptureRegion(x: 5, y: 5, width: 10, height: 8));
+    final result = await serviceFor(portal)
+        .grabRegion(const CaptureRegion(x: 5, y: 5, width: 10, height: 8));
 
     expect(result.width, 10);
     expect(result.height, 8);
