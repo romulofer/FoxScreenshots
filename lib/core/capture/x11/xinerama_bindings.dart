@@ -31,6 +31,7 @@ typedef XineramaQueryScreensDart = Pointer<XineramaScreenInfo> Function(
   Pointer<Void> display,
   Pointer<Int32> count,
 );
+
 /// A loaded `libXinerama.so.1` plus the bound symbols.
 class XineramaLib {
   XineramaLib._(DynamicLibrary lib)

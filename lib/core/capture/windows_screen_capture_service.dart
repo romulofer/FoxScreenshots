@@ -110,12 +110,7 @@ const int _pidOffset = 72;
 
     final area =
         (region ??
-                CaptureRegion(
-                  x: 0,
-                  y: 0,
-                  width: fullWidth,
-                  height: fullHeight,
-                ))
+                CaptureRegion(x: 0, y: 0, width: fullWidth, height: fullHeight))
             .clampedTo(fullWidth, fullHeight);
     if (area.isEmpty) {
       throw const Win32Exception('The selected region is outside the screen');
@@ -227,15 +222,16 @@ CaptureRegion? _activeWindowRegionSync() {
 
     final originX = win.getSystemMetrics(smXVirtualScreen);
     final originY = win.getSystemMetrics(smYVirtualScreen);
-    final region = CaptureRegion(
-      x: frame.left - originX,
-      y: frame.top - originY,
-      width: frame.right - frame.left,
-      height: frame.bottom - frame.top,
-    ).clampedTo(
-      win.getSystemMetrics(smCxVirtualScreen),
-      win.getSystemMetrics(smCyVirtualScreen),
-    );
+    final region =
+        CaptureRegion(
+          x: frame.left - originX,
+          y: frame.top - originY,
+          width: frame.right - frame.left,
+          height: frame.bottom - frame.top,
+        ).clampedTo(
+          win.getSystemMetrics(smCxVirtualScreen),
+          win.getSystemMetrics(smCyVirtualScreen),
+        );
     // A one-pixel frame is a hidden or collapsed window, not a capture target.
     if (region.width <= 1 || region.height <= 1) return null;
     return region;

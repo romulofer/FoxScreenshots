@@ -279,7 +279,12 @@ class Win32Lib {
   bool windowFrame(int hWnd, Pointer<Rect> out) {
     final dwm = _dwmGetWindowAttribute;
     if (dwm != null) {
-      final hr = dwm(hWnd, dwmwaExtendedFrameBounds, out.cast(), sizeOf<Rect>());
+      final hr = dwm(
+        hWnd,
+        dwmwaExtendedFrameBounds,
+        out.cast(),
+        sizeOf<Rect>(),
+      );
       if (hr == 0) return true;
     }
     return _getWindowRect(hWnd, out) != 0;
