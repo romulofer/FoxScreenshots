@@ -174,10 +174,14 @@ class TempDirOutputService implements OutputService {
     return savePngToDir(pngBytes, directory.path);
   }
 
+  /// Writes synchronously on purpose: `pumpAndSettle` only drains the test
+  /// clock, so an awaited disk write completes on the real event loop, whenever
+  /// it happens to. The assertions that follow the tap would then race the
+  /// filesystem, and lose on a loaded machine.
   @override
   Future<String> savePngToDir(Uint8List pngBytes, String directory) async {
     final file = File('$directory/shot_${savedPaths.length}.png');
-    await file.writeAsBytes(pngBytes, flush: true);
+    file.writeAsBytesSync(pngBytes, flush: true);
     savedPaths.add(file.path);
     return file.path;
   }
