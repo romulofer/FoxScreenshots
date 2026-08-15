@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/capture_region.dart';
 import '../../models/capture_result.dart';
 import '../desktop/session_type.dart';
+import 'macos_screen_capture_service.dart';
 import 'portal/screenshot_portal.dart';
 import 'portal_screen_capture_service.dart';
 import 'windows_screen_capture_service.dart';
@@ -33,6 +34,9 @@ enum CaptureFailure {
 
   /// The display server refused the connection or the grab.
   displayUnavailable,
+
+  /// macOS withheld the Screen Recording permission the capture APIs need.
+  screenRecordingDenied,
 
   /// Window capture was asked for while nothing was focused.
   noActiveWindow,
@@ -109,16 +113,17 @@ class UnsupportedScreenCaptureService implements ScreenCaptureService {
 
 /// Picks the backend for the current session.
 ///
-/// Windows copies the desktop through GDI (`BitBlt`), which needs no permission
-/// and no display-server negotiation. On Linux, X11 reads the root window
-/// through Xlib, which is instant and needs no permission either; Wayland forbids
-/// that outright, so it goes through xdg-desktop-portal instead — slower, and
-/// gated behind the desktop's own confirmation, but the only route a client is
-/// given.
+/// Windows copies the desktop through GDI (`BitBlt`) and macOS through
+/// CoreGraphics (`CGWindowListCreateImage`) — the latter behind the Screen
+/// Recording permission. On Linux, X11 reads the root window through Xlib, which
+/// is instant and needs no permission; Wayland forbids that outright, so it goes
+/// through xdg-desktop-portal instead — slower, and gated behind the desktop's
+/// own confirmation, but the only route a client is given.
 ScreenCaptureService defaultScreenCaptureService({
   Map<String, String>? environment,
 }) {
   if (Platform.isWindows) return const WindowsScreenCaptureService();
+  if (Platform.isMacOS) return const MacosScreenCaptureService();
 
   return switch (currentDesktopSession(environment: environment)) {
     DesktopSession.x11 => const X11ScreenCaptureService(),

@@ -25,6 +25,8 @@
   "captureFailedPortalUnavailable": "Nenhum portal de captura respondeu. Instale o xdg-desktop-portal da sua área de trabalho.",
   "captureFailedPlatform": "Captura de tela ainda não é suportada neste sistema.",
   "captureFailedDisplay": "Não foi possível ler a tela. Verifique se o servidor gráfico está acessível.",
+  "captureFailedScreenRecordingDenied": "Autorize o FoxScreenShots em Ajustes do Sistema > Privacidade e Segurança > Gravação de Tela e tente de novo.",
+  "@captureFailedScreenRecordingDenied": { "description": "macOS withheld the Screen Recording permission." },
   "captureFailedNoActiveWindow": "Nenhuma janela ativa para capturar.",
   "captureFailedWindowNotReady": "A janela do aplicativo ainda não está pronta. Tente de novo.",
 

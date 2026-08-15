@@ -12,6 +12,8 @@ String captureFailureMessage(AppLocalizations l10n, CaptureException error) {
     CaptureFailure.portalUnavailable => l10n.captureFailedPortalUnavailable,
     CaptureFailure.platformUnsupported => l10n.captureFailedPlatform,
     CaptureFailure.displayUnavailable => l10n.captureFailedDisplay,
+    CaptureFailure.screenRecordingDenied =>
+      l10n.captureFailedScreenRecordingDenied,
     CaptureFailure.noActiveWindow => l10n.captureFailedNoActiveWindow,
     CaptureFailure.windowNotReady => l10n.captureFailedWindowNotReady,
   };

@@ -20,6 +20,7 @@
   "captureFailedPortalUnavailable": "No screenshot portal answered. Install your desktop's xdg-desktop-portal.",
   "captureFailedPlatform": "Screen capture is not supported on this system yet.",
   "captureFailedDisplay": "Could not read the screen. Check that the display server is reachable.",
+  "captureFailedScreenRecordingDenied": "Allow FoxScreenShots in System Settings > Privacy & Security > Screen Recording, then try again.",
   "captureFailedNoActiveWindow": "No active window to capture.",
   "captureFailedWindowNotReady": "The app window is not ready yet. Try again.",
 
