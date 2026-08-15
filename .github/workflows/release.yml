@@ -34,6 +34,17 @@ jobs:
       - run: flutter pub get
       - run: flutter build windows --release
 
+      # The bundle must carry the VC++ runtime (windows/CMakeLists.txt installs
+      # it): without those DLLs the app cannot start on a Windows machine that
+      # has no redistributable, which is exactly the failure the runner hides.
+      - name: Verify the VC++ runtime is bundled
+        shell: pwsh
+        run: |
+          $dir = "build/windows/x64/runner/Release"
+          $missing = @("msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll") |
+            Where-Object { -not (Test-Path (Join-Path $dir $_)) }
+          if ($missing) { throw "Missing from the bundle: $($missing -join ', ')" }
+
       # The Release folder is self-contained (exe + DLLs + data): unzip and run.
       - name: Package standalone zip
         shell: pwsh

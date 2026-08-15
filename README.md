@@ -57,12 +57,14 @@ acertar a borda pixel a pixel:
 
 ## Situação atual
 
-🚧 Em desenvolvimento inicial — **0.2.0** é a versão marcada mais recente.
+🚧 Em desenvolvimento inicial — **0.3.1** é a versão marcada mais recente.
 Captura (instantânea, temporizador, tela cheia, janela ativa), galeria da
 sessão, editor de anotações, bandeja e atalho global funcionam no Linux/X11,
 inclusive com vários monitores; o Wayland captura pelo xdg-desktop-portal, sem
-janela ativa nem atalho global. Windows e macOS compilam do mesmo código, mas
-ainda não foram exercitados em hardware real.
+janela ativa nem atalho global. No Windows 10 a 0.3.0 sequer abria, por faltar
+o runtime do Visual C++ no pacote; a 0.3.1 empacota esses DLLs e usa um ícone
+`.ico` na bandeja (ver [Windows](#windows)). O macOS compila do mesmo código,
+mas ainda não foi exercitado em hardware real.
 
 A especificação completa está em [`SPEC.md`](SPEC.md).
 
@@ -111,6 +113,22 @@ flutter pub get
 flutter gen-l10n
 flutter run -d linux        # ou: -d windows / -d macos
 ```
+
+### Windows
+
+Requer **Windows 10 (64 bits) ou Windows 11**. Windows 7 e 8 não são
+suportados: o Flutter só tem suporte a Windows 10 ou superior, e o motor usa
+APIs que não existem nas versões antigas — não é uma escolha do app.
+
+O `.zip` da release é autocontido: além do `.exe`, dos DLLs dos plugins e da
+pasta `data`, ele traz o runtime do Visual C++ (`msvcp140.dll`,
+`vcruntime140.dll`, `vcruntime140_1.dll`) ao lado do executável. **Até a v0.3.0
+esses três DLLs faltavam**, e em máquina sem o *Redistribuível do Visual C++
+2015-2022* o app não abria.
+
+O zip vem sem assinatura digital. Baixado pelo navegador, o Windows o marca:
+antes de extrair, **Propriedades → Desbloquear**; na primeira execução o
+SmartScreen pede **Mais informações → Executar assim mesmo**.
 
 ### Comandos usuais
 
@@ -201,12 +219,14 @@ for pixel-precise edges:
 
 ## Status
 
-🚧 Early development — **0.2.0** is the latest tagged release. Capture (instant,
+🚧 Early development — **0.3.1** is the latest tagged release. Capture (instant,
 timer, full screen, active window), the session gallery, the annotation editor,
 tray and global hotkey all work on Linux/X11, multiple monitors included;
 Wayland captures through xdg-desktop-portal, without active-window capture or
-the global hotkey. Windows and macOS build from the same code but are not yet
-exercised on real hardware.
+the global hotkey. On Windows 10, 0.3.0 would not even start — the Visual C++
+runtime was missing from the package; 0.3.1 bundles those DLLs and uses an
+`.ico` tray icon (see [Windows](#windows-1)). macOS builds from the same code
+but has not been exercised on real hardware yet.
 
 See [`SPEC.md`](SPEC.md) for the full specification (written in Portuguese).
 
@@ -254,6 +274,22 @@ flutter pub get
 flutter gen-l10n
 flutter run -d linux        # or: -d windows / -d macos
 ```
+
+### Windows
+
+Requires **Windows 10 (64-bit) or Windows 11**. Windows 7 and 8 are not
+supported: Flutter itself supports Windows 10 and later only, and the engine
+calls APIs the older releases do not have — this is not the app's choice.
+
+The release `.zip` is self-contained: alongside the `.exe`, the plugin DLLs and
+the `data` folder, it ships the Visual C++ runtime (`msvcp140.dll`,
+`vcruntime140.dll`, `vcruntime140_1.dll`) next to the executable. **Up to
+v0.3.0 those three DLLs were missing**, and the app would not start on a
+machine without the *Visual C++ 2015-2022 Redistributable*.
+
+The zip is unsigned. Downloaded through a browser, Windows marks it: before
+extracting, use **Properties → Unblock**; on first run SmartScreen asks for
+**More info → Run anyway**.
 
 ### Common commands
 

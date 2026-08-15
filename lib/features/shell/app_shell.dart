@@ -6,6 +6,7 @@ import '../../core/capture/screen_capture_service.dart';
 import '../../core/desktop/desktop_integration.dart';
 import '../../core/l10n/gen/app_localizations.dart';
 import '../../core/navigation/app_navigator.dart';
+import '../../core/tray/tray_icon_asset.dart';
 import '../../core/tray/tray_service.dart';
 import '../capture/capture_controller.dart';
 import '../capture/capture_failure_message.dart';
@@ -25,8 +26,9 @@ import '../settings/settings_screen.dart';
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
-  /// Bundled tray icon; `tray_manager` resolves it from the asset bundle.
-  static const String trayIconPath = 'assets/icon.png';
+  /// Bundled tray icon; `tray_manager` resolves it from the asset bundle. The
+  /// format is per-OS — see [trayIconAsset].
+  static String get trayIconPath => trayIconAsset();
 
   @override
   ConsumerState<AppShell> createState() => _AppShellState();

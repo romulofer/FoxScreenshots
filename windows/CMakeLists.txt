@@ -87,6 +87,21 @@ if(PLUGIN_BUNDLED_LIBRARIES)
     COMPONENT Runtime)
 endif()
 
+# Ship the Visual C++ runtime next to the executable (msvcp140.dll,
+# vcruntime140.dll, vcruntime140_1.dll). The runner and every plugin DLL import
+# them, and they are NOT part of Windows: on a machine without the "VC++
+# 2015-2022 Redistributable" the app fails to start before any of our code runs.
+# App-local deployment is the redistributable's supported alternative to the
+# installer, and it keeps the zip self-contained. The UCRT
+# (api-ms-win-crt-*.dll) is a Windows 10 component, so it is not copied.
+set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS_SKIP TRUE)
+include(InstallRequiredSystemLibraries)
+if(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
+  install(FILES ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS}
+    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+    COMPONENT Runtime)
+endif()
+
 # Copy the native assets provided by the build.dart from all packages.
 set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/windows/")
 install(DIRECTORY "${NATIVE_ASSETS_DIR}"

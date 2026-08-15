@@ -240,6 +240,14 @@ usa FFI direto com a libX11.
 - Código modular, reutilizável e bem organizado (conforme os critérios de
   aceite).
 - Revisão de segurança antes de cada release.
+- **Plataformas de destino:** Windows 10 (64 bits) e 11, macOS e Linux. Windows
+  7/8 estão fora — o Flutter suporta Windows 10 ou superior, e o motor usa APIs
+  que não existem nas versões antigas.
+- O pacote do Windows leva o runtime do Visual C++ (`msvcp140.dll`,
+  `vcruntime140.dll`, `vcruntime140_1.dll`) ao lado do `.exe`, copiado pelo
+  toolchain da Microsoft na máquina de build (`InstallRequiredSystemLibraries`).
+  Origem conhecida e redistribuição app-local prevista na licença — sem esses
+  DLLs o app não inicia em máquina sem o redistribuível.
 
 ### Perguntar antes
 - Adicionar dependência pesada/nativa, ou mudar a abordagem do backend de
