@@ -1,0 +1,19 @@
+name: Setup Flutter
+description: Checkout the repo and install the pinned Flutter SDK used by CI and release builds.
+
+inputs:
+  flutter-version:
+    required: true
+  flutter-channel:
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v5
+
+    - uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ inputs.flutter-version }}
+        channel: ${{ inputs.flutter-channel }}
+        cache: true
