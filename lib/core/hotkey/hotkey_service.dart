@@ -24,7 +24,7 @@ class HotkeyService {
     final parsed = parseCaptureHotkey(binding);
     final hotKey = HotKey(
       key: parsed.key,
-      modifiers: parsed.modifiers.isEmpty ? null : parsed.modifiers,
+      modifiers: parsed.modifiers,
       scope: HotKeyScope.system,
     );
     await hotKeyManager.register(hotKey, keyDownHandler: (_) => onPressed());
