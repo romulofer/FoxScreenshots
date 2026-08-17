@@ -1,8 +1,9 @@
 name: CI
 
-# Static analysis, formatting, unit/widget tests, and the e2e suite under xvfb
-# (SPEC §6). Runs on every push and pull request. No network access is needed
-# by the app or its tests.
+# Static analysis, formatting, unit/widget tests, and the e2e suite (SPEC §6):
+# Linux under xvfb, plus a macOS job for real Metal/GPU coverage that a headless
+# VM cannot provide. Runs on every push and pull request. No network access is
+# needed by the app or its tests.
 on:
   push:
   pull_request:
@@ -51,3 +52,24 @@ jobs:
       # point keeps it to a single app launch (see integration_test/all_tests.dart).
       - name: End-to-end tests
         run: xvfb-run -a flutter test integration_test/all_tests.dart -d linux
+
+  macos-test:
+    # Real macOS with GPU/Metal support, unlike a headless VM: this is the only
+    # place unit tests and the e2e suite actually run the macOS target.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
+          cache: true
+
+      - run: flutter config --enable-macos-desktop
+      - run: flutter pub get
+
+      - run: flutter test
+
+      - name: End-to-end tests
+        run: flutter test integration_test/all_tests.dart -d macos
