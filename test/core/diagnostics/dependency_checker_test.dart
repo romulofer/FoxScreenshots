@@ -1,3 +1,6 @@
+@TestOn('linux')
+library;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:foxscreenshots/core/diagnostics/dependency_checker.dart';
 
