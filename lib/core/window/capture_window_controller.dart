@@ -6,6 +6,7 @@ import 'package:window_manager/window_manager.dart';
 
 import '../desktop/session_type.dart';
 import 'overlay_stacking.dart';
+import 'window_focus.dart';
 import 'window_geometry.dart';
 
 /// Where the overlay window actually ended up, in logical pixels.
@@ -90,9 +91,11 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
     this.repaintDelay = const Duration(milliseconds: 220),
     WindowGeometryProbe? geometry,
     OverlayStacking? stacking,
+    WindowFocuser? focuser,
     DesktopSession? session,
   }) : _geometry = geometry ?? defaultWindowGeometryProbe(),
        _stacking = stacking ?? defaultOverlayStacking(),
+       _focuser = focuser ?? defaultWindowFocuser(),
        _session = session ?? currentDesktopSession();
 
   /// How long to wait after hiding the window before grabbing pixels. Too short
@@ -106,6 +109,9 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
   /// Keeps the overlay above windows that are themselves fullscreen.
   final OverlayStacking _stacking;
 
+  /// Forces real OS keyboard focus onto the overlay (see [WindowFocuser]).
+  final WindowFocuser _focuser;
+
   /// Wayland gives a window no say in where it goes and no way to ask, so the
   /// overlay is opened fullscreen there and the frozen frame is fitted into it
   /// instead of being laid over the desktop 1:1.
@@ -117,6 +123,18 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
   /// using the window manager's own numbers.
   static const Duration _placementTimeout = Duration(milliseconds: 600);
   static const Duration _placementPoll = Duration(milliseconds: 30);
+
+  /// How long to keep retrying [WindowManager.focus] before giving up.
+  ///
+  /// Matters mainly on Linux: showing a window that was fully hidden (closed
+  /// to the tray) does not reliably win it keyboard focus on the first try —
+  /// most window managers apply focus-stealing prevention to a window with no
+  /// recent user-interaction timestamp, which is exactly what a reveal
+  /// triggered by a global hotkey or a tray click has. Without a real OS-level
+  /// focus grant, Esc cannot cancel the overlay: the Flutter [Focus] widget
+  /// never sees the keypress because the display server never routed it here.
+  static const Duration _focusTimeout = Duration(milliseconds: 500);
+  static const Duration _focusPoll = Duration(milliseconds: 30);
 
   Rect? _restoreBounds;
   Rect _virtualScreen = Rect.zero;
@@ -168,7 +186,8 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
   @override
   Future<OverlayPlacement> revealOverlay() async {
     await windowManager.show();
-    await windowManager.focus();
+    await _ensureFocused();
+    await _focuser.forceFocus();
     if (!_placesWindows) {
       // Nothing to measure: the compositor chose the monitor and will not say
       // which. The frozen frame is fitted into whatever surface came back.
@@ -194,12 +213,29 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
     }
     _fullScreen = fullScreen;
     final granted = await windowManager.getBounds();
+    // The fullscreen client message above re-maps the window on some window
+    // managers, which can drop focus again — force it one more time now that
+    // the overlay has settled into its final state.
+    await _focuser.forceFocus();
 
     return OverlayPlacement(
       window: granted,
       virtualScreen: _virtualScreen,
       physicalWindow: measured,
     );
+  }
+
+  /// Calls [WindowManager.focus] until [WindowManager.isFocused] confirms it
+  /// landed or [_focusTimeout] runs out (see field doc for why one call is
+  /// not enough).
+  Future<void> _ensureFocused() async {
+    final deadline = DateTime.now().add(_focusTimeout);
+    while (true) {
+      await windowManager.focus();
+      if (await windowManager.isFocused()) return;
+      if (!DateTime.now().isBefore(deadline)) return;
+      await Future<void>.delayed(_focusPoll);
+    }
   }
 
   /// Whether [measured] is the whole virtual screen, give or take rounding.

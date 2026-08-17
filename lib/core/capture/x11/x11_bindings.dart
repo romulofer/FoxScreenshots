@@ -102,6 +102,18 @@ typedef XGetInputFocusDart = int Function(
   Pointer<UnsignedLong> focusReturn,
   Pointer<Int32> revertToReturn,
 );
+typedef _XSetInputFocusNative = Int32 Function(
+  Pointer<Void> display,
+  UnsignedLong focus,
+  Int32 revertTo,
+  UnsignedLong time,
+);
+typedef XSetInputFocusDart = int Function(
+  Pointer<Void> display,
+  int focus,
+  int revertTo,
+  int time,
+);
 typedef _XGetGeometryNative = Int32 Function(
   Pointer<Void> display,
   UnsignedLong drawable,
@@ -248,6 +260,9 @@ class X11Lib {
       getInputFocus = lib
           .lookup<NativeFunction<_XGetInputFocusNative>>('XGetInputFocus')
           .asFunction<XGetInputFocusDart>(),
+      setInputFocus = lib
+          .lookup<NativeFunction<_XSetInputFocusNative>>('XSetInputFocus')
+          .asFunction<XSetInputFocusDart>(),
       getGeometry = lib
           .lookup<NativeFunction<_XGetGeometryNative>>('XGetGeometry')
           .asFunction<XGetGeometryDart>(),
@@ -299,6 +314,7 @@ class X11Lib {
   final XDisplayExtentDart displayHeight;
   final XGetImageDart getImage;
   final XGetInputFocusDart getInputFocus;
+  final XSetInputFocusDart setInputFocus;
   final XGetGeometryDart getGeometry;
   final XTranslateCoordinatesDart translateCoordinates;
   final XInternAtomDart internAtom;
