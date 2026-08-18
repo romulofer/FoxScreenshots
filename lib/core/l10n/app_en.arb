@@ -54,6 +54,12 @@
   "settingsHotkey": "Capture hotkey",
   "settingsCaptureDelay": "Timer delay (s)",
   "settingsOutputFolder": "Output folder",
+  "settingsVersion": "v.{version}",
+  "@settingsVersion": {
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
 
   "copiedToClipboard": "Copied to clipboard",
   "copyToClipboardFailed": "Could not copy to the clipboard",

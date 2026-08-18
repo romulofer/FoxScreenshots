@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/storage/settings_service.dart';
+
+/// App version string (e.g. "0.3.3"), read from the platform package info.
+final appVersionProvider = FutureProvider<String>((ref) async {
+  final info = await PackageInfo.fromPlatform();
+  return info.version;
+});
 
 /// User-facing app preferences (SPEC §2.6, §2.7). Immutable.
 @immutable
