@@ -1,0 +1,57 @@
+name: "🐛 Bug report / Relato de bug"
+description: Algo não funciona como esperado. / Something isn't working as expected.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Preencha em português ou inglês — tanto faz.
+        Fill in Portuguese or English — either works.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "O que aconteceu? / What happened?"
+      description: Descreva o bug. Inclua o que era esperado. / Describe the bug and what you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Como reproduzir / Steps to reproduce"
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: "Versão do FoxScreenShots / FoxScreenShots version"
+      description: "Ex.: 0.3.3 — veja em Configurações ou no nome do pacote baixado."
+      placeholder: "0.3.3"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: "Sistema operacional / Operating system"
+      options:
+        - Windows 10
+        - Windows 11
+        - "Linux (X11)"
+        - "Linux (Wayland)"
+        - macOS
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: "Logs / mensagens de erro (opcional) / Logs / error messages (optional)"
+      description: Cole aqui, sem capturas com dados sensíveis. / Paste here, no screenshots with sensitive data.
+      render: shell

@@ -1,0 +1,33 @@
+name: "✨ Sugestão de funcionalidade / Feature request"
+description: Proponha algo novo ou uma melhoria. / Propose something new or an improvement.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Antes de abrir, dá uma olhada em [`SPEC.md`](../../SPEC.md) — a seção
+        "Fora do escopo" já lista o que o projeto não pretende fazer (vídeo/GIF,
+        sincronização em nuvem, edição pesada, OCR).
+
+        Before opening, check [`SPEC.md`](../../SPEC.md) — the "Out of scope"
+        section already lists what this project won't do (video/GIF, cloud
+        sync, heavy editing, OCR).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "Qual problema isso resolve? / What problem does this solve?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "O que você propõe? / What are you proposing?"
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "Alternativas consideradas (opcional) / Alternatives considered (optional)"

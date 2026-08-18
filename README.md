@@ -155,9 +155,11 @@ os testes ficam em `test/` e `integration_test/`.
 
 ## Contribuindo
 
-Issues e PRs são bem-vindos. Mantenha os dois idiomas completos, use os tokens
-de tema (nada de cores cruas) e escreva testes para lógica nova. Os limites do
-projeto estão em [`SPEC.md` §7](SPEC.md).
+Issues e PRs são bem-vindos — veja [`CONTRIBUTING.md`](CONTRIBUTING.md) para o
+passo a passo. Em resumo: mantenha os dois idiomas completos, use os tokens de
+tema (nada de cores cruas) e escreva testes para lógica nova. Os limites do
+projeto estão em [`SPEC.md` §7](SPEC.md). Vulnerabilidade de segurança? Veja
+[`SECURITY.md`](SECURITY.md) em vez de abrir issue pública.
 
 ## Licença
 
@@ -315,9 +317,11 @@ overlay, editor, and settings; tests live in `test/` and `integration_test/`.
 
 ## Contributing
 
-Issues and PRs welcome. Please keep both locales complete, use theme tokens (no
-raw colors), and add tests for new logic. See the boundaries in
-[`SPEC.md` §7](SPEC.md).
+Issues and PRs welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md) for the
+walkthrough. In short: keep both locales complete, use theme tokens (no raw
+colors), and add tests for new logic. See the boundaries in
+[`SPEC.md` §7](SPEC.md). Found a security vulnerability? See
+[`SECURITY.md`](SECURITY.md) instead of opening a public issue.
 
 ## License
 
