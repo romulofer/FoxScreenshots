@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "🔒 Vulnerabilidade de segurança / Security vulnerability"
+    url: https://github.com/romulofer/FoxScreenShots/security/advisories/new
+    about: "Não abra issue pública — veja SECURITY.md. / Don't open a public issue — see SECURITY.md."
