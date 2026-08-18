@@ -17,82 +17,105 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settingsTitle)),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Stack(
         children: [
-          ListTile(
-            title: Text(l10n.settingsTheme),
-            trailing: DropdownButton<ThemeMode>(
-              value: settings.themeMode,
-              onChanged: (m) => m == null ? null : controller.setThemeMode(m),
-              items: [
-                DropdownMenuItem(
-                  value: ThemeMode.system,
-                  child: Text(l10n.settingsThemeSystem),
+          ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              ListTile(
+                title: Text(l10n.settingsTheme),
+                trailing: DropdownButton<ThemeMode>(
+                  value: settings.themeMode,
+                  onChanged: (m) =>
+                      m == null ? null : controller.setThemeMode(m),
+                  items: [
+                    DropdownMenuItem(
+                      value: ThemeMode.system,
+                      child: Text(l10n.settingsThemeSystem),
+                    ),
+                    DropdownMenuItem(
+                      value: ThemeMode.light,
+                      child: Text(l10n.settingsThemeLight),
+                    ),
+                    DropdownMenuItem(
+                      value: ThemeMode.dark,
+                      child: Text(l10n.settingsThemeDark),
+                    ),
+                  ],
                 ),
-                DropdownMenuItem(
-                  value: ThemeMode.light,
-                  child: Text(l10n.settingsThemeLight),
-                ),
-                DropdownMenuItem(
-                  value: ThemeMode.dark,
-                  child: Text(l10n.settingsThemeDark),
-                ),
-              ],
-            ),
-          ),
-          ListTile(
-            title: Text(l10n.settingsLanguage),
-            trailing: DropdownButton<String>(
-              value: settings.locale?.languageCode ?? 'system',
-              onChanged: (tag) => controller.setLocale(switch (tag) {
-                'pt' => const Locale('pt'),
-                'en' => const Locale('en'),
-                _ => null,
-              }),
-              items: [
-                DropdownMenuItem(
-                  value: 'system',
-                  child: Text(l10n.settingsLanguageSystem),
-                ),
-                DropdownMenuItem(
-                  value: 'pt',
-                  child: Text(l10n.settingsLanguagePt),
-                ),
-                DropdownMenuItem(
-                  value: 'en',
-                  child: Text(l10n.settingsLanguageEn),
-                ),
-              ],
-            ),
-          ),
-          ListTile(
-            title: Text(l10n.settingsCaptureDelay),
-            trailing: SizedBox(
-              width: 160,
-              child: Slider(
-                value: settings.timerDelaySeconds.toDouble(),
-                min: 1,
-                max: 15,
-                divisions: 14,
-                label: '${settings.timerDelaySeconds}',
-                onChanged: (v) => controller.setTimerDelaySeconds(v.round()),
               ),
-            ),
+              ListTile(
+                title: Text(l10n.settingsLanguage),
+                trailing: DropdownButton<String>(
+                  value: settings.locale?.languageCode ?? 'system',
+                  onChanged: (tag) => controller.setLocale(switch (tag) {
+                    'pt' => const Locale('pt'),
+                    'en' => const Locale('en'),
+                    _ => null,
+                  }),
+                  items: [
+                    DropdownMenuItem(
+                      value: 'system',
+                      child: Text(l10n.settingsLanguageSystem),
+                    ),
+                    DropdownMenuItem(
+                      value: 'pt',
+                      child: Text(l10n.settingsLanguagePt),
+                    ),
+                    DropdownMenuItem(
+                      value: 'en',
+                      child: Text(l10n.settingsLanguageEn),
+                    ),
+                  ],
+                ),
+              ),
+              ListTile(
+                title: Text(l10n.settingsCaptureDelay),
+                trailing: SizedBox(
+                  width: 160,
+                  child: Slider(
+                    value: settings.timerDelaySeconds.toDouble(),
+                    min: 1,
+                    max: 15,
+                    divisions: 14,
+                    label: '${settings.timerDelaySeconds}',
+                    onChanged: (v) =>
+                        controller.setTimerDelaySeconds(v.round()),
+                  ),
+                ),
+              ),
+              ListTile(
+                title: Text(l10n.settingsHotkey),
+                trailing: DropdownButton<String>(
+                  value: _hotkeyOptions.contains(settings.hotkey)
+                      ? settings.hotkey
+                      : 'PrintScreen',
+                  onChanged: (value) {
+                    if (value != null) controller.setHotkey(value);
+                  },
+                  items: [
+                    for (final option in _hotkeyOptions)
+                      DropdownMenuItem(value: option, child: Text(option)),
+                  ],
+                ),
+              ),
+            ],
           ),
-          ListTile(
-            title: Text(l10n.settingsHotkey),
-            trailing: DropdownButton<String>(
-              value: _hotkeyOptions.contains(settings.hotkey)
-                  ? settings.hotkey
-                  : 'PrintScreen',
-              onChanged: (value) {
-                if (value != null) controller.setHotkey(value);
+          Positioned(
+            right: 16,
+            bottom: 8,
+            child: Consumer(
+              builder: (context, ref, _) {
+                final version = ref.watch(appVersionProvider);
+                return Text(
+                  version.when(
+                    data: (v) => l10n.settingsVersion(v),
+                    loading: () => '',
+                    error: (_, _) => '',
+                  ),
+                  style: Theme.of(context).textTheme.bodySmall,
+                );
               },
-              items: [
-                for (final option in _hotkeyOptions)
-                  DropdownMenuItem(value: option, child: Text(option)),
-              ],
             ),
           ),
         ],
