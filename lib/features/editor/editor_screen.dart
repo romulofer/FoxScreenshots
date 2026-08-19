@@ -99,10 +99,7 @@ class EditorScreen extends ConsumerWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ToolRail(
-                      selected: tool,
-                      onSelected: controller.selectTool,
-                    ),
+                    ToolRail(selected: tool, onSelected: controller.selectTool),
                     const SizedBox(width: 12),
                     Expanded(
                       child: image == null
