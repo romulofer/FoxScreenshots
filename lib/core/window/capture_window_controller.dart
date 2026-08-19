@@ -159,16 +159,21 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
     _restoreBounds ??= await windowManager.getBounds();
     _virtualScreen = await virtualScreenBounds();
 
-    await windowManager.setBackgroundColor(const Color(0xFF000000));
-    await windowManager.setTitleBarStyle(
-      TitleBarStyle.hidden,
-      windowButtonVisibility: false,
-    );
-    await windowManager.setResizable(false);
-    await windowManager.setAlwaysOnTop(true);
-    await windowManager.setSkipTaskbar(true);
-    // Minimum size would otherwise refuse a request smaller than the hub's.
-    await windowManager.setMinimumSize(const Size(1, 1));
+    // None of these six depend on each other's result, so they are fired
+    // together instead of round-tripping the platform channel one at a time —
+    // that serial chain was adding tens of ms to every reveal.
+    await Future.wait([
+      windowManager.setBackgroundColor(const Color(0xFF000000)),
+      windowManager.setTitleBarStyle(
+        TitleBarStyle.hidden,
+        windowButtonVisibility: false,
+      ),
+      windowManager.setResizable(false),
+      windowManager.setAlwaysOnTop(true),
+      windowManager.setSkipTaskbar(true),
+      // Minimum size would otherwise refuse a request smaller than the hub's.
+      windowManager.setMinimumSize(const Size(1, 1)),
+    ]);
     if (_placesWindows) {
       await windowManager.setBounds(_virtualScreen);
     } else {
