@@ -27,14 +27,23 @@ class EditorScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final provider = editorControllerProvider(capture);
-    final state = ref.watch(provider);
     final controller = ref.read(provider.notifier);
-    final image = state.document.image;
+    // Watched field by field, rather than the whole EditorState: the app bar,
+    // tool rail and style bar would otherwise rebuild on every pixel of an
+    // annotation drag, since that drag updates the draft inside the same
+    // state object.
+    final image = ref.watch(provider.select((s) => s.document.image));
+    final tool = ref.watch(provider.select((s) => s.tool));
+    final color = ref.watch(provider.select((s) => s.color));
+    final strokeWidth = ref.watch(provider.select((s) => s.strokeWidth));
+    final canUndo = ref.watch(provider.select((s) => s.canUndo));
+    final canRedo = ref.watch(provider.select((s) => s.canRedo));
+    final isDirty = ref.watch(provider.select((s) => s.isDirty));
 
     return PopScope(
       // Edits live only in this route; leaving with unsaved marks needs a
       // deliberate confirmation.
-      canPop: !state.isDirty,
+      canPop: !isDirty,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
         if (await _confirmDiscard(context)) {
@@ -48,12 +57,12 @@ class EditorScreen extends ConsumerWidget {
             IconButton(
               tooltip: l10n.undo,
               icon: const Icon(Icons.undo),
-              onPressed: state.canUndo ? controller.undo : null,
+              onPressed: canUndo ? controller.undo : null,
             ),
             IconButton(
               tooltip: l10n.redo,
               icon: const Icon(Icons.redo),
-              onPressed: state.canRedo ? controller.redo : null,
+              onPressed: canRedo ? controller.redo : null,
             ),
             const SizedBox(width: 8),
             IconButton(
@@ -75,7 +84,7 @@ class EditorScreen extends ConsumerWidget {
               child: FilledButton.icon(
                 icon: const Icon(Icons.check),
                 label: Text(l10n.editorApply),
-                onPressed: image == null || !state.isDirty
+                onPressed: image == null || !isDirty
                     ? null
                     : () => _onApply(context, ref, controller),
               ),
@@ -91,27 +100,44 @@ class EditorScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ToolRail(
-                      selected: state.tool,
+                      selected: tool,
                       onSelected: controller.selectTool,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: image == null
                           ? const Center(child: CircularProgressIndicator())
-                          : EditorCanvas(
-                              image: image,
-                              annotations: state.visibleAnnotations,
-                              cropDraft: state.cropDraft,
-                              tool: state.tool,
-                              onDragStart: controller.startDraft,
-                              onDragUpdate: controller.updateDraft,
-                              onDragEnd: controller.endDraft,
-                              onTap: (point) => _onTap(
-                                context,
-                                controller,
-                                state.tool,
-                                point,
-                              ),
+                          : Consumer(
+                              // Isolated so an annotation drag — which
+                              // updates document.annotations/draft/cropDraft
+                              // on every pointer-move — only repaints the
+                              // canvas, not the app bar, tool rail or style
+                              // bar above.
+                              builder: (context, ref, _) {
+                                final annotations = ref.watch(
+                                  provider.select(
+                                    (s) => s.document.annotations,
+                                  ),
+                                );
+                                final draft = ref.watch(
+                                  provider.select((s) => s.draft),
+                                );
+                                final cropDraft = ref.watch(
+                                  provider.select((s) => s.cropDraft),
+                                );
+                                return EditorCanvas(
+                                  image: image,
+                                  annotations: annotations,
+                                  draft: draft,
+                                  cropDraft: cropDraft,
+                                  tool: tool,
+                                  onDragStart: controller.startDraft,
+                                  onDragUpdate: controller.updateDraft,
+                                  onDragEnd: controller.endDraft,
+                                  onTap: (point) =>
+                                      _onTap(context, controller, tool, point),
+                                );
+                              },
                             ),
                     ),
                   ],
@@ -119,8 +145,8 @@ class EditorScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               StyleBar(
-                color: state.color,
-                strokeWidth: state.strokeWidth,
+                color: color,
+                strokeWidth: strokeWidth,
                 onColorSelected: controller.selectColor,
                 onStrokeWidthChanged: controller.setStrokeWidth,
               ),

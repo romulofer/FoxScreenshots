@@ -17,6 +17,7 @@ class EditorCanvas extends StatelessWidget {
   const EditorCanvas({
     required this.image,
     required this.annotations,
+    required this.draft,
     required this.cropDraft,
     required this.tool,
     required this.onDragStart,
@@ -27,7 +28,15 @@ class EditorCanvas extends StatelessWidget {
   });
 
   final ui.Image image;
+
+  /// Committed annotations, in paint order.
   final List<Annotation> annotations;
+
+  /// The annotation being dragged right now, painted on top of
+  /// [annotations]. Kept separate so [_EditorCanvasPainter.shouldRepaint] can
+  /// tell "a drag moved" from "the committed list changed" instead of
+  /// comparing a freshly concatenated list every frame.
+  final Annotation? draft;
   final Rect? cropDraft;
   final EditorTool tool;
   final ValueChanged<Offset> onDragStart;
@@ -63,6 +72,7 @@ class EditorCanvas extends StatelessWidget {
               painter: _EditorCanvasPainter(
                 image: image,
                 annotations: annotations,
+                draft: draft,
                 cropDraft: cropDraft,
                 fit: fit,
                 textDirection: Directionality.of(context),
@@ -80,6 +90,7 @@ class _EditorCanvasPainter extends CustomPainter {
   const _EditorCanvasPainter({
     required this.image,
     required this.annotations,
+    required this.draft,
     required this.cropDraft,
     required this.fit,
     required this.textDirection,
@@ -88,6 +99,7 @@ class _EditorCanvasPainter extends CustomPainter {
 
   final ui.Image image;
   final List<Annotation> annotations;
+  final Annotation? draft;
   final Rect? cropDraft;
   final CanvasFit fit;
   final TextDirection textDirection;
@@ -109,10 +121,12 @@ class _EditorCanvasPainter extends CustomPainter {
         Paint()..filterQuality = FilterQuality.medium,
       );
 
-    AnnotationPainter(
+    final annotationPainter = AnnotationPainter(
       base: image,
       textDirection: textDirection,
-    ).paintAll(canvas, annotations);
+    )..paintAll(canvas, annotations);
+    final draft = this.draft;
+    if (draft != null) annotationPainter.paint(canvas, draft);
 
     final crop = cropDraft;
     if (crop != null) _paintCropDraft(canvas, crop);
@@ -153,6 +167,7 @@ class _EditorCanvasPainter extends CustomPainter {
   bool shouldRepaint(_EditorCanvasPainter old) =>
       old.image != image ||
       old.annotations != annotations ||
+      old.draft != draft ||
       old.cropDraft != cropDraft ||
       old.fit != fit ||
       old.cropAccent != cropAccent;
