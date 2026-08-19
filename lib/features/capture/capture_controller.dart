@@ -199,6 +199,14 @@ class CaptureController {
         imageWidth: screenWidth,
         imageHeight: screenHeight,
       );
+      // The route's first frame is built while the window is still hidden, and
+      // on Linux a hidden window's surface is not reliably composited. When the
+      // window manager grants exactly the requested placement, `mapping.value`
+      // above is a no-op (ValueNotifier skips notifyListeners on an equal
+      // value), so nothing else forces a repaint once the window turns visible
+      // — leaving the overlay blank (no crosshair, no dim) even though
+      // dragging still works. Force a frame unconditionally.
+      WidgetsBinding.instance.scheduleFrame();
 
       return await pending;
     } finally {
