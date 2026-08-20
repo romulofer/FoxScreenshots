@@ -4,6 +4,7 @@ import 'package:window_manager/window_manager.dart';
 
 import '../hotkey/hotkey_service.dart';
 import '../tray/tray_service.dart';
+import '../window/window_focus.dart';
 
 /// The desktop-only behaviours that make the app live in the tray (SPEC §1):
 /// tray icon and menu, the global capture hotkey, and hide-instead-of-close.
@@ -36,10 +37,15 @@ abstract interface class DesktopIntegration {
 /// Real implementation over `tray_manager`, `hotkey_manager` and
 /// `window_manager`.
 class WindowManagerDesktopIntegration implements DesktopIntegration {
-  WindowManagerDesktopIntegration(this._tray, this._hotkeys);
+  WindowManagerDesktopIntegration(
+    this._tray,
+    this._hotkeys, {
+    WindowFocuser? focuser,
+  }) : _focuser = focuser ?? defaultWindowFocuser();
 
   final TrayService _tray;
   final HotkeyService _hotkeys;
+  final WindowFocuser _focuser;
   bool _attached = false;
 
   @override
@@ -74,7 +80,7 @@ class WindowManagerDesktopIntegration implements DesktopIntegration {
   @override
   Future<void> showWindow() async {
     await windowManager.show();
-    await windowManager.focus();
+    await ensureWindowFocus(_focuser);
   }
 
   @override

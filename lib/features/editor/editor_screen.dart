@@ -36,8 +36,8 @@ class EditorScreen extends ConsumerWidget {
     final tool = ref.watch(provider.select((s) => s.tool));
     final color = ref.watch(provider.select((s) => s.color));
     final strokeWidth = ref.watch(provider.select((s) => s.strokeWidth));
-    final canUndo = ref.watch(provider.select((s) => s.canUndo));
-    final canRedo = ref.watch(provider.select((s) => s.canRedo));
+    final canUndo = ref.watch(provider.select((s) => s.canUndo && !s.isBusy));
+    final canRedo = ref.watch(provider.select((s) => s.canRedo && !s.isBusy));
     final isDirty = ref.watch(provider.select((s) => s.isDirty));
 
     return PopScope(
@@ -214,7 +214,12 @@ class EditorScreen extends ConsumerWidget {
       messenger.showSnackBar(SnackBar(content: Text(l10n.editorExportFailed)));
       return;
     }
-    final ok = await ref.read(clipboardServiceProvider).copyPng(bytes);
+    bool ok;
+    try {
+      ok = await ref.read(clipboardServiceProvider).copyPng(bytes);
+    } catch (_) {
+      ok = false;
+    }
     messenger.showSnackBar(
       SnackBar(
         content: Text(ok ? l10n.copiedToClipboard : l10n.copyToClipboardFailed),
