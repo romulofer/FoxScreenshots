@@ -99,6 +99,7 @@ const int _pidOffset = 72;
 
   var memDc = 0;
   var dib = 0;
+  var originalBitmap = 0;
   try {
     final originX = win.getSystemMetrics(smXVirtualScreen);
     final originY = win.getSystemMetrics(smYVirtualScreen);
@@ -145,7 +146,7 @@ const int _pidOffset = 72;
       throw const Win32Exception('CreateDIBSection returned no pixel buffer');
     }
 
-    win.selectObject(memDc, dib);
+    originalBitmap = win.selectObject(memDc, dib);
     final copied = win.bitBlt(
       memDc,
       0,
@@ -177,6 +178,11 @@ const int _pidOffset = 72;
       height: area.height,
     );
   } finally {
+    // DeleteObject silently fails on a bitmap still selected into a DC, so
+    // the DC's original bitmap has to go back in first.
+    if (memDc != 0 && originalBitmap != 0) {
+      win.selectObject(memDc, originalBitmap);
+    }
     if (dib != 0) win.deleteObject(dib);
     if (memDc != 0) win.deleteDc(memDc);
     win.free(scratch);

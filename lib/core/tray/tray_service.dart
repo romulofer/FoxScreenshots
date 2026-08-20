@@ -24,6 +24,10 @@ class TrayService with TrayListener {
   }) async {
     _onOpenWindow = onOpenWindow;
     _onAction = onAction;
+    // init() re-runs on every locale/hotkey change to re-wire the menu labels
+    // (see AppShell._attach); drop any listener from a previous run first so
+    // tray clicks do not fire once per past attach.
+    trayManager.removeListener(this);
     trayManager.addListener(this);
     await trayManager.setIcon(iconPath);
     // The Linux (AppIndicator) backend implements neither tooltips nor

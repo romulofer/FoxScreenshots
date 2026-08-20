@@ -209,6 +209,7 @@ class EditorController
   }
 
   void selectTool(EditorTool tool) {
+    if (state.isBusy) return;
     _cropAnchor = null;
     state = state.copyWith(tool: tool, clearDraft: true, clearCropDraft: true);
   }
@@ -269,7 +270,7 @@ class EditorController
   /// input dialog leaves nothing behind.
   void addText(Offset position, String text) {
     // The caption comes back from a dialog, which the editor may have outlived.
-    if (_disposed || text.trim().isEmpty) return;
+    if (_disposed || state.isBusy || text.trim().isEmpty) return;
     _commit(
       state.document.copyWith(
         annotations: [
@@ -289,6 +290,7 @@ class EditorController
 
   /// Drops the next badge in the 1, 2, 3… sequence at [center].
   void addStep(Offset center) {
+    if (state.isBusy) return;
     final next = state.annotations.whereType<StepAnnotation>().length + 1;
     _commit(
       state.document.copyWith(
@@ -312,6 +314,10 @@ class EditorController
     final image = state.document.image;
     if (image == null || state.isBusy) return;
 
+    // Snapshotted now, not read back off `state` after the await below: undo
+    // is blocked by `isBusy` while this runs, but the annotations this crop
+    // shifts have to be the ones the user actually drew it over, regardless.
+    final baseAnnotations = state.annotations;
     state = state.copyWith(isBusy: true);
     try {
       final cropped = await cropImage(base: image, rect: rect);
@@ -332,7 +338,7 @@ class EditorController
           width: cropped.width,
           height: cropped.height,
           annotations: [
-            for (final annotation in state.annotations)
+            for (final annotation in baseAnnotations)
               _translate(annotation, shift),
           ],
         ),
@@ -343,7 +349,7 @@ class EditorController
   }
 
   void undo() {
-    if (_past.isEmpty) return;
+    if (_past.isEmpty || state.isBusy) return;
     _future.add(state.document);
     final previous = _past.removeLast();
     state = state.copyWith(
@@ -357,7 +363,7 @@ class EditorController
   }
 
   void redo() {
-    if (_future.isEmpty) return;
+    if (_future.isEmpty || state.isBusy) return;
     _past.add(state.document);
     final next = _future.removeLast();
     state = state.copyWith(

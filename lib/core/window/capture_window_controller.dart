@@ -124,18 +124,6 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
   static const Duration _placementTimeout = Duration(milliseconds: 600);
   static const Duration _placementPoll = Duration(milliseconds: 30);
 
-  /// How long to keep retrying [WindowManager.focus] before giving up.
-  ///
-  /// Matters mainly on Linux: showing a window that was fully hidden (closed
-  /// to the tray) does not reliably win it keyboard focus on the first try —
-  /// most window managers apply focus-stealing prevention to a window with no
-  /// recent user-interaction timestamp, which is exactly what a reveal
-  /// triggered by a global hotkey or a tray click has. Without a real OS-level
-  /// focus grant, Esc cannot cancel the overlay: the Flutter [Focus] widget
-  /// never sees the keypress because the display server never routed it here.
-  static const Duration _focusTimeout = Duration(milliseconds: 500);
-  static const Duration _focusPoll = Duration(milliseconds: 30);
-
   Rect? _restoreBounds;
   Rect _virtualScreen = Rect.zero;
   bool _wasVisible = true;
@@ -178,6 +166,7 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
       await windowManager.setBounds(_virtualScreen);
     } else {
       await windowManager.setFullScreen(true);
+      _fullScreen = true;
     }
 
     return _placesWindows
@@ -191,8 +180,7 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
   @override
   Future<OverlayPlacement> revealOverlay() async {
     await windowManager.show();
-    await _ensureFocused();
-    await _focuser.forceFocus();
+    await ensureWindowFocus(_focuser);
     if (!_placesWindows) {
       // Nothing to measure: the compositor chose the monitor and will not say
       // which. The frozen frame is fitted into whatever surface came back.
@@ -228,19 +216,6 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
       virtualScreen: _virtualScreen,
       physicalWindow: measured,
     );
-  }
-
-  /// Calls [WindowManager.focus] until [WindowManager.isFocused] confirms it
-  /// landed or [_focusTimeout] runs out (see field doc for why one call is
-  /// not enough).
-  Future<void> _ensureFocused() async {
-    final deadline = DateTime.now().add(_focusTimeout);
-    while (true) {
-      await windowManager.focus();
-      if (await windowManager.isFocused()) return;
-      if (!DateTime.now().isBefore(deadline)) return;
-      await Future<void>.delayed(_focusPoll);
-    }
   }
 
   /// Whether [measured] is the whole virtual screen, give or take rounding.
@@ -313,7 +288,7 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
     _restoreBounds = null;
     if (_wasVisible) {
       await windowManager.show();
-      await windowManager.focus();
+      await ensureWindowFocus(_focuser);
     }
   }
 
@@ -323,7 +298,14 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
   Future<void> _unpin() async {
     if (_fullScreen) {
       _fullScreen = false;
-      await _stacking.clear();
+      // X11 fullscreen went out through _stacking's client messages; the
+      // Wayland path in enterOverlay used windowManager.setFullScreen
+      // directly, so it has to come back down the same way.
+      if (_placesWindows) {
+        await _stacking.clear();
+      } else {
+        await windowManager.setFullScreen(false);
+      }
     }
     await windowManager.setAlwaysOnTop(false);
     await windowManager.setSkipTaskbar(false);

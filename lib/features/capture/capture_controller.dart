@@ -162,60 +162,63 @@ class CaptureController {
     }
 
     final backdrop = await _ref.read(imageDecoderProvider)(pngBytes);
-
-    // Size and position the window first, then push the overlay against that
-    // placement, then show it: the hub is never seen stretched across the
-    // monitors, and a frozen frame is drawn 1:1 from the start.
-    final requested = await _window.enterOverlay();
-    final mapping = ValueNotifier<ScreenMapping>(
-      ScreenMapping.fromPlacement(
-        requested,
-        imageWidth: screenWidth,
-        imageHeight: screenHeight,
-      ),
-    );
-
     try {
-      final pending = navigator.push<CaptureRegion>(
-        PageRouteBuilder<CaptureRegion>(
-          transitionDuration: Duration.zero,
-          reverseTransitionDuration: Duration.zero,
-          pageBuilder: (context, _, _) => CaptureSelectionOverlay(
-            backdrop: backdrop,
-            screenWidth: screenWidth,
-            screenHeight: screenHeight,
-            mapping: mapping,
-            onSelected: (region) => Navigator.of(context).pop(region),
-            onCancel: () => Navigator.of(context).pop(),
-          ),
+      // Size and position the window first, then push the overlay against that
+      // placement, then show it: the hub is never seen stretched across the
+      // monitors, and a frozen frame is drawn 1:1 from the start.
+      final requested = await _window.enterOverlay();
+      final mapping = ValueNotifier<ScreenMapping>(
+        ScreenMapping.fromPlacement(
+          requested,
+          imageWidth: screenWidth,
+          imageHeight: screenHeight,
         ),
       );
 
-      // A window manager may clamp the overlay (to one monitor, or away from a
-      // panel); re-map against what it actually granted.
-      final granted = await _window.revealOverlay();
-      mapping.value = ScreenMapping.fromPlacement(
-        granted,
-        imageWidth: screenWidth,
-        imageHeight: screenHeight,
-      );
-      // The route's first frame is built while the window is still hidden, and
-      // on Linux a hidden window's surface is not reliably composited. When the
-      // window manager grants exactly the requested placement, `mapping.value`
-      // above is a no-op (ValueNotifier skips notifyListeners on an equal
-      // value), so nothing else forces a repaint once the window turns visible
-      // — leaving the overlay blank (no crosshair, no dim) even though
-      // dragging still works. Force a frame unconditionally.
-      WidgetsBinding.instance.scheduleFrame();
-
-      return await pending;
-    } finally {
       try {
-        await _window.leaveOverlay();
-      } catch (_) {
-        // Still tear down mapping/image even if the window restore fails.
+        final pending = navigator.push<CaptureRegion>(
+          PageRouteBuilder<CaptureRegion>(
+            transitionDuration: Duration.zero,
+            reverseTransitionDuration: Duration.zero,
+            pageBuilder: (context, _, _) => CaptureSelectionOverlay(
+              backdrop: backdrop,
+              screenWidth: screenWidth,
+              screenHeight: screenHeight,
+              mapping: mapping,
+              onSelected: (region) => Navigator.of(context).pop(region),
+              onCancel: () => Navigator.of(context).pop(),
+            ),
+          ),
+        );
+
+        // A window manager may clamp the overlay (to one monitor, or away from
+        // a panel); re-map against what it actually granted.
+        final granted = await _window.revealOverlay();
+        mapping.value = ScreenMapping.fromPlacement(
+          granted,
+          imageWidth: screenWidth,
+          imageHeight: screenHeight,
+        );
+        // The route's first frame is built while the window is still hidden,
+        // and on Linux a hidden window's surface is not reliably composited.
+        // When the window manager grants exactly the requested placement,
+        // `mapping.value` above is a no-op (ValueNotifier skips
+        // notifyListeners on an equal value), so nothing else forces a
+        // repaint once the window turns visible — leaving the overlay blank
+        // (no crosshair, no dim) even though dragging still works. Force a
+        // frame unconditionally.
+        WidgetsBinding.instance.scheduleFrame();
+
+        return await pending;
+      } finally {
+        try {
+          await _window.leaveOverlay();
+        } catch (_) {
+          // Still tear down mapping/image even if the window restore fails.
+        }
+        mapping.dispose();
       }
-      mapping.dispose();
+    } finally {
       backdrop.dispose();
     }
   }
