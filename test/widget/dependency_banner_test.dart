@@ -13,7 +13,9 @@ void main() {
   }) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [dependencyIssuesProvider.overrideWithValue(issues)],
+        overrides: [
+          dependencyIssuesProvider.overrideWith((ref) async => issues),
+        ],
         child: MaterialApp(
           locale: locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,

@@ -18,7 +18,7 @@ Future<void> main() async {
     'XDG_SESSION_TYPE=${Platform.environment['XDG_SESSION_TYPE']}',
   );
 
-  final issues = LinuxDependencyChecker().check();
+  final issues = await LinuxDependencyChecker().check();
   final blocking = issues
       .where((issue) => issue.severity == DependencySeverity.blocking)
       .toList();

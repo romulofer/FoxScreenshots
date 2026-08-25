@@ -18,16 +18,16 @@ void main() {
     return LinuxDependencyChecker(
       environment: environment,
       canLoadLibrary: present.contains,
-      canOpenDisplay: () => displayReachable,
+      canOpenDisplay: () async => displayReachable,
     );
   }
 
-  test('não reporta nada em uma máquina X11 completa', () {
-    expect(checker().check(), isEmpty);
+  test('não reporta nada em uma máquina X11 completa', () async {
+    expect(await checker().check(), isEmpty);
   });
 
-  test('aponta a falta da libX11 como bloqueante', () {
-    final issues = checker(
+  test('aponta a falta da libX11 como bloqueante', () async {
+    final issues = await checker(
       present: const {
         LinuxDependencyChecker.keybinderSoname,
         LinuxDependencyChecker.appIndicatorSoname,
@@ -42,19 +42,25 @@ void main() {
     ]);
   });
 
-  test('aponta um display inacessível quando a biblioteca em si carregou', () {
-    final issues = checker(displayReachable: false).check();
+  test(
+    'aponta um display inacessível quando a biblioteca em si carregou',
+    () async {
+      final issues = await checker(displayReachable: false).check();
 
-    expect(issues, [
-      const DependencyIssue(
-        SystemDependency.xDisplay,
-        DependencySeverity.blocking,
-      ),
-    ]);
-  });
+      expect(issues, [
+        const DependencyIssue(
+          SystemDependency.xDisplay,
+          DependencySeverity.blocking,
+        ),
+      ]);
+    },
+  );
 
-  test('não culpa também o display quando a libX11 está faltando', () {
-    final issues = checker(present: const {}, displayReachable: false).check();
+  test('não culpa também o display quando a libX11 está faltando', () async {
+    final issues = await checker(
+      present: const {},
+      displayReachable: false,
+    ).check();
 
     expect(
       issues.map((i) => i.dependency),
@@ -62,8 +68,8 @@ void main() {
     );
   });
 
-  test('aponta a sessão Wayland em vez de sondar o X', () {
-    final issues = checker(
+  test('aponta a sessão Wayland em vez de sondar o X', () async {
+    final issues = await checker(
       environment: const {'XDG_SESSION_TYPE': 'wayland'},
       displayReachable: false,
     ).check();
@@ -73,9 +79,10 @@ void main() {
     expect(issues.first.severity, DependencySeverity.degraded);
   });
 
-  test('no Wayland o atalho global é dado como perdido', () {
-    final issues = checker(environment: const {'XDG_SESSION_TYPE': 'wayland'})
-        .check();
+  test('no Wayland o atalho global é dado como perdido', () async {
+    final issues = await checker(
+      environment: const {'XDG_SESSION_TYPE': 'wayland'},
+    ).check();
 
     // The library is installed in this scenario and still cannot bind a key.
     expect(
@@ -87,9 +94,10 @@ void main() {
     );
   });
 
-  test('detecta o Wayland só pela WAYLAND_DISPLAY', () {
-    final issues = checker(environment: const {'WAYLAND_DISPLAY': 'wayland-0'})
-        .check();
+  test('detecta o Wayland só pela WAYLAND_DISPLAY', () async {
+    final issues = await checker(
+      environment: const {'WAYLAND_DISPLAY': 'wayland-0'},
+    ).check();
 
     expect(
       issues.map((i) => i.dependency),
@@ -97,8 +105,8 @@ void main() {
     );
   });
 
-  test('a falta do keybinder só degrada, não bloqueia', () {
-    final issues = checker(
+  test('a falta do keybinder só degrada, não bloqueia', () async {
+    final issues = await checker(
       present: const {
         LinuxDependencyChecker.x11Soname,
         LinuxDependencyChecker.appIndicatorSoname,
@@ -113,8 +121,8 @@ void main() {
     ]);
   });
 
-  test('a falta do appindicator só degrada', () {
-    final issues = checker(
+  test('a falta do appindicator só degrada', () async {
+    final issues = await checker(
       present: const {
         LinuxDependencyChecker.x11Soname,
         LinuxDependencyChecker.keybinderSoname,
@@ -129,8 +137,8 @@ void main() {
     ]);
   });
 
-  test('lista de uma vez tudo o que está faltando', () {
-    final issues = checker(present: const {}).check();
+  test('lista de uma vez tudo o que está faltando', () async {
+    final issues = await checker(present: const {}).check();
 
     expect(issues.map((i) => i.dependency), [
       SystemDependency.x11Library,
@@ -139,7 +147,7 @@ void main() {
     ]);
   });
 
-  test('o verificador vazio nunca reporta nada', () {
-    expect(const NoDependencyChecker().check(), isEmpty);
+  test('o verificador vazio nunca reporta nada', () async {
+    expect(await const NoDependencyChecker().check(), isEmpty);
   });
 }

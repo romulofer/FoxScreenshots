@@ -1,5 +1,6 @@
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -60,7 +61,7 @@ class DependencyIssue {
 /// dead button (or a crash).
 abstract interface class DependencyChecker {
   /// Unmet requirements, most severe first. Empty means everything is in place.
-  List<DependencyIssue> check();
+  Future<List<DependencyIssue>> check();
 }
 
 /// Linux implementation: probes each shared library with `dlopen` and tries a
@@ -71,7 +72,7 @@ class LinuxDependencyChecker implements DependencyChecker {
   LinuxDependencyChecker({
     Map<String, String>? environment,
     bool Function(String soname)? canLoadLibrary,
-    bool Function()? canOpenDisplay,
+    Future<bool> Function()? canOpenDisplay,
   }) : _env = environment ?? Platform.environment,
        _canLoadLibrary = canLoadLibrary ?? canLoadSharedLibrary,
        _canOpenDisplay = canOpenDisplay ?? canConnectToXDisplay;
@@ -83,10 +84,10 @@ class LinuxDependencyChecker implements DependencyChecker {
 
   final Map<String, String> _env;
   final bool Function(String) _canLoadLibrary;
-  final bool Function() _canOpenDisplay;
+  final Future<bool> Function() _canOpenDisplay;
 
   @override
-  List<DependencyIssue> check() {
+  Future<List<DependencyIssue>> check() async {
     final issues = <DependencyIssue>[];
 
     final isWayland =
@@ -108,7 +109,7 @@ class LinuxDependencyChecker implements DependencyChecker {
           DependencySeverity.blocking,
         ),
       );
-    } else if (!_canOpenDisplay()) {
+    } else if (!await _canOpenDisplay()) {
       // Only worth reporting once the library itself loaded.
       issues.add(
         const DependencyIssue(
@@ -147,7 +148,7 @@ class NoDependencyChecker implements DependencyChecker {
   const NoDependencyChecker();
 
   @override
-  List<DependencyIssue> check() => const [];
+  Future<List<DependencyIssue>> check() async => const [];
 }
 
 /// `dlopen` probe: does this shared library exist and load?
@@ -162,7 +163,21 @@ bool canLoadSharedLibrary(String soname) {
 
 /// Opens and immediately closes an X connection, to prove the display server
 /// is reachable before the user tries to capture.
-bool canConnectToXDisplay() {
+///
+/// Runs in a background isolate: `XOpenDisplay` can block for a long time on
+/// a slow or half-dead connection (e.g. X11 forwarded over SSH, a hung
+/// compositor), and this probe used to run straight on the UI isolate during
+/// the first build — a hung X server meant a frozen app before it ever showed
+/// a window.
+Future<bool> canConnectToXDisplay() async {
+  try {
+    return await Isolate.run(_canConnectToXDisplaySync);
+  } on Object {
+    return false;
+  }
+}
+
+bool _canConnectToXDisplaySync() {
   try {
     final x11 = X11Lib.open();
     final display = x11.openDisplay(nullptr);
@@ -180,6 +195,8 @@ final dependencyCheckerProvider = Provider<DependencyChecker>((ref) {
 });
 
 /// Unmet requirements for this machine, evaluated once per app run.
-final dependencyIssuesProvider = Provider<List<DependencyIssue>>((ref) {
+final dependencyIssuesProvider = FutureProvider<List<DependencyIssue>>((
+  ref,
+) {
   return ref.watch(dependencyCheckerProvider).check();
 });

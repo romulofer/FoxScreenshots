@@ -22,7 +22,7 @@ class _DependencyBannerState extends ConsumerState<DependencyBanner> {
 
   @override
   Widget build(BuildContext context) {
-    final issues = ref.watch(dependencyIssuesProvider);
+    final issues = ref.watch(dependencyIssuesProvider).valueOrNull ?? const [];
     if (issues.isEmpty || _dismissed) return const SizedBox.shrink();
 
     final l10n = AppLocalizations.of(context);
