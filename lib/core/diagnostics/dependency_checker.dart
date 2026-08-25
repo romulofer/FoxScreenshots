@@ -195,8 +195,6 @@ final dependencyCheckerProvider = Provider<DependencyChecker>((ref) {
 });
 
 /// Unmet requirements for this machine, evaluated once per app run.
-final dependencyIssuesProvider = FutureProvider<List<DependencyIssue>>((
-  ref,
-) {
+final dependencyIssuesProvider = FutureProvider<List<DependencyIssue>>((ref) {
   return ref.watch(dependencyCheckerProvider).check();
 });
