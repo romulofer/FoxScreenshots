@@ -248,19 +248,13 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
     final view = PlatformDispatcher.instance.implicitView;
     if (view == null) return null;
 
-    final deadline = DateTime.now().add(_placementTimeout);
-    Rect? previous;
-    while (true) {
-      final size = view.physicalSize;
-      final origin = await _geometry.ownWindowOrigin(size);
-      final measured = origin == null ? null : origin & size;
-      if (measured != null && measured == previous) return measured;
-      previous = measured;
-      // Out of time: a recent reading still beats the stale one the window
-      // manager reports, so hand back whatever the last one was.
-      if (!DateTime.now().isBefore(deadline)) return measured;
-      await Future<void>.delayed(_placementPoll);
-    }
+    final size = view.physicalSize;
+    final origin = await _geometry.settledOrigin(
+      size,
+      timeout: _placementTimeout,
+      pollInterval: _placementPoll,
+    );
+    return origin == null ? null : origin & size;
   }
 
   @override

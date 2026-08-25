@@ -12,12 +12,21 @@ import 'x11_window_geometry.dart';
 /// that origin, so a stale answer paints one monitor's pixels over another.
 /// Measuring at the source keeps the two in step (SPEC §2.1).
 abstract interface class WindowGeometryProbe {
-  /// Top-left corner, in physical pixels relative to the virtual screen, of the
-  /// app's own window whose client area measures [physicalSize] — the surface
-  /// the engine is rendering into. `null` when this platform cannot say, or
-  /// while no window of that size exists yet; callers then fall back to the
-  /// window manager's own numbers.
-  Future<Offset?> ownWindowOrigin(Size physicalSize);
+  /// Polls for the app's own window whose client area measures [physicalSize]
+  /// — the surface the engine is rendering into — until two readings in a row
+  /// agree (settled) or [timeout] runs out, sleeping [pollInterval] between
+  /// tries. `null` when this platform cannot say, or no window of that size
+  /// ever showed up; callers then fall back to the window manager's own
+  /// numbers.
+  ///
+  /// Implementations that need a native connection open it once for the
+  /// whole poll instead of once per try — reconnecting on every 30ms tick is
+  /// what made overlay reveal feel sluggish.
+  Future<Offset?> settledOrigin(
+    Size physicalSize, {
+    required Duration timeout,
+    required Duration pollInterval,
+  });
 }
 
 /// Used wherever there is no native probe yet (Windows, macOS, tests).
@@ -25,7 +34,11 @@ class UnknownWindowGeometry implements WindowGeometryProbe {
   const UnknownWindowGeometry();
 
   @override
-  Future<Offset?> ownWindowOrigin(Size physicalSize) async => null;
+  Future<Offset?> settledOrigin(
+    Size physicalSize, {
+    required Duration timeout,
+    required Duration pollInterval,
+  }) async => null;
 }
 
 /// Picks the probe for the current session — X11 through Xlib, nothing
