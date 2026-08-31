@@ -7,12 +7,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:foxscreenshots/app.dart';
 import 'package:foxscreenshots/core/capture/screen_capture_service.dart';
 import 'package:foxscreenshots/core/desktop/desktop_integration.dart';
-import 'package:foxscreenshots/core/image/png_codec.dart';
 import 'package:foxscreenshots/core/storage/clipboard_service.dart';
 import 'package:foxscreenshots/core/storage/settings_service.dart';
 import 'package:foxscreenshots/core/window/capture_window_controller.dart';
 import 'package:foxscreenshots/features/capture/capture_controller.dart';
 import 'package:foxscreenshots/features/capture/image_decoder.dart';
+import 'package:foxscreenshots/features/editor/editor_compositor.dart';
 import 'package:foxscreenshots/features/home/session_controller.dart';
 import 'package:foxscreenshots/models/capture_region.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -43,8 +43,8 @@ void main() {
           const NoopDesktopIntegration(),
         ),
         // Both hop off the fake clock in production; keep tests synchronous.
-        pngCodecProvider.overrideWithValue(const PngCodec.inline()),
         imageDecoderProvider.overrideWithValue(_fakeDecoder(service)),
+        imageCropperProvider.overrideWithValue(_fakeCropper),
       ],
     );
     addTearDown(container.dispose);
@@ -407,4 +407,19 @@ ImageDecoder _fakeDecoder(FakeScreenCaptureService service) {
       service.screenHeight,
     );
   };
+}
+
+/// Crops synchronously, unlike the real (engine-rasterized) [cropImage]: the
+/// pixels do not matter to these tests, only the resulting dimensions.
+Future<FlattenedImage> _fakeCropper({
+  required ui.Image base,
+  required ui.Rect rect,
+}) async {
+  final recorder = ui.PictureRecorder();
+  ui.Canvas(recorder);
+  final image = recorder.endRecording().toImageSync(
+    rect.width.round(),
+    rect.height.round(),
+  );
+  return FlattenedImage(image: image, pngBytes: Uint8List.fromList([1, 2, 3]));
 }

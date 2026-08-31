@@ -1,13 +1,15 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/capture/screen_capture_service.dart';
-import '../../core/image/png_codec.dart';
 import '../../core/navigation/app_navigator.dart';
 import '../../core/storage/clipboard_service.dart';
 import '../../core/window/capture_window_controller.dart';
 import '../../models/capture_region.dart';
 import '../../models/capture_result.dart';
+import '../editor/editor_compositor.dart';
 import '../home/session_controller.dart';
 import '../settings/settings_controller.dart';
 import 'image_decoder.dart';
@@ -32,7 +34,6 @@ class CaptureController {
   ScreenCaptureService get _service => _ref.read(screenCaptureServiceProvider);
   CaptureWindowController get _window =>
       _ref.read(captureWindowControllerProvider);
-  PngCodec get _codec => _ref.read(pngCodecProvider);
 
   /// Entry point for the toolbar, the tray menu and the global hotkey.
   Future<CaptureResult?> capture(CaptureMode mode) => switch (mode) {
@@ -47,24 +48,33 @@ class CaptureController {
   /// is what makes open menus and tooltips survive in the shot.
   Future<CaptureResult?> captureInstant() => _guarded(() async {
     return _run(() async {
-      final frame = _service.grabFullVirtualScreen();
-      final region = await _selectRegion(frame);
-      if (region == null) return null;
-
-      // Already resolved by the time `_selectRegion` returns a region —
-      // awaiting it again just reads the cached value.
-      final frozen = await frame;
-      final cropped = await _codec.crop(frozen.pngBytes, region);
-      if (cropped == null) return null;
-      return _record(
-        CaptureResult(
-          id: _newId(),
-          pngBytes: cropped.pngBytes,
-          width: cropped.width,
-          height: cropped.height,
-          takenAt: DateTime.now(),
-        ),
-      );
+      final selected = await _selectRegion(_service.grabFullVirtualScreen());
+      if (selected == null) return null;
+      final backdrop = selected.backdrop;
+      try {
+        // Cropped straight out of the already-decoded backdrop, on the same
+        // canvas path the editor's own crop tool uses — no second PNG
+        // decode/encode round trip through the `image` package on top of the
+        // engine decode this backdrop already paid for.
+        final area = selected.region.clampedTo(backdrop.width, backdrop.height);
+        if (area.isEmpty) return null;
+        final cropped = await _ref.read(imageCropperProvider)(
+          base: backdrop,
+          rect: area.toRect(),
+        );
+        cropped.image.dispose();
+        return await _record(
+          CaptureResult(
+            id: _newId(),
+            pngBytes: cropped.pngBytes,
+            width: cropped.width,
+            height: cropped.height,
+            takenAt: DateTime.now(),
+          ),
+        );
+      } finally {
+        backdrop.dispose();
+      }
     });
   });
 
@@ -79,8 +89,10 @@ class CaptureController {
   Future<CaptureResult?> captureWithTimer({Duration? delay}) => _guarded(
     () async {
       return _run(() async {
-        final region = await _selectRegion(_service.grabFullVirtualScreen());
-        if (region == null) return null;
+        final selected = await _selectRegion(_service.grabFullVirtualScreen());
+        if (selected == null) return null;
+        // Only used to frame the drag; the shot itself is grabbed live below.
+        selected.backdrop.dispose();
 
         final wait =
             delay ??
@@ -88,7 +100,7 @@ class CaptureController {
               seconds: _ref.read(settingsControllerProvider).timerDelaySeconds,
             );
         await Future<void>.delayed(wait);
-        return _record(await _service.grabRegion(region));
+        return _record(await _service.grabRegion(selected.region));
       });
     },
   );
@@ -141,8 +153,12 @@ class CaptureController {
   }
 
   /// Shows a fullscreen selection overlay over the frame [frame] resolves to,
-  /// and resolves with the region the user dragged (screen pixels), or `null`
-  /// if they cancelled.
+  /// and resolves with the region the user dragged (screen pixels) plus the
+  /// backdrop it was dragged over, or `null` if they cancelled.
+  ///
+  /// The caller owns the returned backdrop and must dispose it — kept alive
+  /// on purpose, so [captureInstant] can crop straight out of it instead of
+  /// decoding the frozen frame a second time.
   ///
   /// [frame] is a grab already in flight rather than an already-decoded one:
   /// resizing the (still-hidden) hub window for the overlay does not depend on
@@ -150,7 +166,9 @@ class CaptureController {
   /// the grab to finish first — the two used to run back to back, stacking
   /// their latencies on every single capture and making the hotkey feel like
   /// it had hung.
-  Future<CaptureRegion?> _selectRegion(Future<CaptureResult> frame) async {
+  Future<({CaptureRegion region, ui.Image backdrop})?> _selectRegion(
+    Future<CaptureResult> frame,
+  ) async {
     final navigator = _ref.read(navigatorKeyProvider).currentState;
     if (navigator == null) {
       // Nobody will await this grab now; silence its error instead of letting
@@ -186,6 +204,9 @@ class CaptureController {
     }
 
     final backdrop = await _ref.read(imageDecoderProvider)(frozen.pngBytes);
+    // Flipped to false right before returning a non-null result, so the
+    // caller — not this `finally` — takes ownership of disposing it.
+    var ownsBackdrop = true;
     try {
       final requested = await overlayFuture;
       final mapping = ValueNotifier<ScreenMapping>(
@@ -230,7 +251,10 @@ class CaptureController {
         // frame unconditionally.
         WidgetsBinding.instance.scheduleFrame();
 
-        return await pending;
+        final region = await pending;
+        if (region == null) return null;
+        ownsBackdrop = false;
+        return (region: region, backdrop: backdrop);
       } finally {
         try {
           await _window.leaveOverlay();
@@ -240,7 +264,7 @@ class CaptureController {
         mapping.dispose();
       }
     } finally {
-      backdrop.dispose();
+      if (ownsBackdrop) backdrop.dispose();
     }
   }
 
