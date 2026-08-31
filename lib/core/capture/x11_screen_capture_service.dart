@@ -10,6 +10,7 @@ import '../image/raw_pixels.dart';
 import 'screen_capture_service.dart';
 import 'x11/x11_bindings.dart';
 import 'x11/x11_properties.dart';
+import 'x11/xshm_bindings.dart';
 
 /// Linux/X11 capture backend (SPEC §2.1).
 ///
@@ -107,32 +108,138 @@ class X11ScreenCaptureService implements ScreenCaptureService {
       throw const X11Exception('The selected region is outside the screen');
     }
 
-    final image = x11.getImage(
-      display,
-      root,
-      area.x,
-      area.y,
-      area.width,
-      area.height,
-      allPlanes,
-      zPixmap,
+    final rgba =
+        _tryShmGrab(x11, display, screen, root, area) ??
+        _getImageGrab(x11, display, root, area);
+    return (
+      png: encodeRgbaSync(rgba, area.width, area.height, PngCodec.fastLevel),
+      width: area.width,
+      height: area.height,
     );
-    if (image == nullptr) {
-      throw const X11Exception('XGetImage returned no data');
-    }
-
-    try {
-      final rgba = _toRgba(image.ref);
-      return (
-        png: encodeRgbaSync(rgba, area.width, area.height, PngCodec.fastLevel),
-        width: area.width,
-        height: area.height,
-      );
-    } finally {
-      x11.destroyImage(image);
-    }
   } finally {
     x11.closeDisplay(display);
+  }
+}
+
+/// The plain `XGetImage` path: round-trips the whole grab through the core
+/// X11 protocol connection. Always correct, and the fallback whenever MIT-SHM
+/// is unavailable or fails.
+Uint8List _getImageGrab(
+  X11Lib x11,
+  Pointer<Void> display,
+  int root,
+  CaptureRegion area,
+) {
+  final image = x11.getImage(
+    display,
+    root,
+    area.x,
+    area.y,
+    area.width,
+    area.height,
+    allPlanes,
+    zPixmap,
+  );
+  if (image == nullptr) {
+    throw const X11Exception('XGetImage returned no data');
+  }
+  try {
+    return _toRgba(image.ref);
+  } finally {
+    x11.destroyImage(image);
+  }
+}
+
+/// MIT-SHM path: the server writes pixels straight into memory shared with
+/// this process, skipping the copy-through-the-wire `XGetImage` pays on every
+/// single grab. Local X11 sessions support this virtually universally; a
+/// remote/network display never does, which `XShmQueryExtension` already
+/// reports correctly on its own.
+///
+/// Returns `null` on any failure — missing `libXext`, no extension, a shared
+/// memory syscall failing — so the caller falls back to `XGetImage`. Nothing
+/// here is allowed to throw past this function.
+Uint8List? _tryShmGrab(
+  X11Lib x11,
+  Pointer<Void> display,
+  int screen,
+  int root,
+  CaptureRegion area,
+) {
+  final X11ShmLib xext;
+  try {
+    xext = X11ShmLib.open();
+  } on Object {
+    return null;
+  }
+  if (xext.queryExtension(display) == 0) return null;
+
+  final scratch = x11.malloc(sizeOf<XShmSegmentInfo>());
+  if (scratch == nullptr) return null;
+  final shminfo = scratch.cast<XShmSegmentInfo>();
+  var shmid = -1;
+  Pointer<Uint8> shmaddr = nullptr;
+  Pointer<XImage> image = nullptr;
+  var attached = false;
+  try {
+    image = xext.createImage(
+      display,
+      x11.defaultVisual(display, screen),
+      x11.defaultDepth(display, screen),
+      zPixmap,
+      nullptr,
+      shminfo,
+      area.width,
+      area.height,
+    );
+    if (image == nullptr) return null;
+
+    final size = image.ref.bytesPerLine * image.ref.height;
+    if (size <= 0) return null;
+
+    // 0600: owner read/write only. Screenshots can hold sensitive data
+    // (SPEC §7) — the segment lives just long enough for this grab, but
+    // nothing says another local user's process cannot be attaching to shm
+    // ids in that same window.
+    shmid = xext.shmget(ipcPrivate, size, ipcCreat | 0x180);
+    if (shmid < 0) return null;
+    // Marked for removal right away, before the attach that might itself
+    // fail below: whether this grab finishes cleanly, throws, or the isolate
+    // is killed outright, the kernel reclaims the segment once every attached
+    // process (us, and the X server) lets go of it — never leaked, unlike a
+    // detach only reachable through a `finally` further down. `shmat` still
+    // works fine against an id already marked this way.
+    xext.shmctl(shmid, ipcRmid, nullptr);
+
+    shmaddr = xext.shmat(shmid, nullptr, 0);
+    // `(void*)-1` on failure — `Pointer.fromAddress` never returns null, so
+    // the sentinel has to be compared by address instead of identity.
+    if (shmaddr.address == -1 || shmaddr.address == 0) {
+      shmaddr = nullptr;
+      return null;
+    }
+
+    image.ref.data = shmaddr;
+    shminfo.ref
+      ..shmaddr = shmaddr
+      ..readOnly = 0;
+    if (xext.attach(display, shminfo) == 0) return null;
+    attached = true;
+
+    if (xext.getImage(display, root, image, area.x, area.y, allPlanes) == 0) {
+      return null;
+    }
+
+    return _toRgba(image.ref);
+  } on Object {
+    return null;
+  } finally {
+    if (attached) xext.detach(display, shminfo);
+    // Frees only the `XImage` struct: Xlib knows an SHM-backed image's pixel
+    // data is not its own to free.
+    if (image != nullptr) x11.destroyImage(image);
+    if (shmaddr != nullptr) xext.shmdt(shmaddr);
+    x11.free(scratch);
   }
 }
 

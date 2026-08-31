@@ -72,6 +72,10 @@ typedef _XScreenOfDisplayNative = Int32 Function(Pointer<Void>);
 typedef XScreenOfDisplayDart = int Function(Pointer<Void>);
 typedef _XDisplayExtentNative = Int32 Function(Pointer<Void>, Int32);
 typedef XDisplayExtentDart = int Function(Pointer<Void>, int);
+typedef _XDefaultVisualNative = Pointer<Void> Function(Pointer<Void>, Int32);
+typedef XDefaultVisualDart = Pointer<Void> Function(Pointer<Void>, int);
+typedef _XDefaultDepthNative = Int32 Function(Pointer<Void>, Int32);
+typedef XDefaultDepthDart = int Function(Pointer<Void>, int);
 typedef _XGetImageNative = Pointer<XImage> Function(
   Pointer<Void> display,
   UnsignedLong drawable,
@@ -254,6 +258,12 @@ class X11Lib {
       displayHeight = lib
           .lookup<NativeFunction<_XDisplayExtentNative>>('XDisplayHeight')
           .asFunction<XDisplayExtentDart>(),
+      defaultVisual = lib
+          .lookup<NativeFunction<_XDefaultVisualNative>>('XDefaultVisual')
+          .asFunction<XDefaultVisualDart>(),
+      defaultDepth = lib
+          .lookup<NativeFunction<_XDefaultDepthNative>>('XDefaultDepth')
+          .asFunction<XDefaultDepthDart>(),
       getImage = lib
           .lookup<NativeFunction<_XGetImageNative>>('XGetImage')
           .asFunction<XGetImageDart>(),
@@ -312,6 +322,8 @@ class X11Lib {
   final XScreenOfDisplayDart defaultScreen;
   final XDisplayExtentDart displayWidth;
   final XDisplayExtentDart displayHeight;
+  final XDefaultVisualDart defaultVisual;
+  final XDefaultDepthDart defaultDepth;
   final XGetImageDart getImage;
   final XGetInputFocusDart getInputFocus;
   final XSetInputFocusDart setInputFocus;
