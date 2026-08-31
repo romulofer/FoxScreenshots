@@ -126,7 +126,9 @@ CroppedPng? cropSync(Uint8List pngBytes, CaptureRegion region) {
     height: area.height,
   );
   return CroppedPng(
-    pngBytes: img.encodePng(cropped),
+    // Fast level: the user is watching this crop resolve right after the
+    // drag that produced [region], same as the freeze-frame encode above.
+    pngBytes: img.encodePng(cropped, level: PngCodec.fastLevel),
     width: cropped.width,
     height: cropped.height,
   );
