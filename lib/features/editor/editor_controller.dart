@@ -58,6 +58,7 @@ class EditorState {
     required this.tool,
     required this.color,
     required this.strokeWidth,
+    required this.filled,
     required this.draft,
     required this.cropDraft,
     required this.canUndo,
@@ -70,6 +71,10 @@ class EditorState {
   final EditorTool tool;
   final Color color;
   final double strokeWidth;
+
+  /// Whether the next [EditorTool.rectangle] annotation is drawn solid
+  /// instead of just outlined.
+  final bool filled;
 
   /// The annotation being dragged right now, painted on top of the committed
   /// ones and not yet part of the undo history.
@@ -98,6 +103,7 @@ class EditorState {
     EditorTool? tool,
     Color? color,
     double? strokeWidth,
+    bool? filled,
     Annotation? draft,
     bool clearDraft = false,
     Rect? cropDraft,
@@ -112,6 +118,7 @@ class EditorState {
       tool: tool ?? this.tool,
       color: color ?? this.color,
       strokeWidth: strokeWidth ?? this.strokeWidth,
+      filled: filled ?? this.filled,
       draft: clearDraft ? null : (draft ?? this.draft),
       cropDraft: clearCropDraft ? null : (cropDraft ?? this.cropDraft),
       canUndo: canUndo ?? this.canUndo,
@@ -181,6 +188,7 @@ class EditorController
       tool: EditorTool.arrow,
       color: defaultColor,
       strokeWidth: defaultStrokeWidth,
+      filled: false,
       draft: null,
       cropDraft: null,
       canUndo: false,
@@ -218,6 +226,8 @@ class EditorController
 
   void setStrokeWidth(double width) =>
       state = state.copyWith(strokeWidth: width);
+
+  void setFilled(bool filled) => state = state.copyWith(filled: filled);
 
   /// Starts a drag at [point] (image pixels).
   void startDraft(Offset point) {
@@ -455,6 +465,7 @@ class EditorController
         strokeWidth: strokeWidth,
         start: point,
         end: point,
+        filled: state.filled,
       ),
       EditorTool.ellipse => EllipseAnnotation(
         id: id,
@@ -528,6 +539,7 @@ Annotation _translate(Annotation annotation, Offset shift) {
       strokeWidth: annotation.strokeWidth,
       start: annotation.start + shift,
       end: annotation.end + shift,
+      filled: annotation.filled,
     ),
     EllipseAnnotation() => EllipseAnnotation(
       id: annotation.id,

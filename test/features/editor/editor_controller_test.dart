@@ -252,6 +252,23 @@ void main() {
   });
 
   test(
+    'setFilled só afeta retângulos novos, não o resto das ferramentas',
+    () async {
+      final container = makeContainer();
+      final controller = controllerOf(container)
+        ..setFilled(true)
+        ..selectTool(EditorTool.rectangle);
+      await pumpEventQueue();
+
+      await drag(controller, const Offset(5, 5), const Offset(70, 40));
+
+      final rectangle =
+          stateOf(container).annotations.single as RectangleAnnotation;
+      expect(rectangle.filled, isTrue);
+    },
+  );
+
+  test(
     'o achatamento reaproveita os bytes originais quando nada foi desenhado',
     () async {
       final container = makeContainer();
@@ -328,6 +345,7 @@ void main() {
     await tester.runAsync(() async {
       container = makeContainer(width: 100, height: 80);
       final controller = controllerOf(container)
+        ..setFilled(true)
         ..selectTool(EditorTool.rectangle);
       await pumpEventQueue();
 
@@ -344,6 +362,11 @@ void main() {
     final moved = state.annotations.single as RectangleAnnotation;
     expect(moved.start, const Offset(20, 20));
     expect(moved.end, const Offset(40, 40));
+    expect(
+      moved.filled,
+      isTrue,
+      reason: 'o recorte translada a anotação, não deve perder o preenchimento',
+    );
     expect(state.isBusy, isFalse);
   });
 

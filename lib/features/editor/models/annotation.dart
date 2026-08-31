@@ -97,7 +97,7 @@ class ArrowAnnotation extends ShapeAnnotation {
   Rect get bounds => rect.inflate(headLength);
 }
 
-/// Hollow rectangle outline.
+/// Rectangle outline, or a solid block when [filled].
 class RectangleAnnotation extends ShapeAnnotation {
   const RectangleAnnotation({
     required super.id,
@@ -105,7 +105,11 @@ class RectangleAnnotation extends ShapeAnnotation {
     required super.strokeWidth,
     required super.start,
     required super.end,
+    this.filled = false,
   });
+
+  /// Solid fill instead of just a stroked outline.
+  final bool filled;
 
   @override
   RectangleAnnotation dragTo(Offset point) => RectangleAnnotation(
@@ -114,6 +118,7 @@ class RectangleAnnotation extends ShapeAnnotation {
     strokeWidth: strokeWidth,
     start: start,
     end: point,
+    filled: filled,
   );
 }
 

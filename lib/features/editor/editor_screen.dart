@@ -36,6 +36,7 @@ class EditorScreen extends ConsumerWidget {
     final tool = ref.watch(provider.select((s) => s.tool));
     final color = ref.watch(provider.select((s) => s.color));
     final strokeWidth = ref.watch(provider.select((s) => s.strokeWidth));
+    final filled = ref.watch(provider.select((s) => s.filled));
     final canUndo = ref.watch(provider.select((s) => s.canUndo && !s.isBusy));
     final canRedo = ref.watch(provider.select((s) => s.canRedo && !s.isBusy));
     final isDirty = ref.watch(provider.select((s) => s.isDirty));
@@ -142,10 +143,13 @@ class EditorScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               StyleBar(
+                tool: tool,
                 color: color,
                 strokeWidth: strokeWidth,
+                filled: filled,
                 onColorSelected: controller.selectColor,
                 onStrokeWidthChanged: controller.setStrokeWidth,
+                onFilledChanged: controller.setFilled,
               ),
             ],
           ),

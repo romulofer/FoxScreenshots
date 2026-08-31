@@ -93,6 +93,7 @@
 
   "editorColor": "Cor",
   "editorThickness": "Espessura",
+  "editorFill": "Preencher",
   "editorTextTitle": "Adicionar texto",
   "editorTextHint": "Digite o texto",
   "editorApply": "Aplicar na captura",

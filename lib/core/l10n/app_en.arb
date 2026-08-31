@@ -82,6 +82,7 @@
 
   "editorColor": "Color",
   "editorThickness": "Thickness",
+  "editorFill": "Fill",
   "editorTextTitle": "Add text",
   "editorTextHint": "Type the caption",
   "editorApply": "Apply to capture",

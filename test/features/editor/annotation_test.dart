@@ -63,6 +63,28 @@ void main() {
     });
   });
 
+  group('retângulo', () {
+    test('por padrão não é preenchido', () {
+      expect(
+        rectangle(const Offset(0, 0), const Offset(10, 10)).filled,
+        isFalse,
+      );
+    });
+
+    test('dragTo preserva o preenchimento', () {
+      const filled = RectangleAnnotation(
+        id: 'r',
+        color: color,
+        strokeWidth: 4,
+        start: Offset(10, 10),
+        end: Offset(20, 20),
+        filled: true,
+      );
+
+      expect(filled.dragTo(const Offset(50, 70)).filled, isTrue);
+    });
+  });
+
   group('seta', () {
     test('conta o comprimento, não a caixa delimitadora', () {
       // A horizontal arrow has zero height; measuring the box would discard it.
