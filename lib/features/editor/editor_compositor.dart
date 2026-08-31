@@ -108,3 +108,15 @@ Future<FlattenedImage> _record({
 
 /// Overridden in widget tests, where engine rasterization needs `runAsync`.
 final imageFlattenerProvider = Provider<ImageFlattener>((ref) => flattenToPng);
+
+/// Crops a decoded image, going through the same real-engine rasterization
+/// [cropImage] does.
+typedef ImageCropper = Future<FlattenedImage> Function({
+  required ui.Image base,
+  required ui.Rect rect,
+});
+
+/// Overridden in widget tests with a synchronous fake — real rasterization
+/// needs `runAsync`, which does not mix with pumping a widget tree through
+/// the same gesture/overlay flow that triggers the crop.
+final imageCropperProvider = Provider<ImageCropper>((ref) => cropImage);
