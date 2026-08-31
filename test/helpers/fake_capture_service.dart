@@ -16,6 +16,7 @@ class FakeScreenCaptureService implements ScreenCaptureService {
     this.screenHeight = 300,
     this.activeWindow,
     this.failure,
+    this.grabGate,
   });
 
   final int screenWidth;
@@ -27,12 +28,18 @@ class FakeScreenCaptureService implements ScreenCaptureService {
   /// When set, every call throws this instead of returning a frame.
   final CaptureFailure? failure;
 
+  /// When set, `grabFullVirtualScreen` waits on this before resolving — lets a
+  /// test hold the grab open and check what a caller does while it is still in
+  /// flight (SPEC §2.1: window resize and grab now race instead of queuing).
+  final Future<void>? grabGate;
+
   int fullScreenCalls = 0;
   int regionCalls = 0;
   CaptureRegion? lastRegion;
 
   @override
   Future<CaptureResult> grabFullVirtualScreen() async {
+    if (grabGate != null) await grabGate;
     _maybeFail();
     fullScreenCalls++;
     return _result(screenWidth, screenHeight);
