@@ -32,7 +32,10 @@ class AnnotationPainter {
       case ArrowAnnotation():
         _paintArrow(canvas, annotation);
       case RectangleAnnotation():
-        canvas.drawRect(annotation.rect, _stroke(annotation));
+        canvas.drawRect(
+          annotation.rect,
+          annotation.filled ? _fill(annotation) : _stroke(annotation),
+        );
       case EllipseAnnotation():
         canvas.drawOval(annotation.rect, _stroke(annotation));
       case HighlightAnnotation():
@@ -59,6 +62,11 @@ class AnnotationPainter {
     ..strokeWidth = annotation.strokeWidth
     ..strokeCap = ui.StrokeCap.round
     ..strokeJoin = ui.StrokeJoin.round
+    ..color = annotation.color
+    ..isAntiAlias = true;
+
+  ui.Paint _fill(Annotation annotation) => ui.Paint()
+    ..style = ui.PaintingStyle.fill
     ..color = annotation.color
     ..isAntiAlias = true;
 

@@ -2,22 +2,32 @@ import 'package:flutter/material.dart';
 
 import '../../../core/l10n/gen/app_localizations.dart';
 import '../models/annotation_palette.dart';
+import '../models/editor_tool.dart';
 
 /// Ink color and stroke width for the next annotation (SPEC §2.2: "color +
-/// stroke-width picker").
+/// stroke-width picker"), plus the fill toggle for the rectangle tool.
 class StyleBar extends StatelessWidget {
   const StyleBar({
+    required this.tool,
     required this.color,
     required this.strokeWidth,
+    required this.filled,
     required this.onColorSelected,
     required this.onStrokeWidthChanged,
+    required this.onFilledChanged,
     super.key,
   });
 
+  final EditorTool tool;
   final Color color;
   final double strokeWidth;
+
+  /// Whether the next rectangle is drawn solid. Only meaningful — and only
+  /// shown — while [tool] is [EditorTool.rectangle].
+  final bool filled;
   final ValueChanged<Color> onColorSelected;
   final ValueChanged<double> onStrokeWidthChanged;
+  final ValueChanged<bool> onFilledChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +77,11 @@ class StyleBar extends StatelessWidget {
                 ?.copyWith(color: scheme.onSurfaceVariant),
           ),
         ),
+        if (tool == EditorTool.rectangle) ...[
+          const SizedBox(width: 20),
+          Text(l10n.editorFill, style: Theme.of(context).textTheme.labelLarge),
+          Switch(value: filled, onChanged: onFilledChanged),
+        ],
       ],
     );
   }

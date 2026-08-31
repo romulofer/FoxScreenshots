@@ -83,6 +83,39 @@ void main() {
     });
   });
 
+  testWidgets(
+    'um retângulo preenchido cobre também o interior, não só a borda',
+    (tester) async {
+      await tester.runAsync(() async {
+        final base = solidImage(
+          width: 100,
+          height: 80,
+          color: const ui.Color(0xFF000000),
+        );
+        addTearDown(base.dispose);
+
+        final flattened = await flatten(base, [
+          const RectangleAnnotation(
+            id: 'r',
+            color: ui.Color(0xFFFFFFFF),
+            strokeWidth: 4,
+            start: ui.Offset(20, 20),
+            end: ui.Offset(60, 60),
+            filled: true,
+          ),
+        ]);
+        addTearDown(flattened.image.dispose);
+
+        final exported = decode(flattened.pngBytes);
+        expect(
+          luminanceAt(exported, 40, 40),
+          greaterThan(200),
+          reason: 'bem no centro do retângulo, longe do traço da borda',
+        );
+      });
+    },
+  );
+
   testWidgets('o marca-texto tinge sem esconder o que está embaixo', (
     tester,
   ) async {
