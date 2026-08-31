@@ -102,3 +102,5 @@ lib/core/l10n/gen/
 *.env
 .env.local
 secrets.*
+
+references
