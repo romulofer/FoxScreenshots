@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart';
@@ -208,6 +209,37 @@ void main() {
       await dragSelection(tester, const Offset(10, 10), const Offset(110, 90));
       expect(await first, isNotNull);
     });
+
+    testWidgets(
+      'redimensiona a janela do overlay em paralelo com o grab, não depois '
+      'dele',
+      (tester) async {
+        // Antes da otimização, `enterOverlay` só rodava depois do grab
+        // terminar — as duas latências se somavam a cada captura. A trava
+        // abaixo prova que o redimensionamento acontece enquanto o grab ainda
+        // está pendente.
+        final gate = Completer<void>();
+        service = FakeScreenCaptureService(grabGate: gate.future);
+        await pumpApp(tester);
+
+        final pending = container
+            .read(captureControllerProvider)
+            .captureInstant();
+        await tester.pump();
+
+        expect(window.calls, contains('enterOverlay'));
+        expect(service.fullScreenCalls, 0);
+
+        gate.complete();
+        await tester.pumpAndSettle();
+        await dragSelection(
+          tester,
+          const Offset(10, 10),
+          const Offset(110, 90),
+        );
+        expect(await pending, isNotNull);
+      },
+    );
   });
 
   group('captura com temporizador', () {
@@ -326,6 +358,34 @@ void main() {
       );
       expect(window.calls, ['hideForCapture', 'restore']);
     });
+
+    testWidgets(
+      'desfaz o redimensionamento do overlay quando o grab falha durante a '
+      'seleção',
+      (tester) async {
+        // O grab e o `enterOverlay` (que já deixa a janela sem borda, tamanho
+        // fixo e fundo preto) rodam em paralelo desde a otimização de
+        // latência; se o grab falhar, o `leaveOverlay` tem que desfazer esse
+        // redimensionamento antes do `restore` de `_run` — senão o hub volta
+        // com a barra de título ainda escondida.
+        service = FakeScreenCaptureService(
+          failure: CaptureFailure.displayUnavailable,
+        );
+        await pumpApp(tester);
+
+        await expectLater(
+          container.read(captureControllerProvider).captureInstant(),
+          throwsA(isA<CaptureException>()),
+        );
+
+        expect(window.calls, [
+          'hideForCapture',
+          'enterOverlay',
+          'leaveOverlay',
+          'restore',
+        ]);
+      },
+    );
   });
 }
 

@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -49,14 +47,13 @@ class CaptureController {
   /// is what makes open menus and tooltips survive in the shot.
   Future<CaptureResult?> captureInstant() => _guarded(() async {
     return _run(() async {
-      final frozen = await _service.grabFullVirtualScreen();
-      final region = await _selectRegion(
-        screenWidth: frozen.width,
-        screenHeight: frozen.height,
-        pngBytes: frozen.pngBytes,
-      );
+      final frame = _service.grabFullVirtualScreen();
+      final region = await _selectRegion(frame);
       if (region == null) return null;
 
+      // Already resolved by the time `_selectRegion` returns a region —
+      // awaiting it again just reads the cached value.
+      final frozen = await frame;
       final cropped = await _codec.crop(frozen.pngBytes, region);
       if (cropped == null) return null;
       return _record(
@@ -82,12 +79,7 @@ class CaptureController {
   Future<CaptureResult?> captureWithTimer({Duration? delay}) => _guarded(
     () async {
       return _run(() async {
-        final frozen = await _service.grabFullVirtualScreen();
-        final region = await _selectRegion(
-          screenWidth: frozen.width,
-          screenHeight: frozen.height,
-          pngBytes: frozen.pngBytes,
-        );
+        final region = await _selectRegion(_service.grabFullVirtualScreen());
         if (region == null) return null;
 
         final wait =
@@ -148,30 +140,59 @@ class CaptureController {
     return _service.activeWindowRegion();
   }
 
-  /// Shows a fullscreen selection overlay over the frozen frame in [pngBytes]
+  /// Shows a fullscreen selection overlay over the frame [frame] resolves to,
   /// and resolves with the region the user dragged (screen pixels), or `null`
   /// if they cancelled.
-  Future<CaptureRegion?> _selectRegion({
-    required int screenWidth,
-    required int screenHeight,
-    required Uint8List pngBytes,
-  }) async {
+  ///
+  /// [frame] is a grab already in flight rather than an already-decoded one:
+  /// resizing the (still-hidden) hub window for the overlay does not depend on
+  /// the grabbed pixels at all, so it starts immediately instead of waiting for
+  /// the grab to finish first — the two used to run back to back, stacking
+  /// their latencies on every single capture and making the hotkey feel like
+  /// it had hung.
+  Future<CaptureRegion?> _selectRegion(Future<CaptureResult> frame) async {
     final navigator = _ref.read(navigatorKeyProvider).currentState;
     if (navigator == null) {
+      // Nobody will await this grab now; silence its error instead of letting
+      // an unrelated display hiccup surface as an unhandled Future exception.
+      frame.ignore();
       throw const CaptureException(CaptureFailure.windowNotReady);
     }
 
-    final backdrop = await _ref.read(imageDecoderProvider)(pngBytes);
+    // Size and position the window first, then push the overlay against that
+    // placement, then show it: the hub is never seen stretched across the
+    // monitors, and a frozen frame is drawn 1:1 from the start. Kicked off
+    // before the grab resolves — the resize does not need its pixels.
+    final overlayFuture = _window.enterOverlay();
+    final CaptureResult frozen;
     try {
-      // Size and position the window first, then push the overlay against that
-      // placement, then show it: the hub is never seen stretched across the
-      // monitors, and a frozen frame is drawn 1:1 from the start.
-      final requested = await _window.enterOverlay();
+      frozen = await frame;
+    } catch (_) {
+      // The resize above may have gone through even though the grab racing it
+      // failed; undo it the same way a cancelled selection would, so the hub
+      // does not come back with the overlay's chrome (hidden title bar, fixed
+      // size, black background) still applied.
+      try {
+        await overlayFuture;
+      } catch (_) {
+        // Already failing for the grab's reason; this one adds nothing.
+      }
+      try {
+        await _window.leaveOverlay();
+      } catch (_) {
+        // Best effort: the grab's exception is what the caller needs to see.
+      }
+      rethrow;
+    }
+
+    final backdrop = await _ref.read(imageDecoderProvider)(frozen.pngBytes);
+    try {
+      final requested = await overlayFuture;
       final mapping = ValueNotifier<ScreenMapping>(
         ScreenMapping.fromPlacement(
           requested,
-          imageWidth: screenWidth,
-          imageHeight: screenHeight,
+          imageWidth: frozen.width,
+          imageHeight: frozen.height,
         ),
       );
 
@@ -182,8 +203,8 @@ class CaptureController {
             reverseTransitionDuration: Duration.zero,
             pageBuilder: (context, _, _) => CaptureSelectionOverlay(
               backdrop: backdrop,
-              screenWidth: screenWidth,
-              screenHeight: screenHeight,
+              screenWidth: frozen.width,
+              screenHeight: frozen.height,
               mapping: mapping,
               onSelected: (region) => Navigator.of(context).pop(region),
               onCancel: () => Navigator.of(context).pop(),
@@ -196,8 +217,8 @@ class CaptureController {
         final granted = await _window.revealOverlay();
         mapping.value = ScreenMapping.fromPlacement(
           granted,
-          imageWidth: screenWidth,
-          imageHeight: screenHeight,
+          imageWidth: frozen.width,
+          imageHeight: frozen.height,
         );
         // The route's first frame is built while the window is still hidden,
         // and on Linux a hidden window's surface is not reliably composited.
