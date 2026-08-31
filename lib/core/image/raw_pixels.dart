@@ -44,6 +44,47 @@ Uint8List rgbaFromRaw({
 
   final blueFirst = order == RawPixelOrder.bgra;
   final out = Uint8List(width * height * 4);
+
+  // The common case (32bpp, 4-byte-aligned rows — X11 always pads scan lines
+  // to a word boundary): swap red/blue a whole pixel at a time through one
+  // 32-bit read plus a handful of bitwise ops, instead of three
+  // bounds-checked byte reads and four byte writes per pixel. Every capture
+  // this backend takes — instant, timer, full-screen or active-window —
+  // funnels every pixel of the grab through this function, so the per-pixel
+  // constant factor here is what the user waits through between the hotkey
+  // and the frozen frame appearing.
+  //
+  // Typed-data views require the offset into the buffer to be a multiple of
+  // the element size; `source` is always a zero-offset view in practice (a
+  // fresh Uint8List, or `Pointer<Uint8>.asTypedList`), so this only ever
+  // falls through on the untested 24bpp path.
+  if (bytesPerPixel == 4 &&
+      bytesPerLine % 4 == 0 &&
+      source.offsetInBytes % 4 == 0) {
+    final wordsPerLine = bytesPerLine ~/ 4;
+    final srcWords = source.buffer.asUint32List(
+      source.offsetInBytes,
+      wordsPerLine * height,
+    );
+    final outWords = out.buffer.asUint32List();
+    var o = 0;
+    for (var y = 0; y < height; y++) {
+      var i = y * wordsPerLine;
+      for (var x = 0; x < width; x++) {
+        final pixel = srcWords[i];
+        outWords[o] = blueFirst
+            ? (0xFF000000 |
+                  (pixel & 0x0000FF00) |
+                  ((pixel & 0x00FF0000) >> 16) |
+                  ((pixel & 0x000000FF) << 16))
+            : (0xFF000000 | (pixel & 0x00FFFFFF));
+        i++;
+        o++;
+      }
+    }
+    return out;
+  }
+
   var o = 0;
   for (var y = 0; y < height; y++) {
     var i = y * bytesPerLine;
