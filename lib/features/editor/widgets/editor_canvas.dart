@@ -67,17 +67,39 @@ class EditorCanvas extends StatelessWidget {
                 onDragUpdate(fit.toImage(details.localPosition)),
             onPanEnd: (_) => onDragEnd(),
             onPanCancel: onDragEnd,
-            child: CustomPaint(
-              size: constraints.biggest,
-              painter: _EditorCanvasPainter(
-                image: image,
-                annotations: annotations,
-                draft: draft,
-                cropDraft: cropDraft,
-                fit: fit,
-                textDirection: Directionality.of(context),
-                cropAccent: Theme.of(context).colorScheme.primary,
-              ),
+            child: Stack(
+              children: [
+                // Committed annotations rarely change relative to how often
+                // this widget rebuilds (once per drag, not once per pointer
+                // move), so they sit behind a RepaintBoundary: shouldRepaint
+                // returning false lets the engine reuse last frame's
+                // rasterized layer instead of re-walking every annotation on
+                // every pointer-move event of an unrelated drag.
+                RepaintBoundary(
+                  child: CustomPaint(
+                    size: constraints.biggest,
+                    painter: _BaseLayerPainter(
+                      image: image,
+                      annotations: annotations,
+                      fit: fit,
+                      textDirection: Directionality.of(context),
+                    ),
+                  ),
+                ),
+                // Only what actually changes on every pointer-move: the
+                // in-progress drag and the crop rectangle.
+                CustomPaint(
+                  size: constraints.biggest,
+                  painter: _DraftLayerPainter(
+                    base: image,
+                    draft: draft,
+                    cropDraft: cropDraft,
+                    fit: fit,
+                    textDirection: Directionality.of(context),
+                    cropAccent: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -86,26 +108,20 @@ class EditorCanvas extends StatelessWidget {
   }
 }
 
-class _EditorCanvasPainter extends CustomPainter {
-  const _EditorCanvasPainter({
+/// The capture plus every committed annotation — everything a drag does not
+/// touch.
+class _BaseLayerPainter extends CustomPainter {
+  const _BaseLayerPainter({
     required this.image,
     required this.annotations,
-    required this.draft,
-    required this.cropDraft,
     required this.fit,
     required this.textDirection,
-    required this.cropAccent,
   });
 
   final ui.Image image;
   final List<Annotation> annotations;
-  final Annotation? draft;
-  final Rect? cropDraft;
   final CanvasFit fit;
   final TextDirection textDirection;
-  final Color cropAccent;
-
-  static const Color _cropDim = Color(0x99000000);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -121,12 +137,54 @@ class _EditorCanvasPainter extends CustomPainter {
         Paint()..filterQuality = FilterQuality.medium,
       );
 
-    final annotationPainter = AnnotationPainter(
+    AnnotationPainter(
       base: image,
       textDirection: textDirection,
-    )..paintAll(canvas, annotations);
+    ).paintAll(canvas, annotations);
+
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_BaseLayerPainter old) =>
+      old.image != image || old.annotations != annotations || old.fit != fit;
+}
+
+/// The annotation being dragged right now, plus the crop rectangle — redrawn
+/// on every pointer-move event a drag produces.
+class _DraftLayerPainter extends CustomPainter {
+  const _DraftLayerPainter({
+    required this.base,
+    required this.draft,
+    required this.cropDraft,
+    required this.fit,
+    required this.textDirection,
+    required this.cropAccent,
+  });
+
+  final ui.Image base;
+  final Annotation? draft;
+  final Rect? cropDraft;
+  final CanvasFit fit;
+  final TextDirection textDirection;
+  final Color cropAccent;
+
+  static const Color _cropDim = Color(0x99000000);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas
+      ..save()
+      ..translate(fit.offset.dx, fit.offset.dy)
+      ..scale(fit.scale);
+
     final draft = this.draft;
-    if (draft != null) annotationPainter.paint(canvas, draft);
+    if (draft != null) {
+      AnnotationPainter(
+        base: base,
+        textDirection: textDirection,
+      ).paint(canvas, draft);
+    }
 
     final crop = cropDraft;
     if (crop != null) _paintCropDraft(canvas, crop);
@@ -164,9 +222,8 @@ class _EditorCanvasPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_EditorCanvasPainter old) =>
-      old.image != image ||
-      old.annotations != annotations ||
+  bool shouldRepaint(_DraftLayerPainter old) =>
+      old.base != base ||
       old.draft != draft ||
       old.cropDraft != cropDraft ||
       old.fit != fit ||
