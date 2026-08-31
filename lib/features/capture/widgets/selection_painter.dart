@@ -61,7 +61,10 @@ class SelectionPainter extends CustomPainter {
           size.height * mapping.imagePixelsPerLogical,
         ),
         canvasRect,
-        Paint()..filterQuality = FilterQuality.high,
+        // Close to a 1:1 blit (device pixel ratio aside), repainted on every
+        // pointer move — high-quality sampling here just burns GPU time the
+        // magnifier below correctly skips with FilterQuality.none.
+        Paint()..filterQuality = FilterQuality.none,
       );
     }
 
