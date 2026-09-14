@@ -110,15 +110,20 @@ class _AppShellState extends ConsumerState<AppShell> with WindowListener {
 
   Future<void> _capture(CaptureMode mode) async {
     final l10n = AppLocalizations.of(context);
+    final messenger = ref.read(scaffoldMessengerKeyProvider).currentState;
     try {
-      await ref.read(captureControllerProvider).capture(mode);
+      final result = await ref.read(captureControllerProvider).capture(mode);
+      // Tray/hotkey captures fire with the hub hidden, so — unlike the toolbar,
+      // where the new thumbnail is the confirmation — there is nothing on screen
+      // to say it worked. A restored-window snackbar fills that gap. Null means
+      // the user cancelled the selection; stay quiet then.
+      if (result != null) {
+        messenger?.showSnackBar(SnackBar(content: Text(l10n.captureTaken)));
+      }
     } on CaptureException catch (e) {
-      ref
-          .read(scaffoldMessengerKeyProvider)
-          .currentState
-          ?.showSnackBar(
-            SnackBar(content: Text(captureFailureMessage(l10n, e))),
-          );
+      messenger?.showSnackBar(
+        SnackBar(content: Text(captureFailureMessage(l10n, e))),
+      );
     }
   }
 
