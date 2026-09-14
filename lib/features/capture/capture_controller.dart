@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -17,7 +16,6 @@ import '../settings/settings_controller.dart';
 import 'image_decoder.dart';
 import 'screen_mapping.dart';
 import 'selection_overlay.dart';
-import 'widgets/countdown_overlay.dart';
 
 /// Runs the capture flows (SPEC §2.1) end to end: hide the hub window, grab
 /// pixels, let the user pick a region on the frozen frame, then hand the result
@@ -102,54 +100,11 @@ class CaptureController {
             Duration(
               seconds: _ref.read(settingsControllerProvider).timerDelaySeconds,
             );
-        await _countdown(wait);
+        await Future<void>.delayed(wait);
         return _record(await _service.grabRegion(selected.region));
       });
     },
   );
-
-  /// Waits out the timer delay, showing a visible countdown badge over the
-  /// desktop (SPEC §2.1). Falls back to a plain wait for a sub-second delay or
-  /// when there is no navigator to host the badge (tests, headless).
-  ///
-  /// The badge window is always torn down before returning, so it can never
-  /// be part of the shot that follows.
-  Future<void> _countdown(Duration wait) async {
-    final navigator = _ref.read(navigatorKeyProvider).currentState;
-    final seconds = wait.inSeconds;
-    if (navigator == null || seconds < 1) {
-      await Future<void>.delayed(wait);
-      return;
-    }
-
-    final remaining = ValueNotifier<int>(seconds);
-    await _window.enterCountdown();
-    unawaited(
-      navigator.push(
-        PageRouteBuilder<void>(
-          opaque: false,
-          transitionDuration: Duration.zero,
-          reverseTransitionDuration: Duration.zero,
-          pageBuilder: (_, _, _) => CountdownOverlay(remaining: remaining),
-        ),
-      ),
-    );
-    try {
-      for (var s = seconds; s > 0; s--) {
-        remaining.value = s;
-        await Future<void>.delayed(const Duration(seconds: 1));
-      }
-      // Honor a fractional remainder (e.g. a 2500 ms delay) after the ticks.
-      final remainder = wait - Duration(seconds: seconds);
-      if (remainder > Duration.zero) await Future<void>.delayed(remainder);
-    } finally {
-      if (navigator.canPop()) navigator.pop();
-      remaining.dispose();
-      await _window.leaveCountdown();
-      // Let the compositor drop the badge before the frame is grabbed.
-      await Future<void>.delayed(const Duration(milliseconds: 120));
-    }
-  }
 
   /// Whole virtual screen, no selection step.
   Future<CaptureResult?> captureFullScreen() => _guarded(() async {
