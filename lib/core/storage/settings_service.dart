@@ -15,6 +15,7 @@ class SettingsService {
   static const _kHotkey = 'capture_hotkey';
   static const _kDelaySeconds = 'timer_delay_seconds';
   static const _kOutputDir = 'output_dir';
+  static const _kAutoSave = 'auto_save';
 
   String get themeMode => _prefs.getString(_kThemeMode) ?? 'system';
   Future<void> setThemeMode(String value) =>
@@ -44,6 +45,10 @@ class SettingsService {
   String? get outputDir => _prefs.getString(_kOutputDir);
   Future<void> setOutputDir(String value) =>
       _prefs.setString(_kOutputDir, value);
+
+  /// When true, every new capture is written to [outputDir] as it is taken.
+  bool get autoSave => _prefs.getBool(_kAutoSave) ?? false;
+  Future<void> setAutoSave(bool value) => _prefs.setBool(_kAutoSave, value);
 }
 
 /// Bound to a concrete [SharedPreferences] in `main()` via [overrideWithValue].

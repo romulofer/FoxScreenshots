@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/capture/screen_capture_service.dart';
 import '../../core/navigation/app_navigator.dart';
 import '../../core/storage/clipboard_service.dart';
+import '../../core/storage/output_service.dart';
 import '../../core/window/capture_window_controller.dart';
 import '../../models/capture_region.dart';
 import '../../models/capture_result.dart';
@@ -281,7 +282,22 @@ class CaptureController {
     } catch (_) {
       // Nothing to report from here: no BuildContext, and the capture is safe.
     }
+    await _autoSave(result);
     return result;
+  }
+
+  /// Writes the capture to the output folder when auto-save is on. Best effort:
+  /// there is no BuildContext here to report a disk error, and the shot is
+  /// already safe in the gallery where Save can be retried by hand.
+  Future<void> _autoSave(CaptureResult result) async {
+    final settings = _ref.read(settingsControllerProvider);
+    final dir = settings.outputDir;
+    if (!settings.autoSave || dir == null) return;
+    try {
+      await _ref.read(outputServiceProvider).savePngToDir(result.pngBytes, dir);
+    } catch (_) {
+      // Folder gone/read-only: swallow, capture stays in the session.
+    }
   }
 
   String _newId() => 'shot-${DateTime.now().microsecondsSinceEpoch}';

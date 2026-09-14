@@ -18,6 +18,8 @@ class SettingsState {
     required this.locale,
     required this.timerDelaySeconds,
     required this.hotkey,
+    required this.outputDir,
+    required this.autoSave,
   });
 
   /// `null` [locale] means "follow the OS" (falling back to pt-BR).
@@ -26,18 +28,26 @@ class SettingsState {
   final int timerDelaySeconds;
   final String hotkey;
 
+  /// Folder auto-save writes into; `null` until the user picks one.
+  final String? outputDir;
+  final bool autoSave;
+
   SettingsState copyWith({
     ThemeMode? themeMode,
     Locale? locale,
     bool clearLocale = false,
     int? timerDelaySeconds,
     String? hotkey,
+    String? outputDir,
+    bool? autoSave,
   }) {
     return SettingsState(
       themeMode: themeMode ?? this.themeMode,
       locale: clearLocale ? null : (locale ?? this.locale),
       timerDelaySeconds: timerDelaySeconds ?? this.timerDelaySeconds,
       hotkey: hotkey ?? this.hotkey,
+      outputDir: outputDir ?? this.outputDir,
+      autoSave: autoSave ?? this.autoSave,
     );
   }
 }
@@ -52,6 +62,8 @@ class SettingsController extends Notifier<SettingsState> {
       locale: _localeFromTag(s.localeTag),
       timerDelaySeconds: s.timerDelaySeconds,
       hotkey: s.hotkey,
+      outputDir: s.outputDir,
+      autoSave: s.autoSave,
     );
   }
 
@@ -79,6 +91,19 @@ class SettingsController extends Notifier<SettingsState> {
   Future<void> setHotkey(String hotkey) async {
     await _service.setHotkey(hotkey);
     state = state.copyWith(hotkey: hotkey);
+  }
+
+  Future<void> setOutputDir(String dir) async {
+    await _service.setOutputDir(dir);
+    state = state.copyWith(outputDir: dir);
+  }
+
+  /// Turning auto-save on without an output folder is a no-op the UI guards
+  /// against — the toggle stays off until a folder exists.
+  Future<void> setAutoSave(bool enabled) async {
+    if (enabled && state.outputDir == null) return;
+    await _service.setAutoSave(enabled);
+    state = state.copyWith(autoSave: enabled);
   }
 
   static ThemeMode _themeModeFromString(String value) => switch (value) {
