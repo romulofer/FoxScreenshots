@@ -12,6 +12,7 @@ import 'package:foxscreenshots/core/storage/settings_service.dart';
 import 'package:foxscreenshots/core/window/capture_window_controller.dart';
 import 'package:foxscreenshots/features/capture/capture_controller.dart';
 import 'package:foxscreenshots/features/capture/image_decoder.dart';
+import 'package:foxscreenshots/features/capture/widgets/countdown_overlay.dart';
 import 'package:foxscreenshots/features/editor/editor_compositor.dart';
 import 'package:foxscreenshots/features/home/session_controller.dart';
 import 'package:foxscreenshots/models/capture_region.dart';
@@ -265,6 +266,41 @@ void main() {
       expect(
         service.lastRegion,
         const CaptureRegion(x: 10, y: 20, width: 100, height: 100),
+      );
+    });
+
+    testWidgets('mostra a contagem regressiva e captura ao fim', (
+      tester,
+    ) async {
+      await pumpApp(tester);
+
+      final pending = container
+          .read(captureControllerProvider)
+          .captureWithTimer(delay: const Duration(seconds: 2));
+      await tester.pumpAndSettle();
+      await dragSelection(tester, const Offset(20, 40), const Offset(220, 240));
+
+      // Badge visível com o segundo inicial, janela virou countdown.
+      expect(window.calls, contains('enterCountdown'));
+      expect(find.byType(CountdownOverlay), findsOneWidget);
+      expect(find.text('2'), findsOneWidget);
+
+      // Tique de 1 s.
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('1'), findsOneWidget);
+
+      // Fim da contagem + folga do compositor antes do grab.
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(milliseconds: 200));
+      await tester.pumpAndSettle();
+      final result = await pending;
+
+      expect(result!.width, 100);
+      expect(service.regionCalls, 1);
+      expect(find.byType(CountdownOverlay), findsNothing);
+      expect(
+        window.calls,
+        containsAllInOrder(['enterCountdown', 'leaveCountdown']),
       );
     });
 

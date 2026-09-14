@@ -89,6 +89,7 @@
     }
   },
 
+  "captureTaken": "Capture added to the session",
   "copiedToClipboard": "Copied to clipboard",
   "copyToClipboardFailed": "Could not copy to the clipboard",
   "savedTo": "Saved to {path}",

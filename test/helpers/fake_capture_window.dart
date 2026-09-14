@@ -39,5 +39,11 @@ class FakeCaptureWindow implements CaptureWindowController {
   Future<void> leaveOverlay() async => calls.add('leaveOverlay');
 
   @override
+  Future<void> enterCountdown() async => calls.add('enterCountdown');
+
+  @override
+  Future<void> leaveCountdown() async => calls.add('leaveCountdown');
+
+  @override
   Future<void> restore() async => calls.add('restore');
 }

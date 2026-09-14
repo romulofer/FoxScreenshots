@@ -102,6 +102,8 @@
     }
   },
 
+  "captureTaken": "Captura adicionada à sessão",
+  "@captureTaken": { "description": "Confirmation after a capture triggered from the tray or global hotkey, when the hub window was hidden." },
   "copiedToClipboard": "Copiado para a área de transferência",
   "copyToClipboardFailed": "Não foi possível copiar para a área de transferência",
   "savedTo": "Salvo em {path}",

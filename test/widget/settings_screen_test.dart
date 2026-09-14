@@ -62,4 +62,9 @@ void main() {
     await pumpSettings(tester);
     expect(find.text('v.9.9.9'), findsOneWidget);
   });
+
+  testWidgets('mostra o valor do atraso ao lado do slider', (tester) async {
+    await pumpSettings(tester, prefs: {'timer_delay_seconds': 7});
+    expect(find.text('7'), findsOneWidget);
+  });
 }
