@@ -8,9 +8,16 @@ import 'app_colors.dart';
 /// raw colors (SPEC §5). Follows the OS theme by default; overridable in
 /// Settings via the app's `ThemeMode`.
 abstract final class AppTheme {
-  static ThemeData light() => _build(Brightness.light, FoxColors.light);
+  // Built once, lazily. `ColorScheme.fromSeed` runs the HCT tonal-palette
+  // computation; the tokens never change at runtime, so rebuilding the same
+  // ThemeData on every MaterialApp build (i.e. every settings change) is pure
+  // waste. Cached here instead.
+  static final ThemeData _light = _build(Brightness.light, FoxColors.light);
+  static final ThemeData _dark = _build(Brightness.dark, FoxColors.dark);
 
-  static ThemeData dark() => _build(Brightness.dark, FoxColors.dark);
+  static ThemeData light() => _light;
+
+  static ThemeData dark() => _dark;
 
   static ThemeData _build(Brightness brightness, FoxColors c) {
     final scheme = ColorScheme.fromSeed(
