@@ -15,7 +15,15 @@ class FoxScreenShotsApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(settingsControllerProvider);
+    // Only theme and locale drive this widget; watching the whole settings
+    // object would rebuild the entire app tree on unrelated changes (auto-save,
+    // output folder, timer delay, hotkey).
+    final themeMode = ref.watch(
+      settingsControllerProvider.select((s) => s.themeMode),
+    );
+    final locale = ref.watch(
+      settingsControllerProvider.select((s) => s.locale),
+    );
 
     return MaterialApp(
       navigatorKey: ref.watch(navigatorKeyProvider),
@@ -24,8 +32,8 @@ class FoxScreenShotsApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: settings.themeMode,
-      locale: settings.locale,
+      themeMode: themeMode,
+      locale: locale,
       // pt-BR is the fallback when the OS locale is neither pt nor en
       // (SPEC §2.6); the generated supportedLocales list is alphabetical, so the
       // default "first supported" fallback would wrongly be en.
