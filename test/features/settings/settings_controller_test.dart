@@ -56,4 +56,35 @@ void main() {
     expect(container.read(settingsControllerProvider).locale, isNull);
     expect(container.read(settingsServiceProvider).localeTag, 'system');
   });
+
+  test('auto-save começa desligado sem pasta de saída', () async {
+    await makeContainer();
+    final state = container.read(settingsControllerProvider);
+    expect(state.autoSave, isFalse);
+    expect(state.outputDir, isNull);
+  });
+
+  test('ligar auto-save sem pasta é ignorado', () async {
+    await makeContainer();
+    final controller = container.read(settingsControllerProvider.notifier);
+
+    await controller.setAutoSave(true);
+
+    expect(container.read(settingsControllerProvider).autoSave, isFalse);
+    expect(container.read(settingsServiceProvider).autoSave, isFalse);
+  });
+
+  test('setOutputDir persiste e destrava o auto-save', () async {
+    await makeContainer();
+    final controller = container.read(settingsControllerProvider.notifier);
+
+    await controller.setOutputDir('/tmp/shots');
+    await controller.setAutoSave(true);
+
+    final state = container.read(settingsControllerProvider);
+    expect(state.outputDir, '/tmp/shots');
+    expect(state.autoSave, isTrue);
+    expect(container.read(settingsServiceProvider).outputDir, '/tmp/shots');
+    expect(container.read(settingsServiceProvider).autoSave, isTrue);
+  });
 }

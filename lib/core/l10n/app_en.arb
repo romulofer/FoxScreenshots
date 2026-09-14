@@ -35,14 +35,39 @@
 
   "sessionEmpty": "No captures yet. Use the toolbar above to start.",
   "sessionGalleryTitle": "Captures this session",
+  "sessionCount": "{count}/{max}",
+  "@sessionCount": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  },
+  "actionClearSession": "Clear session",
+  "clearSessionTitle": "Clear the session?",
+  "clearSessionMessage": "Every capture in this session will be removed. Files already saved to disk stay.",
+  "actionClear": "Clear",
 
   "actionEdit": "Edit",
   "actionCopy": "Copy",
   "actionSave": "Save",
+  "actionSaveAll": "Save all",
   "actionDelete": "Delete",
   "actionReveal": "Reveal in folder",
+  "actionChange": "Change",
+
+  "savedCountTo": "{count, plural, =1{1 capture saved to {dir}} other{{count} captures saved to {dir}}}",
+  "@savedCountTo": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "dir": { "type": "String" }
+    }
+  },
+  "saveAllFailed": "Could not save the captures",
 
   "settingsTitle": "Settings",
+  "settingsSectionAppearance": "Appearance",
+  "settingsSectionCapture": "Capture",
+  "settingsSectionOutput": "Output",
   "settingsTheme": "Theme",
   "settingsThemeSystem": "System",
   "settingsThemeLight": "Light",
@@ -54,6 +79,9 @@
   "settingsHotkey": "Capture hotkey",
   "settingsCaptureDelay": "Timer delay (s)",
   "settingsOutputFolder": "Output folder",
+  "settingsOutputFolderNone": "No folder chosen",
+  "settingsAutoSave": "Auto-save captures",
+  "settingsAutoSaveSubtitle": "Write every new capture to the output folder as soon as it is taken.",
   "settingsVersion": "v.{version}",
   "@settingsVersion": {
     "placeholders": {

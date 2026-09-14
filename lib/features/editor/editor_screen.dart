@@ -1,6 +1,5 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/l10n/gen/app_localizations.dart';
@@ -41,117 +40,158 @@ class EditorScreen extends ConsumerWidget {
     final canRedo = ref.watch(provider.select((s) => s.canRedo && !s.isBusy));
     final isDirty = ref.watch(provider.select((s) => s.isDirty));
 
-    return PopScope(
-      // Edits live only in this route; leaving with unsaved marks needs a
-      // deliberate confirmation.
-      canPop: !isDirty,
-      onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) return;
-        if (await _confirmDiscard(context)) {
-          if (context.mounted) Navigator.of(context).pop();
-        }
+    return CallbackShortcuts(
+      // Ctrl/Cmd+Z undoes, Ctrl/Cmd+Y or Ctrl/Cmd+Shift+Z redoes — the standard
+      // editor bindings, matching the toolbar buttons and their enabled state.
+      bindings: {
+        for (final ctrl in const [true, false])
+          for (final meta in ctrl ? const [false] : const [true]) ...{
+            SingleActivator(
+              LogicalKeyboardKey.keyZ,
+              control: ctrl,
+              meta: meta,
+            ): () {
+              if (canUndo) controller.undo();
+            },
+            SingleActivator(
+              LogicalKeyboardKey.keyZ,
+              control: ctrl,
+              meta: meta,
+              shift: true,
+            ): () {
+              if (canRedo) controller.redo();
+            },
+            SingleActivator(
+              LogicalKeyboardKey.keyY,
+              control: ctrl,
+              meta: meta,
+            ): () {
+              if (canRedo) controller.redo();
+            },
+          },
       },
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(l10n.editorTitle),
-          actions: [
-            IconButton(
-              tooltip: l10n.undo,
-              icon: const Icon(Icons.undo),
-              onPressed: canUndo ? controller.undo : null,
-            ),
-            IconButton(
-              tooltip: l10n.redo,
-              icon: const Icon(Icons.redo),
-              onPressed: canRedo ? controller.redo : null,
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              tooltip: l10n.actionCopy,
-              icon: const Icon(Icons.copy_outlined),
-              onPressed: image == null
-                  ? null
-                  : () => _onCopy(context, ref, controller),
-            ),
-            IconButton(
-              tooltip: l10n.actionSave,
-              icon: const Icon(Icons.save_outlined),
-              onPressed: image == null
-                  ? null
-                  : () => _onSave(context, ref, controller),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: FilledButton.icon(
-                icon: const Icon(Icons.check),
-                label: Text(l10n.editorApply),
-                onPressed: image == null || !isDirty
-                    ? null
-                    : () => _onApply(context, ref, controller),
-              ),
-            ),
-          ],
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            children: [
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ToolRail(selected: tool, onSelected: controller.selectTool),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: image == null
-                          ? const Center(child: CircularProgressIndicator())
-                          : Consumer(
-                              // Isolated so an annotation drag — which
-                              // updates document.annotations/draft/cropDraft
-                              // on every pointer-move — only repaints the
-                              // canvas, not the app bar, tool rail or style
-                              // bar above.
-                              builder: (context, ref, _) {
-                                final annotations = ref.watch(
-                                  provider.select(
-                                    (s) => s.document.annotations,
-                                  ),
-                                );
-                                final draft = ref.watch(
-                                  provider.select((s) => s.draft),
-                                );
-                                final cropDraft = ref.watch(
-                                  provider.select((s) => s.cropDraft),
-                                );
-                                return EditorCanvas(
-                                  image: image,
-                                  annotations: annotations,
-                                  draft: draft,
-                                  cropDraft: cropDraft,
-                                  tool: tool,
-                                  onDragStart: controller.startDraft,
-                                  onDragUpdate: controller.updateDraft,
-                                  onDragEnd: controller.endDraft,
-                                  onTap: (point) =>
-                                      _onTap(context, controller, tool, point),
-                                );
-                              },
-                            ),
-                    ),
-                  ],
+      child: Focus(
+        autofocus: true,
+        child: PopScope(
+          // Edits live only in this route; leaving with unsaved marks needs a
+          // deliberate confirmation.
+          canPop: !isDirty,
+          onPopInvokedWithResult: (didPop, _) async {
+            if (didPop) return;
+            if (await _confirmDiscard(context)) {
+              if (context.mounted) Navigator.of(context).pop();
+            }
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              title: Text(isDirty ? '• ${l10n.editorTitle}' : l10n.editorTitle),
+              actions: [
+                IconButton(
+                  tooltip: l10n.undo,
+                  icon: const Icon(Icons.undo),
+                  onPressed: canUndo ? controller.undo : null,
                 ),
+                IconButton(
+                  tooltip: l10n.redo,
+                  icon: const Icon(Icons.redo),
+                  onPressed: canRedo ? controller.redo : null,
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  tooltip: l10n.actionCopy,
+                  icon: const Icon(Icons.copy_outlined),
+                  onPressed: image == null
+                      ? null
+                      : () => _onCopy(context, ref, controller),
+                ),
+                IconButton(
+                  tooltip: l10n.actionSave,
+                  icon: const Icon(Icons.save_outlined),
+                  onPressed: image == null
+                      ? null
+                      : () => _onSave(context, ref, controller),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: FilledButton.icon(
+                    icon: const Icon(Icons.check),
+                    label: Text(l10n.editorApply),
+                    onPressed: image == null || !isDirty
+                        ? null
+                        : () => _onApply(context, ref, controller),
+                  ),
+                ),
+              ],
+            ),
+            body: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ToolRail(
+                          selected: tool,
+                          onSelected: controller.selectTool,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: image == null
+                              ? const Center(child: CircularProgressIndicator())
+                              : Consumer(
+                                  // Isolated so an annotation drag — which
+                                  // updates document.annotations/draft/cropDraft
+                                  // on every pointer-move — only repaints the
+                                  // canvas, not the app bar, tool rail or style
+                                  // bar above.
+                                  builder: (context, ref, _) {
+                                    final annotations = ref.watch(
+                                      provider.select(
+                                        (s) => s.document.annotations,
+                                      ),
+                                    );
+                                    final draft = ref.watch(
+                                      provider.select((s) => s.draft),
+                                    );
+                                    final cropDraft = ref.watch(
+                                      provider.select((s) => s.cropDraft),
+                                    );
+                                    return EditorCanvas(
+                                      image: image,
+                                      annotations: annotations,
+                                      draft: draft,
+                                      cropDraft: cropDraft,
+                                      tool: tool,
+                                      onDragStart: controller.startDraft,
+                                      onDragUpdate: controller.updateDraft,
+                                      onDragEnd: controller.endDraft,
+                                      onTap: (point) => _onTap(
+                                        context,
+                                        controller,
+                                        tool,
+                                        point,
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  StyleBar(
+                    tool: tool,
+                    color: color,
+                    strokeWidth: strokeWidth,
+                    filled: filled,
+                    onColorSelected: controller.selectColor,
+                    onStrokeWidthChanged: controller.setStrokeWidth,
+                    onFilledChanged: controller.setFilled,
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              StyleBar(
-                tool: tool,
-                color: color,
-                strokeWidth: strokeWidth,
-                filled: filled,
-                onColorSelected: controller.selectColor,
-                onStrokeWidthChanged: controller.setStrokeWidth,
-                onFilledChanged: controller.setFilled,
-              ),
-            ],
+            ),
           ),
         ),
       ),

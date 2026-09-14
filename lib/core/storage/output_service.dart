@@ -49,7 +49,21 @@ class OutputService {
     final dir = Directory(directory);
     await dir.create(recursive: true);
     final root = await dir.resolveSymbolicLinks();
-    return _writeBytes(p.join(root, _defaultName()), pngBytes);
+    return _writeBytes(_uniquePath(root, _defaultName()), pngBytes);
+  }
+
+  /// Timestamped names collide when several shots are written in the same second
+  /// (auto-save bursts, "Save all"); append `_2`, `_3`… so none is overwritten.
+  String _uniquePath(String root, String name) {
+    final ext = p.extension(name);
+    final stem = p.basenameWithoutExtension(name);
+    var candidate = p.join(root, name);
+    var n = 2;
+    while (File(candidate).existsSync()) {
+      candidate = p.join(root, '${stem}_$n$ext');
+      n++;
+    }
+    return candidate;
   }
 
   void _assertPng(Uint8List bytes) {

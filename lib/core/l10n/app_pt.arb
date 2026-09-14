@@ -42,14 +42,43 @@
 
   "sessionEmpty": "Nenhuma captura ainda. Use a barra acima para começar.",
   "sessionGalleryTitle": "Capturas desta sessão",
+  "sessionCount": "{count}/{max}",
+  "@sessionCount": {
+    "description": "Count badge next to the gallery title: shots kept vs. the session cap.",
+    "placeholders": {
+      "count": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  },
+  "actionClearSession": "Limpar sessão",
+  "@actionClearSession": { "description": "Toolbar action that drops every capture of the session." },
+  "clearSessionTitle": "Limpar a sessão?",
+  "clearSessionMessage": "Todas as capturas desta sessão serão removidas. As já salvas em disco permanecem.",
+  "actionClear": "Limpar",
 
   "actionEdit": "Editar",
   "actionCopy": "Copiar",
   "actionSave": "Salvar",
+  "actionSaveAll": "Salvar tudo",
+  "@actionSaveAll": { "description": "Toolbar action that writes every capture of the session to a chosen folder." },
   "actionDelete": "Excluir",
   "actionReveal": "Mostrar na pasta",
+  "actionChange": "Alterar",
+
+  "savedCountTo": "{count, plural, =1{1 captura salva em {dir}} other{{count} capturas salvas em {dir}}}",
+  "@savedCountTo": {
+    "description": "Confirmation after saving the whole session to a folder.",
+    "placeholders": {
+      "count": { "type": "int" },
+      "dir": { "type": "String" }
+    }
+  },
+  "saveAllFailed": "Não foi possível salvar as capturas",
 
   "settingsTitle": "Configurações",
+  "settingsSectionAppearance": "Aparência",
+  "settingsSectionCapture": "Captura",
+  "settingsSectionOutput": "Saída",
   "settingsTheme": "Tema",
   "settingsThemeSystem": "Sistema",
   "settingsThemeLight": "Claro",
@@ -61,6 +90,11 @@
   "settingsHotkey": "Atalho de captura",
   "settingsCaptureDelay": "Atraso do temporizador (s)",
   "settingsOutputFolder": "Pasta de saída",
+  "settingsOutputFolderNone": "Nenhuma pasta escolhida",
+  "@settingsOutputFolderNone": { "description": "Shown as the output folder subtitle before the user picks one." },
+  "settingsAutoSave": "Salvar automaticamente",
+  "@settingsAutoSave": { "description": "Toggle: write every new capture to the output folder as it is taken." },
+  "settingsAutoSaveSubtitle": "Grava cada nova captura na pasta de saída assim que ela é feita.",
   "settingsVersion": "v.{version}",
   "@settingsVersion": {
     "placeholders": {
