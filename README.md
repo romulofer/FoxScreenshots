@@ -2,6 +2,9 @@
 
 # 🦊 FoxScreenShots
 
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-legendaryredfox-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/legendaryredfox)
+
+
 **Captura e edição rápida de screenshots — Windows · Linux · macOS**
 
 [![CI](https://github.com/romulofer/FoxScreenshots/actions/workflows/ci.yml/badge.svg)](https://github.com/romulofer/FoxScreenshots/actions/workflows/ci.yml)
@@ -326,9 +329,3 @@ colors), and add tests for new logic. See the boundaries in
 ## License
 
 [MIT](LICENSE) © 2026 Rômulo Fernandes Evangelista
-
-## ☕ Support
-
-If you find this project useful, consider supporting its development:
-
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-legendaryredfox-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/legendaryredfox)
