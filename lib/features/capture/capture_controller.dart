@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -250,7 +251,24 @@ class CaptureController {
         // repaint once the window turns visible — leaving the overlay blank
         // (no crosshair, no dim) even though dragging still works. Force a
         // frame unconditionally.
+        //
+        // One forced frame is not always enough: entering fullscreen
+        // (`OverlayStacking.spanAllMonitors`) only sends the X11 state-change
+        // request and returns, it does not wait for the window manager to
+        // apply it, and the placement probe that follows reads its own,
+        // separate X connection. That probe can report "settled" before the
+        // app's own GTK/EGL connection has processed the matching
+        // `ConfigureNotify` and resized its render surface, so a frame forced
+        // right then can still land mid-resize. A second forced frame one
+        // short beat later — after the GTK main loop has had a chance to
+        // drain that event — catches the case the first one missed.
         WidgetsBinding.instance.scheduleFrame();
+        unawaited(
+          Future<void>.delayed(
+            const Duration(milliseconds: 32),
+            WidgetsBinding.instance.scheduleFrame,
+          ),
+        );
 
         final region = await pending;
         if (region == null) return null;
