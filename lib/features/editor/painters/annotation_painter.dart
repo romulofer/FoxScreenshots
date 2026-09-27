@@ -118,13 +118,28 @@ class AnnotationPainter {
     canvas.drawPath(path, paint);
   }
 
+  /// Caches laid-out text keyed by the annotation instance: `TextAnnotation`
+  /// and `StepAnnotation` are immutable and never replaced in place (`dragTo`
+  /// returns `this` for both), so the same object paints on every unrelated
+  /// commit — undo, a new shape elsewhere, a crop. `AnnotationPainter` itself
+  /// is rebuilt fresh on every `paint()` call, so the cache has to live at the
+  /// class level to survive that; a new annotation instance (edited text, a
+  /// crop's translated copy) is simply a cache miss, and `Expando` drops the
+  /// entry on its own once the old instance is no longer reachable.
+  static final Expando<TextPainter> _textCache = Expando<TextPainter>();
+
+  /// Same caching, for the numbered badge label painted by [_paintStep].
+  static final Expando<TextPainter> _stepLabelCache = Expando<TextPainter>();
+
   void _paintText(ui.Canvas canvas, TextAnnotation annotation) {
     _textPainter(annotation).paint(canvas, annotation.position);
   }
 
   /// Laid-out text for [annotation]; also used to measure its real box.
   TextPainter _textPainter(TextAnnotation annotation) {
-    return TextPainter(
+    final cached = _textCache[annotation];
+    if (cached != null) return cached;
+    final painter = TextPainter(
       text: TextSpan(
         text: annotation.text,
         style: TextStyle(
@@ -138,6 +153,8 @@ class AnnotationPainter {
       ),
       textDirection: textDirection,
     )..layout();
+    _textCache[annotation] = painter;
+    return painter;
   }
 
   void _paintStep(ui.Canvas canvas, StepAnnotation step) {
@@ -159,7 +176,7 @@ class AnnotationPainter {
           ..isAntiAlias = true,
       );
 
-    final label = TextPainter(
+    final label = _stepLabelCache[step] ??= (TextPainter(
       text: TextSpan(
         text: '${step.number}',
         style: TextStyle(
@@ -169,7 +186,7 @@ class AnnotationPainter {
         ),
       ),
       textDirection: textDirection,
-    )..layout();
+    )..layout());
     label.paint(
       canvas,
       step.center - ui.Offset(label.width / 2, label.height / 2),

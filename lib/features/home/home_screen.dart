@@ -20,13 +20,20 @@ import 'widgets/thumbnail_tile.dart';
 
 /// Shutter-like hub window (SPEC §2.5): capture toolbar on top, session gallery
 /// below. Left-clicking the tray icon opens this window.
+///
+/// The app bar and the gallery each watch only what they draw (`select` on
+/// emptiness/count for the bar, the full list for the grid below it) — a
+/// single capture added or removed used to rebuild the whole screen, AppBar
+/// included, since the top-level build watched the whole session list.
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final session = ref.watch(sessionControllerProvider);
+    final isEmpty = ref.watch(
+      sessionControllerProvider.select((s) => s.isEmpty),
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -35,14 +42,18 @@ class HomeScreen extends ConsumerWidget {
           IconButton(
             tooltip: l10n.actionSaveAll,
             icon: const Icon(Icons.save_alt_outlined),
-            onPressed: session.isEmpty
+            onPressed: isEmpty
                 ? null
-                : () => _onSaveAll(context, ref, session),
+                : () => _onSaveAll(
+                    context,
+                    ref,
+                    ref.read(sessionControllerProvider),
+                  ),
           ),
           IconButton(
             tooltip: l10n.actionClearSession,
             icon: const Icon(Icons.delete_sweep_outlined),
-            onPressed: session.isEmpty ? null : () => _onClear(context, ref),
+            onPressed: isEmpty ? null : () => _onClear(context, ref),
           ),
           IconButton(
             tooltip: l10n.settingsTitle,
@@ -61,56 +72,9 @@ class HomeScreen extends ConsumerWidget {
             const DependencyBanner(),
             CaptureToolbar(onCapture: (mode) => _onCapture(context, ref, mode)),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Text(
-                  l10n.sessionGalleryTitle,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(width: 8),
-                if (session.isNotEmpty)
-                  Text(
-                    l10n.sessionCount(
-                      session.length,
-                      SessionController.maxSessionCaptures,
-                    ),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-              ],
-            ),
+            _GalleryHeader(l10n: l10n),
             const SizedBox(height: 8),
-            Expanded(
-              child: session.isEmpty
-                  ? _EmptyState(message: l10n.sessionEmpty)
-                  : GridView.builder(
-                      gridDelegate:
-                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 240,
-                            childAspectRatio: 4 / 3,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                          ),
-                      itemCount: session.length,
-                      itemBuilder: (context, i) {
-                        final capture = session[i];
-                        return ThumbnailTile(
-                          capture: capture,
-                          onEdit: () => Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => EditorScreen(capture: capture),
-                            ),
-                          ),
-                          onCopy: () => _onCopy(context, ref, capture.pngBytes),
-                          onSave: () => _onSave(context, ref, capture.pngBytes),
-                          onDelete: () => ref
-                              .read(sessionControllerProvider.notifier)
-                              .remove(capture.id),
-                        );
-                      },
-                    ),
-            ),
+            const Expanded(child: _Gallery()),
           ],
         ),
       ),
@@ -131,21 +95,6 @@ class HomeScreen extends ConsumerWidget {
         SnackBar(content: Text(captureFailureMessage(l10n, e))),
       );
     }
-  }
-
-  Future<void> _onCopy(
-    BuildContext context,
-    WidgetRef ref,
-    Uint8List pngBytes,
-  ) async {
-    final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    final ok = await ref.read(clipboardServiceProvider).copyPng(pngBytes);
-    messenger.showSnackBar(
-      SnackBar(
-        content: Text(ok ? l10n.copiedToClipboard : l10n.copyToClipboardFailed),
-      ),
-    );
   }
 
   /// Drops the whole session after a confirmation. Files already written to
@@ -196,6 +145,92 @@ class HomeScreen extends ConsumerWidget {
     } catch (_) {
       messenger.showSnackBar(SnackBar(content: Text(l10n.saveAllFailed)));
     }
+  }
+}
+
+/// "Session" title plus the live capture count, next to it — the only part of
+/// the header row that needs the session count, so only this rebuilds when it
+/// changes.
+class _GalleryHeader extends ConsumerWidget {
+  const _GalleryHeader({required this.l10n});
+
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(sessionControllerProvider.select((s) => s.length));
+    return Row(
+      children: [
+        Text(
+          l10n.sessionGalleryTitle,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(width: 8),
+        if (count > 0)
+          Text(
+            l10n.sessionCount(count, SessionController.maxSessionCaptures),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// The capture grid, or the empty-state placeholder. The only part of the
+/// screen that needs the full session list, so adding/removing a capture only
+/// rebuilds this instead of the AppBar and toolbar above it too.
+class _Gallery extends ConsumerWidget {
+  const _Gallery();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final session = ref.watch(sessionControllerProvider);
+
+    if (session.isEmpty) return _EmptyState(message: l10n.sessionEmpty);
+
+    return GridView.builder(
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 240,
+        childAspectRatio: 4 / 3,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+      ),
+      itemCount: session.length,
+      itemBuilder: (context, i) {
+        final capture = session[i];
+        return ThumbnailTile(
+          key: ValueKey(capture.id),
+          capture: capture,
+          onEdit: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => EditorScreen(capture: capture),
+            ),
+          ),
+          onCopy: () => _onCopy(context, ref, capture.pngBytes),
+          onSave: () => _onSave(context, ref, capture.pngBytes),
+          onDelete: () =>
+              ref.read(sessionControllerProvider.notifier).remove(capture.id),
+        );
+      },
+    );
+  }
+
+  Future<void> _onCopy(
+    BuildContext context,
+    WidgetRef ref,
+    Uint8List pngBytes,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await ref.read(clipboardServiceProvider).copyPng(pngBytes);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(ok ? l10n.copiedToClipboard : l10n.copyToClipboardFailed),
+      ),
+    );
   }
 
   Future<void> _onSave(
