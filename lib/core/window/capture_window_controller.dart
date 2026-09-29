@@ -81,6 +81,17 @@ abstract interface class CaptureWindowController {
   /// Restores the window to how it was before [enterOverlay].
   Future<void> leaveOverlay();
 
+  /// Turns the app window into a small, always-on-top badge near the top of
+  /// the virtual screen — the timer-mode countdown. The desktop underneath
+  /// stays accessible so the user can open menus and tooltips for the shot.
+  /// Unlike [enterOverlay], the badge is interactive (not click-through) but
+  /// small enough not to cover the target content.
+  Future<void> enterCountdown();
+
+  /// Tears the countdown badge back down (mirror of [enterCountdown]).
+  /// Always called before the live grab so the badge never lands in the shot.
+  Future<void> leaveCountdown();
+
   /// Brings the hub window back after a capture.
   Future<void> restore();
 }
@@ -264,6 +275,46 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
     // this teardown throws.
     await _unpin();
     await windowManager.setBackgroundColor(const Color(0xFF000000));
+    await windowManager.setTitleBarStyle(TitleBarStyle.normal);
+    await windowManager.setResizable(true);
+    await windowManager.setMinimumSize(const Size(640, 480));
+    final bounds = _restoreBounds;
+    if (bounds != null) await windowManager.setBounds(bounds);
+    await windowManager.hide();
+  }
+
+  @override
+  Future<void> enterCountdown() async {
+    _restoreBounds ??= await windowManager.getBounds();
+    _virtualScreen = await virtualScreenBounds();
+
+    const size = Size(180, 96);
+    final rect = Rect.fromLTWH(
+      _virtualScreen.left + (_virtualScreen.width - size.width) / 2,
+      _virtualScreen.top + 48,
+      size.width,
+      size.height,
+    );
+    await Future.wait([
+      windowManager.setBackgroundColor(const Color(0x00000000)),
+      windowManager.setTitleBarStyle(
+        TitleBarStyle.hidden,
+        windowButtonVisibility: false,
+      ),
+      windowManager.setResizable(false),
+      windowManager.setAlwaysOnTop(true),
+      windowManager.setSkipTaskbar(true),
+      windowManager.setMinimumSize(const Size(1, 1)),
+    ]);
+    await windowManager.setBounds(rect);
+    // Shown without ensureWindowFocus so focus stays on whatever the user
+    // opened (a menu, a tooltip target) — not on the countdown badge.
+    await windowManager.show();
+  }
+
+  @override
+  Future<void> leaveCountdown() async {
+    await _unpin();
     await windowManager.setTitleBarStyle(TitleBarStyle.normal);
     await windowManager.setResizable(true);
     await windowManager.setMinimumSize(const Size(640, 480));
