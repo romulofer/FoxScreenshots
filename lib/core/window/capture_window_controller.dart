@@ -295,25 +295,27 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
       size.width,
       size.height,
     );
+    // Apply decorative/stacking properties while hidden; deliberately excludes
+    // setResizable(false), which calls gtk_window_get_size() internally to
+    // capture the "fixed" dimensions — on a hidden window that returns the
+    // previous (hub / overlay) size, so the badge would be locked at 800×600
+    // and setBounds(180×96) would be silently ignored.
     await Future.wait([
       windowManager.setBackgroundColor(const Color(0x00000000)),
       windowManager.setTitleBarStyle(
         TitleBarStyle.hidden,
         windowButtonVisibility: false,
       ),
-      windowManager.setResizable(false),
       windowManager.setAlwaysOnTop(true),
       windowManager.setSkipTaskbar(true),
       windowManager.setMinimumSize(const Size(1, 1)),
     ]);
-    await windowManager.setBounds(rect);
-    // Shown without ensureWindowFocus so focus stays on whatever the user
-    // opened (a menu, a tooltip target) — not on the countdown badge.
+    // Show without stealing focus, then reposition: WMs honor geometry only
+    // on a mapped (visible) window.
     await windowManager.show();
-    // Re-apply bounds after mapping: X11 WMs honor geometry only once the
-    // window is visible, so the pre-show setBounds above can be silently
-    // ignored, leaving the badge at the overlay's fullscreen size.
     await windowManager.setBounds(rect);
+    // Lock size only after the badge has its correct dimensions.
+    await windowManager.setResizable(false);
   }
 
   @override
