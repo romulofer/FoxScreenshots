@@ -310,6 +310,10 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
     // Shown without ensureWindowFocus so focus stays on whatever the user
     // opened (a menu, a tooltip target) — not on the countdown badge.
     await windowManager.show();
+    // Re-apply bounds after mapping: X11 WMs honor geometry only once the
+    // window is visible, so the pre-show setBounds above can be silently
+    // ignored, leaving the badge at the overlay's fullscreen size.
+    await windowManager.setBounds(rect);
   }
 
   @override
