@@ -210,7 +210,11 @@ class FakeDesktopIntegration implements DesktopIntegration {
     required VoidCallback onOpenWindow,
     required void Function(TrayAction action) onTrayAction,
     required VoidCallback onHotkey,
+    required VoidCallback onTimerHotkey,
+    required VoidCallback onRepeatHotkey,
     String hotkey = 'PrintScreen',
+    String timerHotkey = 'F7',
+    String repeatHotkey = 'F6',
   }) async {
     calls.add('attach');
     attachedHotkey = hotkey;

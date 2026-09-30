@@ -29,6 +29,35 @@ class HotkeyService {
     );
     await hotKeyManager.register(hotKey, keyDownHandler: (_) => onPressed());
   }
+
+  /// Registers three independent system-wide hotkeys in one call.
+  ///
+  /// Clears all previous registrations first, then registers instant, timer and
+  /// repeat bindings. Unknown binding labels fall back to their defaults via
+  /// [parseCaptureHotkey].
+  Future<void> registerAll({
+    required VoidCallback onInstant,
+    required VoidCallback onTimer,
+    required VoidCallback onRepeat,
+    String instantBinding = 'PrintScreen',
+    String timerBinding = 'F7',
+    String repeatBinding = 'F6',
+  }) async {
+    await hotKeyManager.unregisterAll();
+    for (final (binding, cb) in [
+      (instantBinding, onInstant),
+      (timerBinding, onTimer),
+      (repeatBinding, onRepeat),
+    ]) {
+      final parsed = parseCaptureHotkey(binding);
+      final hotKey = HotKey(
+        key: parsed.key,
+        modifiers: parsed.modifiers,
+        scope: HotKeyScope.system,
+      );
+      await hotKeyManager.register(hotKey, keyDownHandler: (_) => cb());
+    }
+  }
 }
 
 /// Result of parsing a persisted hotkey string.

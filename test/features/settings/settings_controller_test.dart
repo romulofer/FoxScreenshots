@@ -87,4 +87,38 @@ void main() {
     expect(container.read(settingsServiceProvider).outputDir, '/tmp/shots');
     expect(container.read(settingsServiceProvider).autoSave, isTrue);
   });
+
+  test('timerHotkey começa com F7', () async {
+    await makeContainer();
+    final state = container.read(settingsControllerProvider);
+    expect(state.timerHotkey, 'F7');
+    expect(container.read(settingsServiceProvider).timerHotkey, 'F7');
+  });
+
+  test('repeatHotkey começa com F6', () async {
+    await makeContainer();
+    final state = container.read(settingsControllerProvider);
+    expect(state.repeatHotkey, 'F6');
+    expect(container.read(settingsServiceProvider).repeatHotkey, 'F6');
+  });
+
+  test('setTimerHotkey atualiza o estado e persiste', () async {
+    await makeContainer();
+    final controller = container.read(settingsControllerProvider.notifier);
+
+    await controller.setTimerHotkey('F8');
+
+    expect(container.read(settingsControllerProvider).timerHotkey, 'F8');
+    expect(container.read(settingsServiceProvider).timerHotkey, 'F8');
+  });
+
+  test('setRepeatHotkey atualiza o estado e persiste', () async {
+    await makeContainer();
+    final controller = container.read(settingsControllerProvider.notifier);
+
+    await controller.setRepeatHotkey('F9');
+
+    expect(container.read(settingsControllerProvider).repeatHotkey, 'F9');
+    expect(container.read(settingsServiceProvider).repeatHotkey, 'F9');
+  });
 }

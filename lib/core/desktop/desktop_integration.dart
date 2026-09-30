@@ -12,8 +12,8 @@ import '../window/window_focus.dart';
 /// Behind an interface because all three need a real embedder; widget tests
 /// override the provider with [NoopDesktopIntegration].
 abstract interface class DesktopIntegration {
-  /// Installs the tray icon and the global hotkey. Safe to call again to
-  /// refresh [labels] after a locale change, or [hotkey] after a rebind.
+  /// Installs the tray icon and the global hotkeys. Safe to call again to
+  /// refresh [labels] after a locale change, or any hotkey after a rebind.
   Future<void> attach({
     required String iconPath,
     required String tooltip,
@@ -21,7 +21,11 @@ abstract interface class DesktopIntegration {
     required VoidCallback onOpenWindow,
     required void Function(TrayAction action) onTrayAction,
     required VoidCallback onHotkey,
+    required VoidCallback onTimerHotkey,
+    required VoidCallback onRepeatHotkey,
     String hotkey = 'PrintScreen',
+    String timerHotkey = 'F7',
+    String repeatHotkey = 'F6',
   });
 
   /// Hides the window instead of closing it, keeping the app in the tray.
@@ -56,7 +60,11 @@ class WindowManagerDesktopIntegration implements DesktopIntegration {
     required VoidCallback onOpenWindow,
     required void Function(TrayAction action) onTrayAction,
     required VoidCallback onHotkey,
+    required VoidCallback onTimerHotkey,
+    required VoidCallback onRepeatHotkey,
     String hotkey = 'PrintScreen',
+    String timerHotkey = 'F7',
+    String repeatHotkey = 'F6',
   }) async {
     await _tray.init(
       iconPath: iconPath,
@@ -71,7 +79,14 @@ class WindowManagerDesktopIntegration implements DesktopIntegration {
       await windowManager.setPreventClose(true);
       _attached = true;
     }
-    await _hotkeys.registerCapture(onHotkey, binding: hotkey);
+    await _hotkeys.registerAll(
+      onInstant: onHotkey,
+      onTimer: onTimerHotkey,
+      onRepeat: onRepeatHotkey,
+      instantBinding: hotkey,
+      timerBinding: timerHotkey,
+      repeatBinding: repeatHotkey,
+    );
   }
 
   @override
@@ -104,7 +119,11 @@ class NoopDesktopIntegration implements DesktopIntegration {
     required VoidCallback onOpenWindow,
     required void Function(TrayAction action) onTrayAction,
     required VoidCallback onHotkey,
+    required VoidCallback onTimerHotkey,
+    required VoidCallback onRepeatHotkey,
     String hotkey = 'PrintScreen',
+    String timerHotkey = 'F7',
+    String repeatHotkey = 'F6',
   }) async {}
 
   @override

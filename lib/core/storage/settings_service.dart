@@ -13,6 +13,8 @@ class SettingsService {
   static const _kThemeMode = 'theme_mode'; // system | light | dark
   static const _kLocale = 'locale_tag'; // system | pt | en
   static const _kHotkey = 'capture_hotkey';
+  static const _kTimerHotkey = 'timer_hotkey';
+  static const _kRepeatHotkey = 'repeat_hotkey';
   static const _kDelaySeconds = 'timer_delay_seconds';
   static const _kOutputDir = 'output_dir';
   static const _kAutoSave = 'auto_save';
@@ -26,6 +28,14 @@ class SettingsService {
 
   String get hotkey => _prefs.getString(_kHotkey) ?? 'PrintScreen';
   Future<void> setHotkey(String value) => _prefs.setString(_kHotkey, value);
+
+  String get timerHotkey => _prefs.getString(_kTimerHotkey) ?? 'F7';
+  Future<void> setTimerHotkey(String value) =>
+      _prefs.setString(_kTimerHotkey, value);
+
+  String get repeatHotkey => _prefs.getString(_kRepeatHotkey) ?? 'F6';
+  Future<void> setRepeatHotkey(String value) =>
+      _prefs.setString(_kRepeatHotkey, value);
 
   static const int minTimerDelaySeconds = 1;
   static const int maxTimerDelaySeconds = 60;

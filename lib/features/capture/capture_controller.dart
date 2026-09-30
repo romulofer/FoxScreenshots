@@ -34,6 +34,9 @@ class CaptureController {
   /// Guards against overlapping captures from toolbar, tray and hotkey.
   bool _busy = false;
 
+  /// Region selected during the last instant or timer capture; used by [captureRepeat].
+  CaptureRegion? _lastRegion;
+
   ScreenCaptureService get _service => _ref.read(screenCaptureServiceProvider);
   CaptureWindowController get _window =>
       _ref.read(captureWindowControllerProvider);
@@ -44,6 +47,7 @@ class CaptureController {
     CaptureMode.timer => captureWithTimer(),
     CaptureMode.fullScreen => captureFullScreen(),
     CaptureMode.activeWindow => captureActiveWindow(),
+    CaptureMode.repeat => captureRepeat(),
   };
 
   /// Instant mode: freeze every screen, drag a region, crop it out of the
@@ -53,6 +57,7 @@ class CaptureController {
     return _run(() async {
       final selected = await _selectRegion(_service.grabFullVirtualScreen());
       if (selected == null) return null;
+      _lastRegion = selected.region;
       final backdrop = selected.backdrop;
       try {
         // Cropped straight out of the already-decoded backdrop, on the same
@@ -94,6 +99,7 @@ class CaptureController {
       return _run(() async {
         final selected = await _selectRegion(_service.grabFullVirtualScreen());
         if (selected == null) return null;
+        _lastRegion = selected.region;
         // Only used to frame the drag; the shot itself is grabbed live below.
         selected.backdrop.dispose();
 
@@ -164,6 +170,14 @@ class CaptureController {
       }
       return _record(await _service.grabRegion(region));
     });
+  });
+
+  /// Repeats the last instant or timer capture without showing the selection
+  /// overlay. Returns `null` if no prior capture exists in this session.
+  Future<CaptureResult?> captureRepeat() => _guarded(() async {
+    if (_lastRegion == null) return null;
+    final region = _lastRegion!;
+    return _run(() async => _record(await _service.grabRegion(region)));
   });
 
   /// Rejects overlapping captures from toolbar, tray and hotkey.

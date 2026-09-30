@@ -60,11 +60,43 @@ void main() {
 
   testWidgets('exibe a versão do app no rodapé', (tester) async {
     await pumpSettings(tester);
+    await tester.dragUntilVisible(
+      find.text('v.9.9.9'),
+      find.byType(ListView),
+      const Offset(0, -100),
+    );
     expect(find.text('v.9.9.9'), findsOneWidget);
   });
 
   testWidgets('mostra o valor do atraso ao lado do slider', (tester) async {
     await pumpSettings(tester, prefs: {'timer_delay_seconds': 7});
     expect(find.text('7'), findsOneWidget);
+  });
+
+  testWidgets('seção Captura exibe atalho do temporizador', (tester) async {
+    await pumpSettings(tester);
+    expect(find.text('Atalho do temporizador'), findsOneWidget);
+  });
+
+  testWidgets('seção Captura exibe atalho de repetir último', (tester) async {
+    await pumpSettings(tester);
+    expect(find.text('Atalho de repetir último'), findsOneWidget);
+  });
+
+  testWidgets('atalho do temporizador começa em F7', (tester) async {
+    await pumpSettings(tester);
+    final dropdowns = tester
+        .widgetList<DropdownButton<String>>(find.byType(DropdownButton<String>))
+        .toList();
+    // Order: language(0), capture hotkey(1), timer hotkey(2), repeat hotkey(3).
+    expect(dropdowns[2].value, 'F7');
+  });
+
+  testWidgets('atalho de repetir último começa em F6', (tester) async {
+    await pumpSettings(tester);
+    final dropdowns = tester
+        .widgetList<DropdownButton<String>>(find.byType(DropdownButton<String>))
+        .toList();
+    expect(dropdowns[3].value, 'F6');
   });
 }

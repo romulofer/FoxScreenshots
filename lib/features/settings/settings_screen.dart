@@ -30,6 +30,8 @@ class SettingsScreen extends StatelessWidget {
           _SectionHeader(l10n.settingsSectionCapture),
           const _TimerDelayRow(),
           const _HotkeyRow(),
+          const _TimerHotkeyRow(),
+          const _RepeatHotkeyRow(),
           _SectionHeader(l10n.settingsSectionOutput),
           const _OutputFolderRow(),
           const _AutoSaveRow(),
@@ -174,6 +176,58 @@ class _HotkeyRow extends ConsumerWidget {
   }
 }
 
+class _TimerHotkeyRow extends ConsumerWidget {
+  const _TimerHotkeyRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final hotkey = ref.watch(
+      settingsControllerProvider.select((s) => s.timerHotkey),
+    );
+    final controller = ref.read(settingsControllerProvider.notifier);
+    return ListTile(
+      title: Text(l10n.settingsHotkeyTimer),
+      trailing: DropdownButton<String>(
+        value: _hotkeyOptions.contains(hotkey) ? hotkey : 'F7',
+        onChanged: (value) {
+          if (value != null) controller.setTimerHotkey(value);
+        },
+        items: [
+          for (final option in _hotkeyOptions)
+            DropdownMenuItem(value: option, child: Text(option)),
+        ],
+      ),
+    );
+  }
+}
+
+class _RepeatHotkeyRow extends ConsumerWidget {
+  const _RepeatHotkeyRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final hotkey = ref.watch(
+      settingsControllerProvider.select((s) => s.repeatHotkey),
+    );
+    final controller = ref.read(settingsControllerProvider.notifier);
+    return ListTile(
+      title: Text(l10n.settingsHotkeyRepeat),
+      trailing: DropdownButton<String>(
+        value: _hotkeyOptions.contains(hotkey) ? hotkey : 'F6',
+        onChanged: (value) {
+          if (value != null) controller.setRepeatHotkey(value);
+        },
+        items: [
+          for (final option in _hotkeyOptions)
+            DropdownMenuItem(value: option, child: Text(option)),
+        ],
+      ),
+    );
+  }
+}
+
 class _OutputFolderRow extends ConsumerWidget {
   const _OutputFolderRow();
 
@@ -276,6 +330,8 @@ class _SectionHeader extends StatelessWidget {
 
 const _hotkeyOptions = <String>[
   'PrintScreen',
+  'F6',
+  'F7',
   'F8',
   'F9',
   'F10',

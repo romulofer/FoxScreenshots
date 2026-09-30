@@ -8,6 +8,7 @@ Map<TrayAction, String> trayMenuLabels(AppLocalizations l10n) {
     TrayAction.show: l10n.showWindow,
     TrayAction.instant: l10n.captureInstant,
     TrayAction.timer: l10n.captureTimer,
+    TrayAction.repeat: l10n.captureRepeat,
     TrayAction.settings: l10n.settingsTitle,
     TrayAction.quit: l10n.quit,
   };

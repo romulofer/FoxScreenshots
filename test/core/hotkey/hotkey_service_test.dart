@@ -47,4 +47,35 @@ void main() {
             as Map<Object?, Object?>;
     expect(args['modifiers'], isNotEmpty);
   });
+
+  test('registerAll registra exatamente 3 hotkeys', () async {
+    await const HotkeyService().registerAll(
+      onInstant: () {},
+      onTimer: () {},
+      onRepeat: () {},
+      instantBinding: 'PrintScreen',
+      timerBinding: 'F7',
+      repeatBinding: 'F6',
+    );
+
+    final registerCalls = calls.where((c) => c.method == 'register').toList();
+    expect(registerCalls, hasLength(3));
+  });
+
+  test('registerAll não passa modifiers null para nenhuma das 3', () async {
+    await const HotkeyService().registerAll(
+      onInstant: () {},
+      onTimer: () {},
+      onRepeat: () {},
+      instantBinding: 'PrintScreen',
+      timerBinding: 'F7',
+      repeatBinding: 'F6',
+    );
+
+    final registerCalls = calls.where((c) => c.method == 'register').toList();
+    for (final call in registerCalls) {
+      final args = call.arguments as Map<Object?, Object?>;
+      expect(args['modifiers'], isA<List<dynamic>>());
+    }
+  });
 }

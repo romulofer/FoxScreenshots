@@ -13,6 +13,7 @@
   "captureTimer": "Timer",
   "captureFullScreen": "Full screen",
   "captureActiveWindow": "Active window",
+  "captureRepeat": "Repeat last",
 
   "selectionHint": "Drag to select an area · Esc cancels",
   "captureFailedWayland": "Capture is not available on Wayland yet. Log in to an X11 session.",
@@ -77,6 +78,8 @@
   "settingsLanguagePt": "Portuguese (Brazil)",
   "settingsLanguageEn": "English (US)",
   "settingsHotkey": "Capture hotkey",
+  "settingsHotkeyTimer": "Timer hotkey",
+  "settingsHotkeyRepeat": "Repeat last hotkey",
   "settingsCaptureDelay": "Timer delay (s)",
   "settingsOutputFolder": "Output folder",
   "settingsOutputFolderNone": "No folder chosen",

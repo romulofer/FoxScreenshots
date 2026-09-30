@@ -37,6 +37,8 @@ class AppShell extends ConsumerStatefulWidget {
 class _AppShellState extends ConsumerState<AppShell> with WindowListener {
   Locale? _wiredFor;
   String? _wiredHotkey;
+  String? _wiredTimerHotkey;
+  String? _wiredRepeatHotkey;
 
   @override
   void initState() {
@@ -50,11 +52,21 @@ class _AppShellState extends ConsumerState<AppShell> with WindowListener {
     // Re-attach on the first build and after every locale change, so the tray
     // menu is never left in the previous language (SPEC §2.6).
     final locale = Localizations.localeOf(context);
-    final hotkey = ref.read(settingsControllerProvider).hotkey;
-    if (_wiredFor == locale && _wiredHotkey == hotkey) return;
+    final settings = ref.read(settingsControllerProvider);
+    final hotkey = settings.hotkey;
+    final timerHotkey = settings.timerHotkey;
+    final repeatHotkey = settings.repeatHotkey;
+    if (_wiredFor == locale &&
+        _wiredHotkey == hotkey &&
+        _wiredTimerHotkey == timerHotkey &&
+        _wiredRepeatHotkey == repeatHotkey) {
+      return;
+    }
     _wiredFor = locale;
     _wiredHotkey = hotkey;
-    _attach(AppLocalizations.of(context), hotkey);
+    _wiredTimerHotkey = timerHotkey;
+    _wiredRepeatHotkey = repeatHotkey;
+    _attach(AppLocalizations.of(context), hotkey, timerHotkey, repeatHotkey);
   }
 
   @override
@@ -63,7 +75,12 @@ class _AppShellState extends ConsumerState<AppShell> with WindowListener {
     super.dispose();
   }
 
-  Future<void> _attach(AppLocalizations l10n, String hotkey) {
+  Future<void> _attach(
+    AppLocalizations l10n,
+    String hotkey,
+    String timerHotkey,
+    String repeatHotkey,
+  ) {
     return ref
         .read(desktopIntegrationProvider)
         .attach(
@@ -73,7 +90,11 @@ class _AppShellState extends ConsumerState<AppShell> with WindowListener {
           onOpenWindow: _openWindow,
           onTrayAction: _onTrayAction,
           onHotkey: () => _capture(CaptureMode.instant),
+          onTimerHotkey: () => _capture(CaptureMode.timer),
+          onRepeatHotkey: () => _capture(CaptureMode.repeat),
           hotkey: hotkey,
+          timerHotkey: timerHotkey,
+          repeatHotkey: repeatHotkey,
         );
   }
 
@@ -94,6 +115,8 @@ class _AppShellState extends ConsumerState<AppShell> with WindowListener {
         _capture(CaptureMode.instant);
       case TrayAction.timer:
         _capture(CaptureMode.timer);
+      case TrayAction.repeat:
+        _capture(CaptureMode.repeat);
       case TrayAction.settings:
         _openSettings();
       case TrayAction.quit:
@@ -129,14 +152,28 @@ class _AppShellState extends ConsumerState<AppShell> with WindowListener {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(settingsControllerProvider.select((s) => s.hotkey), (
-      previous,
-      next,
-    ) {
-      if (previous == next || _wiredHotkey == next) return;
-      _wiredHotkey = next;
-      _attach(AppLocalizations.of(context), next);
-    });
+    ref.listen(
+      settingsControllerProvider.select(
+        (s) => (s.hotkey, s.timerHotkey, s.repeatHotkey),
+      ),
+      (previous, next) {
+        final (hotkey, timerHotkey, repeatHotkey) = next;
+        if (_wiredHotkey == hotkey &&
+            _wiredTimerHotkey == timerHotkey &&
+            _wiredRepeatHotkey == repeatHotkey) {
+          return;
+        }
+        _wiredHotkey = hotkey;
+        _wiredTimerHotkey = timerHotkey;
+        _wiredRepeatHotkey = repeatHotkey;
+        _attach(
+          AppLocalizations.of(context),
+          hotkey,
+          timerHotkey,
+          repeatHotkey,
+        );
+      },
+    );
     return const HomeScreen();
   }
 }
