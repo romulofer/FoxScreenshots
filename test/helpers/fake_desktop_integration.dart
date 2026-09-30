@@ -7,6 +7,8 @@ import 'package:foxscreenshots/core/tray/tray_service.dart';
 /// exercise the tray/hotkey capture paths without a desktop embedder.
 class FakeDesktopIntegration implements DesktopIntegration {
   VoidCallback? onHotkey;
+  VoidCallback? onTimerHotkey;
+  VoidCallback? onRepeatHotkey;
   void Function(TrayAction action)? onTrayAction;
 
   @override
@@ -17,9 +19,15 @@ class FakeDesktopIntegration implements DesktopIntegration {
     required VoidCallback onOpenWindow,
     required void Function(TrayAction action) onTrayAction,
     required VoidCallback onHotkey,
+    required VoidCallback onTimerHotkey,
+    required VoidCallback onRepeatHotkey,
     String hotkey = 'PrintScreen',
+    String timerHotkey = 'F7',
+    String repeatHotkey = 'F6',
   }) async {
     this.onHotkey = onHotkey;
+    this.onTimerHotkey = onTimerHotkey;
+    this.onRepeatHotkey = onRepeatHotkey;
     this.onTrayAction = onTrayAction;
   }
 

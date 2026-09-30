@@ -15,6 +15,7 @@
   "captureTimer": "Temporizador",
   "captureFullScreen": "Tela cheia",
   "captureActiveWindow": "Janela ativa",
+  "captureRepeat": "Repetir último",
   "@captureInstant": { "description": "Capture the screen now via region selection." },
 
   "selectionHint": "Arraste para selecionar uma área · Esc cancela",
@@ -88,6 +89,8 @@
   "settingsLanguagePt": "Português (Brasil)",
   "settingsLanguageEn": "Inglês (EUA)",
   "settingsHotkey": "Atalho de captura",
+  "settingsHotkeyTimer": "Atalho do temporizador",
+  "settingsHotkeyRepeat": "Atalho de repetir último",
   "settingsCaptureDelay": "Atraso do temporizador (s)",
   "settingsOutputFolder": "Pasta de saída",
   "settingsOutputFolderNone": "Nenhuma pasta escolhida",

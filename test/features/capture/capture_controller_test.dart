@@ -345,6 +345,72 @@ void main() {
     });
   });
 
+  group('repetir último screenshot', () {
+    testWidgets('sem captura prévia retorna null', (tester) async {
+      await pumpApp(tester);
+
+      final result = await container
+          .read(captureControllerProvider)
+          .captureRepeat();
+
+      expect(result, isNull);
+      expect(container.read(sessionControllerProvider), isEmpty);
+    });
+
+    testWidgets('com região prévia grava sem overlay', (tester) async {
+      await pumpApp(tester);
+
+      // Primeiro faz uma captura normal para registrar a última região.
+      final firstPending = container
+          .read(captureControllerProvider)
+          .captureInstant();
+      await tester.pumpAndSettle();
+      await dragSelection(tester, const Offset(20, 40), const Offset(220, 240));
+      await firstPending;
+
+      final fullScreenCallsBefore = service.fullScreenCalls;
+      final regionCallsBefore = service.regionCalls;
+
+      // Agora repete — não deve abrir o overlay.
+      final result = await container
+          .read(captureControllerProvider)
+          .captureRepeat();
+
+      expect(result, isNotNull);
+      expect(container.read(sessionControllerProvider), hasLength(2));
+      // Repeat usa grabRegion, não grabFullVirtualScreen.
+      expect(service.fullScreenCalls, fullScreenCallsBefore);
+      expect(service.regionCalls, regionCallsBefore + 1);
+    });
+
+    testWidgets('repete a mesma região da última captura de temporizador', (
+      tester,
+    ) async {
+      service = FakeScreenCaptureService(
+        activeWindow: const CaptureRegion(
+          x: 10,
+          y: 20,
+          width: 100,
+          height: 100,
+        ),
+      );
+      await pumpApp(tester);
+
+      final timerPending = container
+          .read(captureControllerProvider)
+          .captureWithTimer(delay: Duration.zero);
+      await tester.pumpAndSettle();
+      await dragSelection(tester, const Offset(20, 40), const Offset(220, 240));
+      await timerPending;
+
+      final expected = service.lastRegion;
+
+      await container.read(captureControllerProvider).captureRepeat();
+
+      expect(service.lastRegion, expected);
+    });
+  });
+
   group('falha do backend', () {
     testWidgets('propaga a falha e restaura a janela', (tester) async {
       service = FakeScreenCaptureService(

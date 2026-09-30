@@ -12,7 +12,7 @@ import 'windows_screen_capture_service.dart';
 import 'x11_screen_capture_service.dart';
 
 /// How a capture is framed.
-enum CaptureMode { instant, timer, fullScreen, activeWindow }
+enum CaptureMode { instant, timer, fullScreen, activeWindow, repeat }
 
 /// Why a capture could not be taken.
 ///

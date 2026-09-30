@@ -32,5 +32,16 @@ void main() {
         );
       },
     );
+
+    test('inclui a ação de repetir último em pt e en', () {
+      expect(
+        trayMenuLabels(AppLocalizationsPt())[TrayAction.repeat],
+        'Repetir último',
+      );
+      expect(
+        trayMenuLabels(AppLocalizationsEn())[TrayAction.repeat],
+        'Repeat last',
+      );
+    });
   });
 }

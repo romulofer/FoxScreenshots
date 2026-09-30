@@ -18,6 +18,8 @@ class SettingsState {
     required this.locale,
     required this.timerDelaySeconds,
     required this.hotkey,
+    required this.timerHotkey,
+    required this.repeatHotkey,
     required this.outputDir,
     required this.autoSave,
   });
@@ -27,6 +29,8 @@ class SettingsState {
   final Locale? locale;
   final int timerDelaySeconds;
   final String hotkey;
+  final String timerHotkey;
+  final String repeatHotkey;
 
   /// Folder auto-save writes into; `null` until the user picks one.
   final String? outputDir;
@@ -38,6 +42,8 @@ class SettingsState {
     bool clearLocale = false,
     int? timerDelaySeconds,
     String? hotkey,
+    String? timerHotkey,
+    String? repeatHotkey,
     String? outputDir,
     bool? autoSave,
   }) {
@@ -46,6 +52,8 @@ class SettingsState {
       locale: clearLocale ? null : (locale ?? this.locale),
       timerDelaySeconds: timerDelaySeconds ?? this.timerDelaySeconds,
       hotkey: hotkey ?? this.hotkey,
+      timerHotkey: timerHotkey ?? this.timerHotkey,
+      repeatHotkey: repeatHotkey ?? this.repeatHotkey,
       outputDir: outputDir ?? this.outputDir,
       autoSave: autoSave ?? this.autoSave,
     );
@@ -62,6 +70,8 @@ class SettingsController extends Notifier<SettingsState> {
       locale: _localeFromTag(s.localeTag),
       timerDelaySeconds: s.timerDelaySeconds,
       hotkey: s.hotkey,
+      timerHotkey: s.timerHotkey,
+      repeatHotkey: s.repeatHotkey,
       outputDir: s.outputDir,
       autoSave: s.autoSave,
     );
@@ -91,6 +101,16 @@ class SettingsController extends Notifier<SettingsState> {
   Future<void> setHotkey(String hotkey) async {
     await _service.setHotkey(hotkey);
     state = state.copyWith(hotkey: hotkey);
+  }
+
+  Future<void> setTimerHotkey(String hotkey) async {
+    await _service.setTimerHotkey(hotkey);
+    state = state.copyWith(timerHotkey: hotkey);
+  }
+
+  Future<void> setRepeatHotkey(String hotkey) async {
+    await _service.setRepeatHotkey(hotkey);
+    state = state.copyWith(repeatHotkey: hotkey);
   }
 
   Future<void> setOutputDir(String dir) async {
