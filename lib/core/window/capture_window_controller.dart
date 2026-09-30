@@ -286,47 +286,20 @@ class WindowManagerCaptureWindow implements CaptureWindowController {
   @override
   Future<void> enterCountdown() async {
     _restoreBounds ??= await windowManager.getBounds();
-    _virtualScreen = await virtualScreenBounds();
-
-    const size = Size(180, 96);
-    final rect = Rect.fromLTWH(
-      _virtualScreen.left + (_virtualScreen.width - size.width) / 2,
-      _virtualScreen.top + 48,
-      size.width,
-      size.height,
-    );
-    // Apply decorative/stacking properties while hidden; deliberately excludes
-    // setResizable(false), which calls gtk_window_get_size() internally to
-    // capture the "fixed" dimensions — on a hidden window that returns the
-    // previous (hub / overlay) size, so the badge would be locked at 800×600
-    // and setBounds(180×96) would be silently ignored.
-    await Future.wait([
-      windowManager.setBackgroundColor(const Color(0x00000000)),
-      windowManager.setTitleBarStyle(
-        TitleBarStyle.hidden,
-        windowButtonVisibility: false,
-      ),
-      windowManager.setAlwaysOnTop(true),
-      windowManager.setSkipTaskbar(true),
-      windowManager.setMinimumSize(const Size(1, 1)),
-    ]);
-    // Show without stealing focus, then reposition: WMs honor geometry only
-    // on a mapped (visible) window.
-    await windowManager.show();
-    await windowManager.setBounds(rect);
-    // Lock size only after the badge has its correct dimensions.
-    await windowManager.setResizable(false);
+    // Minimize so the desktop is fully accessible during the countdown.
+    // Only relevant when the hub was visible before the capture; when triggered
+    // from the tray or hotkey the window is already hidden — minimizing an
+    // unmapped window can inadvertently map it as an icon.
+    if (_wasVisible) {
+      await windowManager.show();
+      await windowManager.minimize();
+    }
   }
 
   @override
   Future<void> leaveCountdown() async {
-    await _unpin();
-    await windowManager.setTitleBarStyle(TitleBarStyle.normal);
-    await windowManager.setResizable(true);
-    await windowManager.setMinimumSize(const Size(640, 480));
-    final bounds = _restoreBounds;
-    if (bounds != null) await windowManager.setBounds(bounds);
-    await windowManager.hide();
+    // No window state was changed by enterCountdown other than iconifying;
+    // restore() handles the deiconify + show path.
   }
 
   @override
