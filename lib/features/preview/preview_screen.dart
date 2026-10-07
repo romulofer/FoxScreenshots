@@ -26,8 +26,18 @@ class PreviewScreen extends StatelessWidget {
           appBar: AppBar(
             backgroundColor: Colors.black,
             foregroundColor: Colors.white,
-            title: Text(
-              '${l10n.previewTitle} · ${capture.width}×${capture.height}',
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${l10n.previewTitle} · ${capture.width}×${capture.height}',
+                ),
+                Text(
+                  l10n.previewHint,
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: Colors.white70),
+                ),
+              ],
             ),
             leading: IconButton(
               tooltip: l10n.actionClose,
@@ -35,17 +45,14 @@ class PreviewScreen extends StatelessWidget {
               onPressed: () => Navigator.of(context).maybePop(),
             ),
           ),
-          body: Tooltip(
-            message: l10n.previewHint,
-            child: InteractiveViewer(
-              maxScale: 8,
-              child: Center(
-                child: Image.memory(
-                  capture.pngBytes,
-                  fit: BoxFit.contain,
-                  width: double.infinity,
-                  height: double.infinity,
-                ),
+          body: InteractiveViewer(
+            maxScale: 8,
+            child: Center(
+              child: Image.memory(
+                capture.pngBytes,
+                fit: BoxFit.contain,
+                width: double.infinity,
+                height: double.infinity,
               ),
             ),
           ),
