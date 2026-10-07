@@ -101,15 +101,32 @@ const Duration scrollLockPollInterval = Duration(seconds: 2);
 
 /// Live Scroll Lock state. Auto-disposed, so it only polls while the banner
 /// (or anything else) is on screen.
-final scrollLockActiveProvider = StreamProvider.autoDispose<bool>((ref) async* {
+///
+/// Polls with a cancellable [Timer] rather than a `delayed` loop: a loop's
+/// pending delay outlives the provider, which leaves a live timer behind once
+/// the widget tree is gone.
+final scrollLockActiveProvider = StreamProvider.autoDispose<bool>((ref) {
   final detector = ref.watch(scrollLockDetectorProvider);
+  final controller = StreamController<bool>();
+  Timer? timer;
+  var disposed = false;
   bool? last;
-  while (true) {
+
+  Future<void> poll() async {
     final active = await detector.isActive();
+    if (disposed) return;
     if (active != last) {
       last = active;
-      yield active;
+      controller.add(active);
     }
-    await Future<void>.delayed(scrollLockPollInterval);
+    timer = Timer(scrollLockPollInterval, poll);
   }
+
+  ref.onDispose(() {
+    disposed = true;
+    timer?.cancel();
+    controller.close();
+  });
+  poll();
+  return controller.stream;
 });
