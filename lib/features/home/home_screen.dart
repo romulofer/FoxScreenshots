@@ -12,6 +12,7 @@ import '../../models/capture_result.dart';
 import '../capture/capture_controller.dart';
 import '../capture/capture_failure_message.dart';
 import '../editor/editor_screen.dart';
+import '../preview/preview_screen.dart';
 import '../settings/settings_screen.dart';
 import 'session_controller.dart';
 import 'widgets/capture_toolbar.dart';
@@ -206,6 +207,11 @@ class _Gallery extends ConsumerWidget {
         return ThumbnailTile(
           key: ValueKey(capture.id),
           capture: capture,
+          onPreview: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => PreviewScreen(capture: capture),
+            ),
+          ),
           onEdit: () => Navigator.of(context).push(
             MaterialPageRoute<void>(
               builder: (_) => EditorScreen(capture: capture),

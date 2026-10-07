@@ -54,6 +54,11 @@
       "max": { "type": "int" }
     }
   },
+  "actionPreview": "Visualizar",
+  "@actionPreview": { "description": "Tooltip of the gallery thumbnail that opens the full-size preview." },
+  "previewTitle": "Pré-visualização",
+  "previewHint": "Role para ampliar · Esc fecha",
+  "actionClose": "Fechar",
   "actionClearSession": "Limpar sessão",
   "@actionClearSession": { "description": "Toolbar action that drops every capture of the session." },
   "clearSessionTitle": "Limpar a sessão?",
