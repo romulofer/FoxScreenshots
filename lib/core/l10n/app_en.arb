@@ -33,6 +33,8 @@
   "dependencyKeybinder": "Global hotkeys are off — libkeybinder-3.0.so.0 is missing (Debian/Ubuntu: libkeybinder-3.0-0).",
   "dependencyAppIndicator": "The tray icon may not show — libayatana-appindicator3.so.1 is missing (Debian/Ubuntu: libayatana-appindicator3-1).",
   "dependencyDismiss": "Dismiss",
+  "scrollLockTitle": "Scroll Lock is on",
+  "scrollLockMessage": "While Scroll Lock is on, the global capture hotkeys do not work. Turn it off to use them again.",
 
   "sessionEmpty": "No captures yet. Use the toolbar above to start.",
   "sessionGalleryTitle": "Captures this session",
