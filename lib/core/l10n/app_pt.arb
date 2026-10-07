@@ -40,6 +40,9 @@
   "dependencyKeybinder": "Atalhos globais desligados — libkeybinder-3.0.so.0 não encontrada (Debian/Ubuntu: libkeybinder-3.0-0).",
   "dependencyAppIndicator": "O ícone na bandeja pode não aparecer — libayatana-appindicator3.so.1 não encontrada (Debian/Ubuntu: libayatana-appindicator3-1).",
   "dependencyDismiss": "Dispensar",
+  "scrollLockTitle": "Scroll Lock está ativo",
+  "@scrollLockTitle": { "description": "Banner title shown while Scroll Lock is on." },
+  "scrollLockMessage": "Com a tecla Scroll Lock ligada, os atalhos globais de captura não funcionam. Desligue-a para voltar a usá-los.",
 
   "sessionEmpty": "Nenhuma captura ainda. Use a barra acima para começar.",
   "sessionGalleryTitle": "Capturas desta sessão",
