@@ -45,6 +45,10 @@
       "max": { "type": "int" }
     }
   },
+  "actionPreview": "Preview",
+  "previewTitle": "Preview",
+  "previewHint": "Scroll to zoom · Esc closes",
+  "actionClose": "Close",
   "actionClearSession": "Clear session",
   "clearSessionTitle": "Clear the session?",
   "clearSessionMessage": "Every capture in this session will be removed. Files already saved to disk stay.",

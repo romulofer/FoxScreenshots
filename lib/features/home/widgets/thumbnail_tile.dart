@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import '../../../core/l10n/gen/app_localizations.dart';
 import '../../../models/capture_result.dart';
 
-/// A single session capture in the gallery grid (SPEC §2.5), with hover actions
-/// Edit / Copy / Save / Delete.
+/// A single session capture in the gallery grid (SPEC §2.5). Tapping the image
+/// previews it; the footer has Edit / Copy / Save / Delete.
 class ThumbnailTile extends StatelessWidget {
   const ThumbnailTile({
     required this.capture,
+    required this.onPreview,
     required this.onEdit,
     required this.onCopy,
     required this.onSave,
@@ -16,6 +17,7 @@ class ThumbnailTile extends StatelessWidget {
   });
 
   final CaptureResult capture;
+  final VoidCallback onPreview;
   final VoidCallback onEdit;
   final VoidCallback onCopy;
   final VoidCallback onSave;
@@ -31,11 +33,18 @@ class ThumbnailTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
-            child: Image.memory(
-              capture.pngBytes,
-              fit: BoxFit.cover,
-              // Decode at gallery size — full 4K frames blow GPU memory otherwise.
-              cacheWidth: 480,
+            child: Tooltip(
+              message: l10n.actionPreview,
+              child: InkWell(
+                onTap: onPreview,
+                child: Image.memory(
+                  capture.pngBytes,
+                  fit: BoxFit.cover,
+                  // Decode at gallery size — full 4K frames blow GPU memory
+                  // otherwise.
+                  cacheWidth: 480,
+                ),
+              ),
             ),
           ),
           // Each action takes an equal share of the tile width: four fixed-size
