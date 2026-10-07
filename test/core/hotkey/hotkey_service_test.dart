@@ -30,7 +30,7 @@ void main() {
   });
 
   test('binding sem modificadores manda lista vazia, nunca null', () async {
-    await const HotkeyService().registerCapture(() {}, binding: 'PrintScreen');
+    await HotkeyService().registerCapture(() {}, binding: 'PrintScreen');
 
     final args =
         calls.singleWhere((c) => c.method == 'register').arguments
@@ -40,7 +40,7 @@ void main() {
   });
 
   test('binding com modificadores preserva a lista', () async {
-    await const HotkeyService().registerCapture(() {}, binding: 'Ctrl+Shift+S');
+    await HotkeyService().registerCapture(() {}, binding: 'Ctrl+Shift+S');
 
     final args =
         calls.singleWhere((c) => c.method == 'register').arguments
@@ -49,7 +49,7 @@ void main() {
   });
 
   test('registerAll registra exatamente 3 hotkeys', () async {
-    await const HotkeyService().registerAll(
+    await HotkeyService().registerAll(
       onInstant: () {},
       onTimer: () {},
       onRepeat: () {},
@@ -63,7 +63,7 @@ void main() {
   });
 
   test('registerAll não passa modifiers null para nenhuma das 3', () async {
-    await const HotkeyService().registerAll(
+    await HotkeyService().registerAll(
       onInstant: () {},
       onTimer: () {},
       onRepeat: () {},
@@ -78,4 +78,31 @@ void main() {
       expect(args['modifiers'], isA<List<dynamic>>());
     }
   });
+
+  test(
+    'registerAll sobreposto não intercala unregisterAll e register',
+    () async {
+      final service = HotkeyService();
+      Future<void> attach() => service.registerAll(
+        onInstant: () {},
+        onTimer: () {},
+        onRepeat: () {},
+      );
+
+      await Future.wait([attach(), attach()]);
+
+      // Each run must be unregisterAll followed by its own 3 registers; an
+      // interleaved pair would leave native registrations Dart has forgotten.
+      expect(calls.map((c) => c.method).toList(), [
+        'unregisterAll',
+        'register',
+        'register',
+        'register',
+        'unregisterAll',
+        'register',
+        'register',
+        'register',
+      ]);
+    },
+  );
 }

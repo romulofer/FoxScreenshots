@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
@@ -5,7 +6,10 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 /// Registers the global capture hotkey (SPEC §1). Wraps `hotkey_manager` so the
 /// rest of the app never touches the plugin directly.
 class HotkeyService {
-  const HotkeyService();
+  HotkeyService();
+
+  /// Tail of the registration queue; see [registerAll].
+  Future<void> _queue = Future<void>.value();
 
   /// Clears any OS-level registrations left over from a previous run. Call once
   /// at startup before registering.
@@ -42,20 +46,37 @@ class HotkeyService {
     String instantBinding = 'PrintScreen',
     String timerBinding = 'F7',
     String repeatBinding = 'F6',
-  }) async {
+  }) {
+    // Serialized: the shell re-attaches on locale and hotkey changes, so two
+    // calls can overlap. Interleaved, the native side keeps the first call's
+    // registrations while Dart forgets them, and the key event is then matched
+    // to an identifier Dart no longer knows — the hotkey silently does nothing.
+    final run = _queue.then(
+      (_) => _registerAll([
+        (instantBinding, onInstant),
+        (timerBinding, onTimer),
+        (repeatBinding, onRepeat),
+      ]),
+    );
+    _queue = run.catchError((Object _) {});
+    return run;
+  }
+
+  Future<void> _registerAll(List<(String, VoidCallback)> bindings) async {
     await hotKeyManager.unregisterAll();
-    for (final (binding, cb) in [
-      (instantBinding, onInstant),
-      (timerBinding, onTimer),
-      (repeatBinding, onRepeat),
-    ]) {
+    for (final (binding, cb) in bindings) {
       final parsed = parseCaptureHotkey(binding);
       final hotKey = HotKey(
         key: parsed.key,
         modifiers: parsed.modifiers,
         scope: HotKeyScope.system,
       );
-      await hotKeyManager.register(hotKey, keyDownHandler: (_) => cb());
+      try {
+        await hotKeyManager.register(hotKey, keyDownHandler: (_) => cb());
+      } catch (e) {
+        // One unusable binding must not leave the others unregistered.
+        debugPrint('Hotkey "$binding" could not be registered: $e');
+      }
     }
   }
 }
@@ -156,5 +177,5 @@ PhysicalKeyboardKey? _keyFromToken(String token) {
 }
 
 final hotkeyServiceProvider = Provider<HotkeyService>((ref) {
-  return const HotkeyService();
+  return HotkeyService();
 });
