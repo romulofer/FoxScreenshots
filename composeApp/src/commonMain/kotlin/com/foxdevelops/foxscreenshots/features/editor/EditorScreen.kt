@@ -74,10 +74,9 @@ fun EditorScreen(app: AppContainer, capture: CaptureResult, modifier: Modifier =
     var askingText by remember { mutableStateOf<Offset?>(null) }
     var confirmDiscard by remember { mutableStateOf(false) }
 
-    LaunchedEffect(controller) {
-        controller.load()
-        focus.requestFocus()
-    }
+    // Focus first, on its own: it touches the layout, so it must not run after a hop to a background thread.
+    LaunchedEffect(Unit) { focus.requestFocus() }
+    LaunchedEffect(controller) { controller.load() }
     DisposableEffect(controller) { onDispose { controller.close() } }
 
     val image = state.document.image

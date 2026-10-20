@@ -57,4 +57,32 @@ class X11CaptureSmokeTest {
         requireX11()
         service.activeWindowRegion() // may be null on a bare server; must not throw
     }
+
+    @Test
+    fun `active window is the focused window, measured in root coordinates`() = runTest {
+        assumeTrue("set FOX_ISOLATED_DISPLAY=1 under xvfb-run", System.getenv("FOX_ISOLATED_DISPLAY") == "1")
+        requireX11()
+        val window = ProcessBuilder("xmessage", "-geometry", "300x200+120+80", "-name", "fox-probe", "hello").start()
+        try {
+            val id = run {
+                val search = ProcessBuilder("xdotool", "search", "--sync", "--onlyvisible", "--pid", window.pid().toString()).start()
+                if (!search.waitFor(10, java.util.concurrent.TimeUnit.SECONDS)) {
+                    search.destroyForcibly()
+                    null
+                } else {
+                    search.inputStream.bufferedReader().readLine()?.trim()
+                }
+            }
+            assumeTrue("xmessage/xdotool unavailable", id != null)
+            ProcessBuilder("xdotool", "windowfocus", id).start().waitFor(5, java.util.concurrent.TimeUnit.SECONDS)
+            Thread.sleep(300)
+            val region = assertNotNull(service.activeWindowRegion())
+            assertEquals(300, region.width)
+            assertEquals(200, region.height)
+            assertEquals(120, region.x)
+            assertEquals(80, region.y)
+        } finally {
+            window.destroy()
+        }
+    }
 }

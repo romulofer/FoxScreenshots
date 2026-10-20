@@ -152,7 +152,6 @@ private fun CountdownWindow(seconds: Int, theme: com.foxdevelops.foxscreenshots.
         onCloseRequest = {},
         state = state,
         undecorated = true,
-        transparent = true,
         resizable = false,
         alwaysOnTop = true,
         focusable = false,

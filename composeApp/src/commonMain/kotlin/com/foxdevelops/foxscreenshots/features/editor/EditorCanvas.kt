@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
@@ -32,6 +33,9 @@ import androidx.compose.ui.unit.IntSize
 
 /** Movement (in widget pixels) below which a press-and-release counts as a tap. */
 private const val TAP_SLOP = 4f
+
+/** Test hook: the pointer-driven drawing surface. */
+const val EDITOR_CANVAS_TAG = "editor-canvas"
 
 private val CropDim = Color(0x99000000)
 
@@ -64,6 +68,7 @@ fun EditorCanvas(
     Box(
         modifier
             .fillMaxSize()
+            .testTag(EDITOR_CANVAS_TAG)
             .pointerHoverIcon(if (tool.isDragTool) PointerIcon.Crosshair else PointerIcon.Hand)
             .pointerInput(fit, tool) {
                 awaitEachGesture {

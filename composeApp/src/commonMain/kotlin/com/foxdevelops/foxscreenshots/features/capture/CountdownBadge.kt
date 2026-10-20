@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material3.Icon
@@ -29,11 +28,11 @@ import androidx.compose.ui.unit.sp
  */
 @Composable
 fun CountdownBadge(remainingSeconds: Int, modifier: Modifier = Modifier) {
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    // Fills the whole window with a solid color: a transparent window needs a compositing window manager,
+    // and on a plain X11 session it would come out as a black box around the badge.
+    Box(modifier = modifier.fillMaxSize().background(Color(0xFF111111)), contentAlignment = Alignment.Center) {
         Row(
-            modifier = Modifier
-                .background(Color(0xE6000000), RoundedCornerShape(20.dp))
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(Icons.Outlined.CameraAlt, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))

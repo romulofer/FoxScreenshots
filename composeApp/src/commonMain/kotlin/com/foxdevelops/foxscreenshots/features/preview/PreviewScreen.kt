@@ -64,9 +64,10 @@ fun PreviewScreen(app: AppContainer, capture: CaptureResult, modifier: Modifier 
     val focus = remember { FocusRequester() }
     var image by remember(capture) { mutableStateOf<ImageBitmap?>(null) }
 
+    // Focus first, on its own: it touches the layout, so it must not run after a hop to a background thread.
+    LaunchedEffect(Unit) { focus.requestFocus() }
     LaunchedEffect(capture) {
         image = withContext(Dispatchers.Default) { app.processor.decode(capture.pngBytes) }
-        focus.requestFocus()
     }
     DisposableEffect(capture) { onDispose { image?.let(app.processor::release) } }
 

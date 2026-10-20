@@ -2,8 +2,6 @@ package com.foxdevelops.foxscreenshots.features.capture
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,7 +29,6 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextLayoutResult
@@ -118,33 +115,26 @@ fun CaptureSelectionOverlay(
                 }
             }
             .pointerInput(mapping) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    if (currentEvent.buttons.isSecondaryPressed) {
-                        cancel()
-                        return@awaitEachGesture
-                    }
-                    start = down.position
-                    current = down.position
-                    pointer = down.position
-                    while (true) {
-                        val event = awaitPointerEvent()
-                        val change = event.changes.first()
-                        current = change.position
-                        pointer = change.position
-                        if (change.changedToUp()) {
-                            finish(down.position, change.position)
-                            break
-                        }
-                    }
-                }
-            }
-            .pointerInput(Unit) {
                 awaitPointerEventScope {
+                    var dragFrom: Offset? = null
                     while (true) {
                         val event = awaitPointerEvent()
-                        if (event.type == PointerEventType.Move || event.type == PointerEventType.Enter) {
-                            pointer = event.changes.first().position
+                        val position = event.changes.first().position
+                        pointer = position
+                        when (event.type) {
+                            PointerEventType.Press ->
+                                if (event.buttons.isSecondaryPressed) {
+                                    cancel()
+                                } else {
+                                    dragFrom = position
+                                    start = position
+                                    current = position
+                                }
+                            PointerEventType.Move -> if (dragFrom != null) current = position
+                            PointerEventType.Release -> {
+                                dragFrom?.let { finish(it, position) }
+                                dragFrom = null
+                            }
                         }
                     }
                 }
