@@ -47,6 +47,12 @@ kotlin {
     }
 }
 
+// The version shown in Settings: written into a resource so the code has one place to read it from.
+tasks.named<ProcessResources>("desktopProcessResources") {
+    inputs.property("appVersion", appVersion)
+    filesMatching("app.properties") { expand("version" to appVersion) }
+}
+
 compose.desktop {
     application {
         mainClass = "com.foxdevelops.foxscreenshots.MainKt"

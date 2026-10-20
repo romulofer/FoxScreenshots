@@ -46,6 +46,25 @@ class SkiaImageProcessor : ImageProcessor {
         }
     }
 
+    override fun thumbnail(png: ByteArray, maxWidth: Int): ImageBitmap {
+        Image.makeFromEncoded(png).use { full ->
+            if (full.width <= maxWidth) return full.toComposeImageBitmap()
+            val width = maxWidth
+            val height = maxOf(1, (full.height.toLong() * maxWidth / full.width).toInt())
+            Surface.makeRasterN32Premul(width, height).use { surface ->
+                surface.canvas.drawImageRect(
+                    full,
+                    SkiaRect.makeWH(full.width.toFloat(), full.height.toFloat()),
+                    SkiaRect.makeWH(width.toFloat(), height.toFloat()),
+                    SamplingMode.LINEAR,
+                    null,
+                    true,
+                )
+                return surface.makeImageSnapshot().use { it.toComposeImageBitmap() }
+            }
+        }
+    }
+
     override fun release(image: ImageBitmap) {
         image.asSkiaBitmap().close()
     }

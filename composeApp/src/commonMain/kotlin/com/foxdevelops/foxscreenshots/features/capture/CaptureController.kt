@@ -12,6 +12,8 @@ import com.foxdevelops.foxscreenshots.features.home.SessionController
 import com.foxdevelops.foxscreenshots.model.CaptureRegion
 import com.foxdevelops.foxscreenshots.model.CaptureResult
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -62,7 +64,7 @@ class CaptureController(
                 lastRegion = region
                 val area = region.clampedTo(frame.width, frame.height)
                 if (area.isEmpty) return@run null
-                val cropped = processor.crop(frame.image, area.toRect())
+                val cropped = withContext(Dispatchers.Default) { processor.crop(frame.image, area.toRect()) }
                 processor.release(cropped.image)
                 record(newResult(cropped.pngBytes, cropped.width, cropped.height))
             } finally {
@@ -133,7 +135,7 @@ class CaptureController(
 
     private suspend fun freeze(): FrozenFrame {
         val frozen = service.grabFullVirtualScreen()
-        val image = processor.decode(frozen.pngBytes)
+        val image = withContext(Dispatchers.Default) { processor.decode(frozen.pngBytes) }
         return FrozenFrame(image, frozen.width, frozen.height)
     }
 

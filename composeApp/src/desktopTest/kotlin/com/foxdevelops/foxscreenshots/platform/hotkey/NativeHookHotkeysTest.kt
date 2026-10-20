@@ -44,7 +44,7 @@ class NativeHookHotkeysTest {
     fun tearDown() = hotkeys.close()
 
     private fun requireIsolatedX() {
-        assumeTrue("set FOX_ALLOW_INPUT_INJECTION=1 under xvfb-run", System.getenv("FOX_ALLOW_INPUT_INJECTION") == "1")
+        assumeTrue("set FOX_ISOLATED_DISPLAY=1 under xvfb-run", System.getenv("FOX_ISOLATED_DISPLAY") == "1")
         assumeTrue(System.getenv("DISPLAY")?.isNotEmpty() == true)
     }
 

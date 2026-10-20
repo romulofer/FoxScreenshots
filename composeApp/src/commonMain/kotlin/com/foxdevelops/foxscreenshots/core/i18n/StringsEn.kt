@@ -5,7 +5,6 @@ object StringsEn : Strings {
     override val appTitle = "FoxScreenShots"
 
     override val menuFile = "File"
-    override val menuEdit = "Edit"
     override val menuSettings = "Settings"
     override val menuHelp = "Help"
     override val showWindow = "Show window"

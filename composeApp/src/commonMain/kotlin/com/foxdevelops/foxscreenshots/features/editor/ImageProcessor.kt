@@ -23,6 +23,9 @@ interface ImageProcessor {
     /** Draws [base] plus [annotations] at 1:1 and encodes the result as PNG. */
     suspend fun flatten(base: ImageBitmap, annotations: List<Annotation>): ProcessedImage
 
+    /** Decodes PNG bytes at no more than [maxWidth] pixels wide, for gallery tiles: a 4K frame would blow GPU memory otherwise. */
+    fun thumbnail(png: ByteArray, maxWidth: Int): ImageBitmap
+
     /** Frees native memory held by [image] as soon as nothing needs it. */
     fun release(image: ImageBitmap)
 }

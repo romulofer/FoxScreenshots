@@ -12,7 +12,6 @@ interface Strings {
     val appTitle: String
 
     val menuFile: String
-    val menuEdit: String
     val menuSettings: String
     val menuHelp: String
     val showWindow: String

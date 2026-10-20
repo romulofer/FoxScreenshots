@@ -5,7 +5,6 @@ object StringsPt : Strings {
     override val appTitle = "FoxScreenShots"
 
     override val menuFile = "Arquivo"
-    override val menuEdit = "Editar"
     override val menuSettings = "Configurações"
     override val menuHelp = "Ajuda"
     override val showWindow = "Mostrar janela"

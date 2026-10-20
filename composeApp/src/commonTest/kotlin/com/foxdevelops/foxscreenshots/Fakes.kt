@@ -40,6 +40,8 @@ class FakeImageProcessor : ImageProcessor {
         return ProcessedImage(ImageBitmap(base.width, base.height), fakePngBytes + 9)
     }
 
+    override fun thumbnail(png: ByteArray, maxWidth: Int): ImageBitmap = ImageBitmap(maxWidth, maxWidth / 2)
+
     override fun release(image: ImageBitmap) {
         released += image
     }
