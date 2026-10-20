@@ -104,3 +104,9 @@ lib/core/l10n/gen/
 secrets.*
 
 references
+# Gradle / Kotlin Multiplatform
+.gradle/
+.kotlin/
+**/build/
+local.properties
+!gradle/wrapper/gradle-wrapper.jar
