@@ -5,12 +5,10 @@ body:
   - type: markdown
     attributes:
       value: |
-        Antes de abrir, dá uma olhada em [`SPEC.md`](../../SPEC.md) — a seção
-        "Fora do escopo" já lista o que o projeto não pretende fazer (vídeo/GIF,
+        Antes de abrir, lembre que o projeto não pretende cobrir (vídeo/GIF,
         sincronização em nuvem, edição pesada, OCR).
 
-        Before opening, check [`SPEC.md`](../../SPEC.md) — the "Out of scope"
-        section already lists what this project won't do (video/GIF, cloud
+        Before opening, keep in mind this project won't cover (video/GIF, cloud
         sync, heavy editing, OCR).
 
   - type: textarea

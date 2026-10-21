@@ -12,8 +12,8 @@
 
 <!--
 Mudanças maiores (dependência nova, backend de captura, paleta/marca) precisam
-de aval prévio do autor — veja SPEC.md §7 antes de abrir o PR.
+de aval prévio do autor — combine numa issue antes de abrir o PR.
 
 Larger changes (new dependency, capture backend, palette/brand) need prior
-approval — see SPEC.md §7 before opening the PR.
+approval — agree on it in an issue before opening the PR.
 -->

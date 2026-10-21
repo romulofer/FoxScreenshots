@@ -1,8 +1,9 @@
 # Contribuindo
 
-Issues e PRs são bem-vindos. Antes de mandar código, leia
-[`SPEC.md`](SPEC.md) — é a fonte da verdade para escopo, arquitetura e
-limites (§7 lista o que precisa aval prévio e o que nunca entra).
+Issues e PRs são bem-vindos. Antes de mandar código, abra uma issue para
+conversar: mudanças grandes (dependência nova, backend de captura, paleta de
+cores) precisam de aval prévio, e o app nunca faz chamadas de rede nem envia
+conteúdo da tela para fora da máquina.
 
 ## Ambiente
 
@@ -42,16 +43,17 @@ FOX_ISOLATED_DISPLAY=1 xvfb-run -a ./gradlew :composeApp:desktopTest   # inclui 
 
 ## Reportando bugs / pedindo funcionalidades
 
-Use os templates de issue do GitHub. Para vulnerabilidades de segurança, veja
-[`SECURITY.md`](SECURITY.md) em vez de abrir issue pública.
+Use os templates de issue do GitHub. Para vulnerabilidades de segurança, use o
+[relatório privado do GitHub](https://github.com/romulofer/FoxScreenShots/security/advisories/new) em vez de abrir issue pública.
 
 ---
 
 # Contributing — English
 
-Issues and PRs are welcome. Before sending code, read [`SPEC.md`](SPEC.md) —
-it's the source of truth for scope, architecture and limits (§7 lists what
-needs prior approval and what never goes in).
+Issues and PRs are welcome. Before sending code, open an issue to talk it
+over: larger changes (new dependency, capture backend, color palette) need
+prior approval, and the app never makes network calls or sends screen content
+off the machine.
 
 ## Setup
 
@@ -91,5 +93,5 @@ FOX_ISOLATED_DISPLAY=1 xvfb-run -a ./gradlew :composeApp:desktopTest   # include
 
 ## Reporting bugs / requesting features
 
-Use the GitHub issue templates. For security vulnerabilities, see
-[`SECURITY.md`](SECURITY.md) instead of opening a public issue.
+Use the GitHub issue templates. For security vulnerabilities, use GitHub's
+[private vulnerability reporting](https://github.com/romulofer/FoxScreenShots/security/advisories/new) instead of opening a public issue.

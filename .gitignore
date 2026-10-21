@@ -110,3 +110,8 @@ references
 **/build/
 local.properties
 !gradle/wrapper/gradle-wrapper.jar
+
+# Documentos de trabalho que ficam só na máquina do autor (não vão para o remoto)
+/SPEC.md
+/SECURITY.md
+/docs/
