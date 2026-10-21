@@ -57,6 +57,7 @@ fun AppRoot(app: AppContainer, modifier: Modifier = Modifier) {
                         }
                     }
                 }
+                if (app.navigator.aboutVisible) AboutDialog(app.appVersion) { app.navigator.aboutVisible = false }
             }
         }
     }

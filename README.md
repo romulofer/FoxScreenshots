@@ -31,6 +31,9 @@ Ferramenta de desktop para capturar e anotar screenshots rapidamente.
 - **Editor** — recorte, seta, retângulo/elipse, texto, marca-texto,
   desfoque/pixelagem, caneta livre e marcadores numerados. Desfazer/refazer.
 - **Saída** — copia para a área de transferência **e** salva em PNG.
+- **Nome de arquivo configurável** (`{date}`, `{time}`…), diálogo de salvar que
+  lembra a última pasta e **Arquivo ▸ Abrir imagem…** para anotar uma imagem existente.
+- **Atrasos rápidos** (1, 3, 5, 10 s) direto na janela principal.
 - **Roda na bandeja do sistema**, com atalhos globais reconfiguráveis.
 - **Localizado** em português (pt-BR) e inglês (en-US).
 - **Temas claro e escuro.**

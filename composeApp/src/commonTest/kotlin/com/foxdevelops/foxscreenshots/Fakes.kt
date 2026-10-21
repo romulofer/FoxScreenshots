@@ -106,7 +106,13 @@ class FakeOutput : OutputService {
     override suspend fun savePngWithDialog(pngBytes: ByteArray, initialDirectory: String?, suggestedName: String?) =
         "/tmp/${suggestedName ?: "x.png"}"
 
-    override suspend fun savePngToDir(pngBytes: ByteArray, directory: String): String {
+    var pickedImage: ByteArray? = null
+    var lastPattern: String? = null
+
+    override suspend fun pickImage(initialDirectory: String?): ByteArray? = pickedImage
+
+    override suspend fun savePngToDir(pngBytes: ByteArray, directory: String, namePattern: String): String {
+        lastPattern = namePattern
         if (failing) throw IllegalStateException("read-only")
         saved += directory to pngBytes
         return "$directory/shot.png"

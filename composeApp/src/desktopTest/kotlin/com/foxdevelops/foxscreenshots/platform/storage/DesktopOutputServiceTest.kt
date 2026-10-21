@@ -24,6 +24,13 @@ class DesktopOutputServiceTest {
     }
 
     @Test
+    fun `a custom pattern names the file`() = runTest {
+        val dir = Files.createTempDirectory("fox-out").toString()
+        val path = service.savePngToDir(fakePngBytes, dir, "tela-{date}")
+        assertEquals("tela-20260813.png", Paths.get(path).fileName.toString())
+    }
+
+    @Test
     fun `same-second saves never overwrite each other`() = runTest {
         val dir = Files.createTempDirectory("fox-out").toString()
         val names = List(3) { Paths.get(service.savePngToDir(fakePngBytes, dir)).fileName.toString() }

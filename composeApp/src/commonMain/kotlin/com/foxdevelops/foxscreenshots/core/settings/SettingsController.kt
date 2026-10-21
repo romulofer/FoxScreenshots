@@ -1,5 +1,6 @@
 package com.foxdevelops.foxscreenshots.core.settings
 
+import com.foxdevelops.foxscreenshots.core.storage.DEFAULT_FILE_NAME_PATTERN
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,6 +22,8 @@ class SettingsController(private val store: SettingsStore) {
         repeatHotkey = store.getString(KEY_REPEAT_HOTKEY) ?: Settings.DEFAULT_REPEAT_HOTKEY,
         outputDir = store.getString(KEY_OUTPUT_DIR),
         autoSave = store.getString(KEY_AUTO_SAVE) == "true",
+        fileNamePattern = store.getString(KEY_FILE_NAME_PATTERN)?.takeIf { it.isNotBlank() } ?: DEFAULT_FILE_NAME_PATTERN,
+        lastSaveDir = store.getString(KEY_LAST_SAVE_DIR),
     )
 
     fun setTheme(theme: ThemePreference) {
@@ -66,7 +69,21 @@ class SettingsController(private val store: SettingsStore) {
         mutableState.update { it.copy(autoSave = enabled) }
     }
 
+    /** Blank patterns reset to the default; overlong ones are cut. */
+    fun setFileNamePattern(pattern: String) {
+        val cleaned = pattern.trim().take(Settings.MAX_FILE_NAME_PATTERN_LENGTH).ifEmpty { DEFAULT_FILE_NAME_PATTERN }
+        store.putString(KEY_FILE_NAME_PATTERN, cleaned)
+        mutableState.update { it.copy(fileNamePattern = cleaned) }
+    }
+
+    fun setLastSaveDir(dir: String) {
+        store.putString(KEY_LAST_SAVE_DIR, dir)
+        mutableState.update { it.copy(lastSaveDir = dir) }
+    }
+
     private companion object {
+        const val KEY_FILE_NAME_PATTERN = "file_name_pattern"
+        const val KEY_LAST_SAVE_DIR = "last_save_dir"
         const val KEY_THEME = "theme_mode"
         const val KEY_LOCALE = "locale_tag"
         const val KEY_HOTKEY = "capture_hotkey"

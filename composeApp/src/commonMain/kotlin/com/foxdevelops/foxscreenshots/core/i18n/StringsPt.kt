@@ -69,6 +69,16 @@ object StringsPt : Strings {
     override fun savedCountTo(count: Int, dir: String) =
         if (count == 1) "1 captura salva em $dir" else "$count capturas salvas em $dir"
     override val saveAllFailed = "Não foi possível salvar as capturas"
+    override val actionOpenImage = "Abrir imagem…"
+    override val openImageFailed = "Não foi possível abrir essa imagem"
+    override val quickDelayLabel = "Atraso rápido"
+    override fun delaySeconds(seconds: Int) = "$seconds s"
+    override val settingsFileNamePattern = "Nome dos arquivos"
+    override val settingsFileNamePatternHint = "Use {date}, {time}, {year}, {month}, {day}, {hour}, {minute} e {second}."
+    override val aboutTitle = "Sobre o FoxScreenShots"
+    override val aboutTagline = "Captura e edição rápida de screenshots."
+    override val aboutPrivacy = "Tudo roda localmente: nenhuma chamada de rede e nenhum conteúdo de tela sai da sua máquina."
+    override val aboutLicense = "Código aberto sob a Licença MIT."
 
     override val settingsTitle = "Configurações"
     override val settingsSectionAppearance = "Aparência"

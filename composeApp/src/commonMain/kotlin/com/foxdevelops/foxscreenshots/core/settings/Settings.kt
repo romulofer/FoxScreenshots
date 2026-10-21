@@ -1,5 +1,7 @@
 package com.foxdevelops.foxscreenshots.core.settings
 
+import com.foxdevelops.foxscreenshots.core.storage.DEFAULT_FILE_NAME_PATTERN
+
 enum class ThemePreference(val tag: String) {
     System("system"),
     Light("light"),
@@ -32,6 +34,10 @@ data class Settings(
     /** Folder auto-save writes into; `null` until the user picks one. */
     val outputDir: String? = null,
     val autoSave: Boolean = false,
+    /** Name template for auto-saved files and the save dialog's suggestion; see `renderFileName`. */
+    val fileNamePattern: String = DEFAULT_FILE_NAME_PATTERN,
+    /** Folder of the last file saved through the dialog; the dialog opens here next time. */
+    val lastSaveDir: String? = null,
 ) {
     companion object {
         const val MIN_TIMER_DELAY_SECONDS = 1
@@ -40,6 +46,10 @@ data class Settings(
         const val DEFAULT_HOTKEY = "PrintScreen"
         const val DEFAULT_TIMER_HOTKEY = "F7"
         const val DEFAULT_REPEAT_HOTKEY = "F6"
+        const val MAX_FILE_NAME_PATTERN_LENGTH = 80
+
+        /** Delays offered as one-click chips on the hub. */
+        val QUICK_DELAYS_SECONDS = listOf(1, 3, 5, 10)
 
         /** Bindings offered in the settings screen. */
         val HOTKEY_OPTIONS = listOf(

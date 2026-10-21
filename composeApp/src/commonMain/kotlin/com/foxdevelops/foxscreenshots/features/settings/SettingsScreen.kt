@@ -23,6 +23,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -133,6 +134,7 @@ fun SettingsScreen(app: AppContainer, modifier: Modifier = Modifier) {
                 },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             )
+            FileNameRow(settings.fileNamePattern, controller::setFileNamePattern)
             ListItem(
                 leadingContent = { Icon(Icons.Outlined.SaveAlt, contentDescription = null) },
                 headlineContent = { Text(strings.settingsAutoSave) },
@@ -214,5 +216,29 @@ private fun SectionHeader(title: String) {
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.SemiBold,
+    )
+}
+
+/** Edits the file name template. Commits on every keystroke; a blank field resets to the default once it is read back. */
+@Composable
+private fun FileNameRow(pattern: String, onChange: (String) -> Unit) {
+    val strings = LocalStrings.current
+    var text by remember(pattern) { mutableStateOf(pattern) }
+    ListItem(
+        headlineContent = { Text(strings.settingsFileNamePattern) },
+        supportingContent = { Text(strings.settingsFileNamePatternHint) },
+        trailingContent = {
+            OutlinedTextField(
+                value = text,
+                onValueChange = {
+                    text = it.take(Settings.MAX_FILE_NAME_PATTERN_LENGTH)
+                    if (text.isNotBlank()) onChange(text)
+                },
+                singleLine = true,
+                suffix = { Text(".png") },
+                modifier = Modifier.width(280.dp),
+            )
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
     )
 }

@@ -171,7 +171,7 @@ class CaptureController(
         val dir = current.outputDir
         if (!current.autoSave || dir == null) return
         try {
-            output.savePngToDir(result.pngBytes, dir)
+            output.savePngToDir(result.pngBytes, dir, current.fileNamePattern)
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {

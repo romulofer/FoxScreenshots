@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DeleteSweep
+import androidx.compose.material.icons.outlined.FileOpen
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.SaveAlt
 import androidx.compose.material.icons.outlined.Settings
@@ -67,6 +68,9 @@ fun HomeScreen(app: AppContainer, modifier: Modifier = Modifier) {
             title = { Text(strings.appTitle) },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             actions = {
+                IconButton(onClick = { scope.launch { openImage(app) } }) {
+                    Icon(Icons.Outlined.FileOpen, contentDescription = strings.actionOpenImage)
+                }
                 IconButton(
                     enabled = session.isNotEmpty(),
                     onClick = { scope.launch { saveAll(app, session) } },
@@ -82,6 +86,11 @@ fun HomeScreen(app: AppContainer, modifier: Modifier = Modifier) {
         Column(Modifier.fillMaxSize().padding(16.dp)) {
             DependencyBanner(app.issues)
             CaptureToolbar(onCapture = { mode -> scope.launch { runCapture(app, mode) } })
+            Spacer(Modifier.height(8.dp))
+            TimerDelayChips(
+                selected = app.settings.state.collectAsState().value.timerDelaySeconds,
+                onSelect = app.settings::setTimerDelaySeconds,
+            )
             Spacer(Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(strings.sessionGalleryTitle, style = MaterialTheme.typography.titleMedium)
@@ -129,9 +138,11 @@ suspend fun runCapture(app: AppContainer, mode: CaptureMode) {
 /** Writes every session capture into a folder the user picks. A single failure aborts and shows the generic error. */
 private suspend fun saveAll(app: AppContainer, session: List<CaptureResult>) {
     val strings = app.currentStrings()
-    val dir = app.output.pickDirectory(app.settings.state.value.outputDir) ?: return
+    val current = app.settings.state.value
+    val dir = app.output.pickDirectory(current.lastSaveDir ?: current.outputDir) ?: return
     try {
-        for (capture in session) app.output.savePngToDir(capture.pngBytes, dir)
+        for (capture in session) app.output.savePngToDir(capture.pngBytes, dir, current.fileNamePattern)
+        app.settings.setLastSaveDir(dir)
         app.messenger.show(strings.savedCountTo(session.size, dir))
     } catch (e: CancellationException) {
         throw e
@@ -201,11 +212,21 @@ suspend fun copyToClipboard(app: AppContainer, png: ByteArray) {
 suspend fun saveWithDialog(app: AppContainer, png: ByteArray) {
     val strings = app.currentStrings()
     try {
-        val path = app.output.savePngWithDialog(png, app.settings.state.value.outputDir)
-        if (path != null) app.messenger.show(strings.savedTo(path))
+        val settings = app.settings.state.value
+        val path = app.output.savePngWithDialog(png, settings.lastSaveDir ?: settings.outputDir)
+        if (path != null) {
+            parentDirectory(path)?.let(app.settings::setLastSaveDir)
+            app.messenger.show(strings.savedTo(path))
+        }
     } catch (e: CancellationException) {
         throw e
     } catch (_: Exception) {
         app.messenger.show(strings.saveFailed)
     }
+}
+
+/** Folder part of a saved file path, for either separator; `null` when the path has no folder. */
+internal fun parentDirectory(path: String): String? {
+    val cut = path.lastIndexOfAny(charArrayOf('/', '\\'))
+    return if (cut > 0) path.substring(0, cut) else null
 }

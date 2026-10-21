@@ -1,6 +1,9 @@
 package com.foxdevelops.foxscreenshots.ui
 
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.foxdevelops.foxscreenshots.core.desktop.DesktopIntegration
 import com.foxdevelops.foxscreenshots.core.desktop.SystemIssues
 import com.foxdevelops.foxscreenshots.core.i18n.Strings
@@ -27,6 +30,9 @@ sealed interface Screen {
 /** A back stack over [Screen]. Captures can start from the tray or a hotkey, so navigation lives outside composition. */
 class AppNavigator {
     private val stack = mutableStateListOf<Screen>(Screen.Home)
+
+    /** Whether the About dialog is open. Lives here because the menu bar and the hub window both ask for it. */
+    var aboutVisible by mutableStateOf(false)
 
     val current: Screen get() = stack.last()
     val canGoBack: Boolean get() = stack.size > 1

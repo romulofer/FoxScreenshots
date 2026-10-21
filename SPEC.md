@@ -70,6 +70,11 @@ sem perda.
 - Salvar por diálogo; lembrar a última pasta. Pasta de salvamento automático +
   padrão de nome de arquivo é uma opção das Configurações (com data e hora) —
   desejável, não bloqueante.
+  *Implementado:* o diálogo abre na última pasta usada; o padrão de nome aceita
+  `{date}`, `{time}`, `{year}`, `{month}`, `{day}`, `{hour}`, `{minute}` e
+  `{second}`, e separadores de caminho ou caracteres reservados são descartados.
+- **Abrir imagem** (Arquivo ▸ Abrir imagem…): carrega PNG/JPEG/BMP/GIF, converte
+  para PNG e abre no editor.
 
 **Aceite:** a área de transferência recebe um PNG válido nos três sistemas
 operacionais; o arquivo salvo abre em um visualizador comum.

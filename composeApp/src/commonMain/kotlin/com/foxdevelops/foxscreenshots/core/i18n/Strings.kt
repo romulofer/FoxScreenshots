@@ -121,6 +121,19 @@ interface Strings {
     val actionDiscard: String
     val actionCancel: String
     val actionConfirm: String
+
+    val actionOpenImage: String
+    val openImageFailed: String
+    val quickDelayLabel: String
+    fun delaySeconds(seconds: Int): String
+
+    val settingsFileNamePattern: String
+    val settingsFileNamePatternHint: String
+
+    val aboutTitle: String
+    val aboutTagline: String
+    val aboutPrivacy: String
+    val aboutLicense: String
 }
 
 /** Localized explanation of a failed capture. */

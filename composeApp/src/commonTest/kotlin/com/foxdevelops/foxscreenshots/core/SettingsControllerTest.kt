@@ -67,4 +67,29 @@ class SettingsControllerTest {
         controller.setAutoSave(true)
         assertTrue(controller.state.value.autoSave)
     }
+
+    @Test
+    fun `file name pattern defaults, persists, and a blank one resets`() {
+        val store = MemorySettingsStore()
+        val controller = SettingsController(store)
+        assertEquals("foxshot_{date}_{time}", controller.state.value.fileNamePattern)
+        controller.setFileNamePattern("  tela-{date}  ")
+        assertEquals("tela-{date}", SettingsController(store).state.value.fileNamePattern)
+        controller.setFileNamePattern("   ")
+        assertEquals("foxshot_{date}_{time}", controller.state.value.fileNamePattern)
+    }
+
+    @Test
+    fun `file name pattern is length limited`() {
+        val controller = SettingsController(MemorySettingsStore())
+        controller.setFileNamePattern("x".repeat(500))
+        assertEquals(Settings.MAX_FILE_NAME_PATTERN_LENGTH, controller.state.value.fileNamePattern.length)
+    }
+
+    @Test
+    fun `last save folder is remembered`() {
+        val store = MemorySettingsStore()
+        SettingsController(store).setLastSaveDir("/home/me/shots")
+        assertEquals("/home/me/shots", SettingsController(store).state.value.lastSaveDir)
+    }
 }
