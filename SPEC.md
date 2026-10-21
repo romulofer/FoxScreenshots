@@ -5,7 +5,8 @@
 
 ## 1. Objetivo
 
-App de desktop multiplataforma (Windows, Linux, macOS) feito em Flutter para
+App de desktop multiplataforma (Windows, Linux, macOS) feito em Kotlin
+Multiplatform (Compose Multiplatform para desktop) para
 **capturar** e fazer a **edição básica** de screenshots.
 
 **Público-alvo:** quem usa desktop e precisa de screenshots rápidos e
@@ -28,11 +29,11 @@ revisto no futuro.
 
 ### Execução e acionamento — *decidido*
 
-- Roda na **bandeja do sistema**, em segundo plano (`tray_manager`).
+- Roda na **bandeja do sistema**, em segundo plano (`java.awt.SystemTray`).
 - **Clique esquerdo no ícone da bandeja abre a janela principal** (um hub no
   estilo do Shutter, veja §2.5). Clique direito abre um menu de contexto (os
   dois modos, Configurações, Sair).
-- **Atalho global** dispara a captura (`hotkey_manager`), `PrintScreen` por
+- **Atalho global** dispara a captura (JNativeHook), `PrintScreen` por
   padrão, reconfigurável nas Configurações — funciona sem abrir a janela.
 - Fechar a janela principal a esconde na bandeja (o app continua rodando); sair
   é explícito (menu da bandeja / menu do app).
@@ -74,7 +75,7 @@ sem perda.
 operacionais; o arquivo salvo abre em um visualizador comum.
 
 ### 2.4 Barra de ferramentas / menus
-- Barra de menus do app: **Arquivo**, **Configurações**, mais Editar e Ajuda. O
+- Barra de menus do app: **Arquivo**, **Configurações** e **Ajuda**. O
   menu da bandeja espelha as ações principais.
 
 ### 2.5 Janela principal — *hub no estilo do Shutter — decidido*
@@ -95,15 +96,15 @@ aparece como miniatura; Editar/Copiar/Salvar/Excluir agem sobre o item
 selecionado; fechar esconde na bandeja.
 
 ### 2.6 Localização — *obrigatório*
-- **pt-BR (principal)** e **en-US**, com `flutter_localizations` + arquivos ARB
-  do `intl`.
+- **pt-BR (principal)** e **en-US**, em duas implementações da interface
+  `Strings` (`StringsPt`, `StringsEn`): o compilador recusa um idioma que
+  esqueça uma chave.
 - **pt-BR é o idioma padrão e de fallback** (usado quando o idioma do sistema
-  não é nem pt-BR nem en-US, e como ARB base no `template-arb-file`). O idioma
-  segue o do sistema quando é um dos suportados, e pode ser trocado nas
-  Configurações. Nada de texto fixo no código.
+  não é nem pt nem en). O idioma segue o do sistema quando é um dos suportados,
+  e pode ser trocado nas Configurações. Nada de texto fixo no código.
 
-**Aceite:** todo texto visível ao usuário vem do ARB; trocar de idioma atualiza
-a interface na hora; os dois idiomas completos (sem chave faltando).
+**Aceite:** todo texto visível ao usuário vem de `Strings`; trocar de idioma
+atualiza a interface na hora; os dois idiomas completos (sem chave faltando).
 
 ### 2.7 Temas — *obrigatório*
 - Esquemas claro/escuro **portados de `~/development/mobile/foxdevelops`**.
@@ -126,106 +127,92 @@ mais escuro. Manter assim: não usar `#D9531E` para texto sobre fundo claro.
 
 ## 3. Comandos
 
+Requer o **JDK 25 ou mais novo**; o Gradle vem pelo wrapper.
+
 ```bash
-flutter pub get                     # instalar dependências
-flutter gen-l10n                    # gerar as localizações a partir dos ARB
-flutter run -d linux                # rodar (ambiente de desenvolvimento); -d windows / -d macos
-flutter analyze                     # análise estática / lints
-dart format .                       # formatação
-flutter test                        # testes de unidade e de widget
-# e2e (precisa de display / xvfb na CI). Um único ponto de entrada: o runner de
-# desktop não relança o app para um segundo arquivo na mesma execução.
-flutter test integration_test/all_tests.dart -d linux
-# regerar as imagens do README (não faz parte da suíte)
-xvfb-run -a flutter test integration_test/screenshots_test.dart -d linux
-flutter build linux                 # build de release; também windows / macos
+./gradlew :composeApp:run              # rodar o app
+./gradlew :composeApp:desktopTest      # testes de unidade e de UI
+# testes ao vivo (X11, atalhos globais, área de transferência): só em display
+# descartável — injetam teclas e escrevem na área de transferência
+FOX_ISOLATED_DISPLAY=1 xvfb-run -a ./gradlew :composeApp:desktopTest
+./gradlew :composeApp:packageDeb       # instalador: também packageMsi / packageDmg
+./gradlew :composeApp:packageDeb -PappVersion=1.2.3   # versão do pacote (padrão: build.gradle.kts)
 ```
 
 ## 4. Estrutura do projeto
 
 ```
-lib/
-  main.dart                 # bootstrap: window_manager, bandeja, atalhos, roda o app
-  app.dart                  # MaterialApp, tema, ligação do idioma
-  core/
-    theme/                  # app_colors.dart, app_theme.dart (claro/escuro)
-    l10n/                   # app_*.arb + gerados
-    capture/                # screen_capture_service.dart (interface) + implementações
-    hotkey/                 # hotkey_service.dart
-    tray/                   # tray_service.dart
-    storage/
-      settings_service.dart # invólucro do shared_preferences
-      output_service.dart   # salvar em arquivo
-      clipboard_service.dart# imagem para a área de transferência
-    utils/
-  features/
-    home/                   # janela hub estilo Shutter (§2.5)
-      home_screen.dart      # barra de captura + galeria da sessão
-      session_controller.dart# lista em memória das capturas da sessão
-      widgets/              # thumbnail_tile, capture_toolbar
-    capture/
-      selection_overlay.dart# sobreposição congelada + seleção elástica
-      capture_controller.dart# instantâneo, temporizador, tela cheia, janela ativa
-      widgets/              # lupa, etiqueta de dimensões, escurecimento
-    editor/
-      editor_screen.dart
-      models/               # modelos de anotação (imutáveis)
-      painters/             # CustomPainter das anotações + compositor
-      widgets/              # trilho de ferramentas, barra de estilo, área de desenho
-      editor_controller.dart
-    settings/
-      settings_screen.dart
-      settings_controller.dart
-    menu/                   # construtores do menu do app e da bandeja
-  models/                   # tipos de valor compartilhados (capture_result, region…)
-test/                       # unidade + widget
-integration_test/           # fluxos e2e + gerador das imagens do README
+build.gradle.kts, settings.gradle.kts, gradle/libs.versions.toml   # versões num só lugar
+composeApp/
+  packaging/                  # ícones dos instaladores
+  src/
+    commonMain/               # tudo que não depende de sistema (Kotlin + Compose)
+      model/                  # CaptureRegion, CaptureResult
+      core/
+        capture/              # ScreenCaptureService (interface), ScreenMapping, falhas
+        settings/             # Settings, SettingsController, SettingsStore (interface)
+        hotkey/               # HotkeyBinding (parser), GlobalHotkeys (interface)
+        i18n/                 # Strings + StringsPt + StringsEn
+        theme/                # FoxColors, FoxTheme (claro/escuro)
+        storage/              # ClipboardService, OutputService (interfaces)
+        desktop/              # DesktopIntegration (bandeja + atalhos), SystemIssues
+      features/
+        home/                 # hub estilo Shutter: barra de captura + galeria
+        capture/              # CaptureController, sobreposição de seleção, contagem
+        editor/               # anotações (modelos imutáveis), EditorController, telas
+        preview/ settings/
+      ui/                     # AppContainer, AppRoot, navegação, mensagens
+    desktopMain/              # o que toca no sistema
+      app/                    # AppRuntime (liga os serviços reais), janelas de captura
+      platform/
+        x11/ portal/ windows/ macos/   # backends de captura (JNA / dbus-java)
+        image/                # Skia: decodificação, recorte, pintura das anotações
+        hotkey/ tray/ storage/ desktop/ session/
+    commonTest/ desktopTest/  # unidade + Compose UI + testes ao vivo
 ```
 
-- **Gerência de estado:** Riverpod (`flutter_riverpod`) — testável, modular, sem
-  acoplamento a `BuildContext` na lógica.
-- **Abstração de captura:** interface `ScreenCaptureService` com implementações
-  por sistema operacional escolhidas em tempo de execução; a interface e o
+- **Estado:** `StateFlow` nos controladores (sem acoplamento a `@Composable`
+  na lógica); as telas coletam com `collectAsState`.
+- **Abstração de captura:** interface `ScreenCaptureService` com uma
+  implementação por sistema, escolhida em tempo de execução; a interface e o
   editor nunca tocam em código de plataforma.
+- **Janelas de captura:** a sobreposição de seleção e o selo do temporizador
+  são **janelas próprias**, nunca a janela principal reaproveitada.
 
 ### Dependências principais
-`window_manager`, `tray_manager`, `hotkey_manager`, `screen_retriever`,
-`flutter_riverpod`, `intl` + `flutter_localizations`, `shared_preferences`,
-`image` (operações raster: recorte/codificação), `super_clipboard` (imagem na
-área de transferência), `file_selector` + `path_provider`. No Linux, a captura
-usa FFI direto com a libX11.
+Compose Multiplatform (Material 3), `kotlinx-coroutines`, **JNA** (X11,
+GDI, CoreGraphics), **dbus-java** (portal do Wayland), **JNativeHook**
+(atalhos globais), **FileKit** (diálogos de arquivo nativos), Skia (já vem com
+o Compose: imagem, recorte, PNG, anotações). Área de transferência e bandeja
+usam o AWT.
 
 ## 5. Estilo de código
 
-- **Effective Dart** + `flutter_lints`; zero aviso do analisador no merge.
-- `dart format` (80 colunas, o padrão) obrigatório, com o SDK fixado na CI
-  (Flutter 3.47.0 stable / Dart 3.13.0): o estilo do formatador muda entre
-  versões do Dart e a CI reprova o que veio de outra.
-- Modelos imutáveis; `const` sempre que possível; nada de lógica no `build()`.
-- Um tipo principal por arquivo; arquivos em `snake_case.dart`, tipos em
-  `UpperCamelCase`.
+- **Convenções do Kotlin** (`kotlin.code.style=official`); zero aviso de
+  compilação no merge.
+- Modelos imutáveis (`data class`, `sealed class`); nada de lógica em
+  `@Composable` além de ligar estado a UI.
+- Um tipo principal por arquivo; arquivos em `UpperCamelCase.kt`.
 - Nada de texto fixo (i18n) nem de cor fixa (tokens de tema).
-- Comentários de documentação nas APIs públicas dos serviços.
-- **Identificadores em inglês** (nomes de classe, método e variável), para não
-  destoar das APIs do Flutter. **Documentação do projeto em português do Brasil:**
-  README, este documento e as descrições dos testes (`group`, `test`,
-  `testWidgets`, `reason:`). Texto visível ao usuário sempre localizado.
+- Comentários (KDoc) nas APIs públicas dos serviços.
+- **Identificadores em inglês** (nomes de classe, método e variável).
+  **Documentação do projeto em português do Brasil:** README, este documento e
+  as descrições dos testes. Texto visível ao usuário sempre localizado.
 
 ## 6. Estratégia de testes
 
-- **Unidade** — serviços (configurações, saída, área de transferência, captura
-  por mock), geometria/modelos das ferramentas do editor, compositor de imagem
-  (correção de recorte/desfoque/pixelagem).
-- **Widget** — interação da sobreposição de seleção, cada ferramenta do editor,
-  tela de configurações, troca de idioma e de tema.
-- **Golden** — instantâneos das telas principais nos temas claro e escuro.
-  *Ainda não implementado;* por enquanto o que existe é o gerador das imagens do
-  README (`integration_test/screenshots_test.dart`), que fotografa as telas mas
-  não compara com um instantâneo de referência.
-- **e2e (`integration_test`)** — fluxos de temporizador e instantâneo com um
-  **serviço de captura mockado** (sem depender de display real); teste de fumaça
-  da captura real limitado a um runner com display/xvfb.
-- **CI:** `flutter analyze` + `flutter test` a cada push; e2e sob xvfb.
+- **Unidade** (`commonTest`) — controladores (configurações, sessão, captura,
+  editor), geometria e modelos das ferramentas, mapeamento tela↔imagem,
+  atalhos, textos.
+- **Imagem** (`desktopTest`) — recorte, desfoque, pixelagem e cada tipo de
+  anotação sobre pixels reais (Skia).
+- **UI** (`desktopTest`, Compose UI test) — home, editor (cada interação),
+  sobreposição de seleção, pré-visualização e configurações, sobre fakes das
+  bordas do sistema.
+- **Ao vivo** (`desktopTest`, sob `xvfb-run` com `FOX_ISOLATED_DISPLAY=1`) —
+  captura real em X11 (tela, região, janela ativa), atalhos globais injetados
+  com `xdotool` e a área de transferência. Nunca na sessão do desenvolvedor.
+- **CI:** os testes em Linux (xvfb), macOS e Windows a cada push.
 - **Revisão de segurança a cada release** (§7).
 
 ## 7. Limites
@@ -240,14 +227,10 @@ usa FFI direto com a libX11.
 - Código modular, reutilizável e bem organizado (conforme os critérios de
   aceite).
 - Revisão de segurança antes de cada release.
-- **Plataformas de destino:** Windows 10 (64 bits) e 11, macOS e Linux. Windows
-  7/8 estão fora — o Flutter suporta Windows 10 ou superior, e o motor usa APIs
-  que não existem nas versões antigas.
-- O pacote do Windows leva o runtime do Visual C++ (`msvcp140.dll`,
-  `vcruntime140.dll`, `vcruntime140_1.dll`) ao lado do `.exe`, copiado pelo
-  toolchain da Microsoft na máquina de build (`InstallRequiredSystemLibraries`).
-  Origem conhecida e redistribuição app-local prevista na licença — sem esses
-  DLLs o app não inicia em máquina sem o redistribuível.
+- **Plataformas de destino:** Windows 10 (64 bits) e 11, macOS e Linux
+  (X11; Wayland pelo portal, com limites).
+- Os instaladores levam o runtime do Java (jlink): origem conhecida, nada a
+  instalar à parte. Windows e macOS saem sem assinatura digital.
 
 ### Perguntar antes
 - Adicionar dependência pesada/nativa, ou mudar a abordagem do backend de

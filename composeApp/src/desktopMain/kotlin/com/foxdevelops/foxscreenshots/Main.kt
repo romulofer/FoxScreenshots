@@ -90,7 +90,7 @@ fun main() {
             )
         }
 
-        val hubState = rememberWindowState(size = DpSize(920.dp, 640.dp))
+        val hubState = rememberWindowState(size = DpSize(960.dp, 700.dp))
         Window(
             visible = surface.hubVisible,
             state = hubState,

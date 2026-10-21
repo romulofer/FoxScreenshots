@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +23,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
+import com.foxdevelops.foxscreenshots.ui.FoxSlider
 import kotlin.math.roundToInt
 
 /**
@@ -50,7 +50,7 @@ fun StyleBar(
         }
         Spacer(Modifier.width(20.dp))
         Text(strings.editorThickness, style = MaterialTheme.typography.labelLarge)
-        Slider(
+        FoxSlider(
             value = strokeWidth.coerceIn(AnnotationPalette.MIN_STROKE_WIDTH, AnnotationPalette.MAX_STROKE_WIDTH),
             onValueChange = { onStrokeWidthChanged(it.roundToInt().toFloat()) },
             valueRange = AnnotationPalette.MIN_STROKE_WIDTH..AnnotationPalette.MAX_STROKE_WIDTH,

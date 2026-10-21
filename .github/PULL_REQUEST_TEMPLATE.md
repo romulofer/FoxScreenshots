@@ -4,7 +4,7 @@
 
 ## Checklist
 
-- [ ] `flutter analyze` e `flutter test` passam localmente / pass locally
+- [ ] `./gradlew :composeApp:desktopTest` passa localmente / passes locally
 - [ ] Strings novas em **pt-BR e en-US** (`app_pt.arb` + `app_en.arb`) / New strings in **both languages**
 - [ ] Sem cor crua — só tokens de `FoxColors` / No raw colors — `FoxColors` tokens only
 - [ ] Testes para lógica nova, se aplicável / Tests for new logic, if applicable

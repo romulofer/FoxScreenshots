@@ -23,7 +23,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -47,6 +46,7 @@ import com.foxdevelops.foxscreenshots.core.settings.LanguagePreference
 import com.foxdevelops.foxscreenshots.core.settings.Settings
 import com.foxdevelops.foxscreenshots.core.settings.ThemePreference
 import com.foxdevelops.foxscreenshots.ui.AppContainer
+import com.foxdevelops.foxscreenshots.ui.FoxSlider
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -103,11 +103,10 @@ fun SettingsScreen(app: AppContainer, modifier: Modifier = Modifier) {
             SectionHeader(strings.settingsSectionCapture)
             SettingRow(strings.settingsCaptureDelay) {
                 Row(Modifier.width(220.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Slider(
+                    FoxSlider(
                         value = settings.timerDelaySeconds.toFloat(),
                         onValueChange = { controller.setTimerDelaySeconds(it.roundToInt()) },
                         valueRange = 1f..15f,
-                        steps = 13,
                         modifier = Modifier.weight(1f),
                     )
                     Text(

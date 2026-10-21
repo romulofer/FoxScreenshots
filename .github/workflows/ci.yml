@@ -1,73 +1,67 @@
 name: CI
 
-# Static analysis, formatting, unit/widget tests, and the e2e suite (SPEC §6):
-# Linux under xvfb, plus a macOS job for real Metal/GPU coverage that a headless
-# VM cannot provide. Runs on every push and pull request. No network access is
+# Unit and UI tests on the three desktop systems. Linux runs under xvfb, where
+# the live checks (X11 capture, global hotkeys, clipboard) also run, on a
+# throwaway display. Runs on every push and pull request. No network access is
 # needed by the app or its tests.
 on:
   push:
   pull_request:
   workflow_dispatch:
 
-# Same SDK the release builds use, so CI cannot pass on a version nobody ships.
-env:
-  FLUTTER_VERSION: "3.47.0"
-  FLUTTER_CHANNEL: "stable"
-
-# Nothing here publishes anything; checkout is all the token is needed for.
 permissions:
   contents: read
 
 jobs:
-  analyze-and-test:
+  linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
 
-      - uses: ./.github/actions/setup-flutter
+      - uses: actions/setup-java@v4
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          flutter-channel: ${{ env.FLUTTER_CHANNEL }}
+          distribution: temurin
+          java-version: "25"
 
-      # Build deps for the Linux desktop target, plus the tray and global-hotkey
-      # libraries the app links against (see README).
-      - name: Install Linux build dependencies
+      - uses: gradle/actions/setup-gradle@v4
+
+      # The keyboard hook library links these; xvfb gives the live tests a display, xdotool drives it.
+      - name: Install system packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config \
-            libgtk-3-dev libkeybinder-3.0-dev libayatana-appindicator3-dev \
-            xvfb
+          sudo apt-get install -y xvfb xdotool x11-utils x11-apps \
+            libxkbcommon-x11-0 libxkbfile1 libxt6 libxinerama1 libxcb-xkb1 libx11-xcb1
 
-      - run: flutter config --enable-linux-desktop
-      - run: flutter pub get
+      - name: Tests (under xvfb)
+        env:
+          # The live tests inject keys and write the clipboard: only ever on a throwaway display.
+          FOX_ISOLATED_DISPLAY: "1"
+        run: xvfb-run -a -s "-screen 0 1400x900x24" ./gradlew :composeApp:desktopTest --console=plain
 
-      - run: dart format --output=none --set-exit-if-changed lib test integration_test tool
-      - run: flutter analyze
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: linux-test-reports
+          path: composeApp/build/reports/tests
 
-      - run: flutter test
-
-      # The e2e suite drives the real widget tree against fake OS edges, but it
-      # still launches the Linux embedder, so it needs a display. One entry
-      # point keeps it to a single app launch (see integration_test/all_tests.dart).
-      - name: End-to-end tests
-        run: xvfb-run -a flutter test integration_test/all_tests.dart -d linux
-
-  macos-test:
-    # Real macOS with GPU/Metal support, unlike a headless VM: this is the only
-    # place unit tests and the e2e suite actually run the macOS target.
+  macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
-
-      - uses: ./.github/actions/setup-flutter
+      - uses: actions/setup-java@v4
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          flutter-channel: ${{ env.FLUTTER_CHANNEL }}
+          distribution: temurin
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew :composeApp:desktopTest --console=plain
 
-      - run: flutter config --enable-macos-desktop
-      - run: flutter pub get
-
-      - run: flutter test
-
-      - name: End-to-end tests
-        run: flutter test integration_test/all_tests.dart -d macos
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew.bat :composeApp:desktopTest --console=plain

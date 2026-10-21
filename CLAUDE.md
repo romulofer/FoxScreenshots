@@ -8,7 +8,8 @@ aplicativo cross-platform (windows, linux e mac) para auxiliar na captura e edi√
 
 | Categoria | Tecnologia | Vers√£o / Notas |
 |----------|------------|-----------------|
-| Front/back | flutter | latest |
+| Linguagem / UI | Kotlin Multiplatform + Compose Multiplatform (desktop) | Kotlin 2.4, Compose 1.12, JVM 25 |
+| Nativo | JNA (X11, GDI, CoreGraphics), dbus-java (portal Wayland), JNativeHook (atalhos) | ver `gradle/libs.versions.toml` |
 
 
 ## Funcionalidades Principais

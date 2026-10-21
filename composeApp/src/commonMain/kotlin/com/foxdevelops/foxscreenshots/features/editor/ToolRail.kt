@@ -43,7 +43,7 @@ fun ToolRail(selected: EditorTool, onSelected: (EditorTool) -> Unit, modifier: M
             val isSelected = tool == selected
             IconButton(
                 onClick = { onSelected(tool) },
-                modifier = Modifier.padding(vertical = 2.dp),
+                modifier = Modifier.padding(vertical = 1.dp).size(40.dp),
                 colors = IconButtonDefaults.iconButtonColors(
                     containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else androidx.compose.ui.graphics.Color.Transparent,
                     contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,

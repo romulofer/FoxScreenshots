@@ -1,157 +1,120 @@
 name: Release
 
-# Builds standalone desktop bundles for Windows and macOS and attaches them to
-# the GitHub Release. Trigger: publishing a Release (or a manual run for a dry
-# build). No network/telemetry is added — builds are plain `flutter build`.
+# Builds the installers and attaches them to the GitHub Release: .deb (Linux),
+# .msi (Windows) and .dmg (macOS). Trigger: publishing a Release (or a manual
+# run for a dry build, which only uploads workflow artifacts). No network or
+# telemetry is added — builds are plain Gradle.
 on:
   release:
     types: [published]
   workflow_dispatch:
 
-# Pinned to stable: the 3.45 beta crashes the AOT snapshotter on macOS
-# ("Unexpected object ... package:flutter/src/widgets/_window_macos.dart"), and a
-# release build has no reason to sit on a pre-release SDK anyway.
-env:
-  FLUTTER_VERSION: "3.47.0"
-  FLUTTER_CHANNEL: "stable"
-
 permissions:
   contents: write # needed to upload assets to the Release
 
 jobs:
-  windows:
-    runs-on: windows-latest
+  linux:
+    # An older Ubuntu keeps the .deb's glibc floor (and library package names) low.
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v5
-
-      - uses: subosito/flutter-action@v2
+      - uses: actions/setup-java@v4
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: ${{ env.FLUTTER_CHANNEL }}
-          cache: true
-
-      - run: flutter config --enable-windows-desktop
-      - run: flutter pub get
-      - run: flutter build windows --release
-
-      # The bundle must carry the VC++ runtime (windows/CMakeLists.txt installs
-      # it): without those DLLs the app cannot start on a Windows machine that
-      # has no redistributable, which is exactly the failure the runner hides.
-      - name: Verify the VC++ runtime is bundled
-        shell: pwsh
+          distribution: temurin
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Version
+        # A dry run from a branch has no version tag: fall back to the default.
         run: |
-          $dir = "build/windows/x64/runner/Release"
-          $missing = @("msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll") |
-            Where-Object { -not (Test-Path (Join-Path $dir $_)) }
-          if ($missing) { throw "Missing from the bundle: $($missing -join ', ')" }
-
-      # The Release folder is self-contained (exe + DLLs + data): unzip and run.
-      - name: Package standalone zip
-        shell: pwsh
+          v="$(echo '${{ github.ref_name }}' | sed 's/^v//')"
+          case "$v" in [0-9]*) ;; *) v=1.0.0 ;; esac
+          echo "VERSION=$v" >> "$GITHUB_ENV"
+      - run: ./gradlew :composeApp:packageDeb -PappVersion="$VERSION" --console=plain
+      - name: Name the asset
         run: |
-          $tag = "${{ github.ref_name }}"
-          $out = "foxscreenshots-$tag-windows-x64.zip"
-          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath $out
-          echo "ASSET=$out" >> $env:GITHUB_ENV
-
+          mkdir -p dist
+          cp composeApp/build/compose/binaries/main/deb/*.deb "dist/foxscreenshots-${{ github.ref_name }}-linux-amd64.deb"
       - uses: actions/upload-artifact@v4
         with:
-          name: windows-x64
-          path: ${{ env.ASSET }}
-
+          name: linux-deb
+          path: dist/*
       - name: Attach to Release
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.ASSET }}
+          files: dist/*
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Version
+        shell: pwsh
+        run: |
+          # A dry run from a branch has no version tag: fall back to the default.
+          $v = "${{ github.ref_name }}".TrimStart("v")
+          if ($v -notmatch '^\d') { $v = "1.0.0" }
+          echo "VERSION=$v" >> $env:GITHUB_ENV
+      - run: ./gradlew.bat :composeApp:packageMsi "-PappVersion=$env:VERSION" --console=plain
+        shell: pwsh
+      - name: Name the asset
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item (Get-ChildItem composeApp/build/compose/binaries/main/msi/*.msi | Select-Object -First 1) "dist/foxscreenshots-${{ github.ref_name }}-windows-x64.msi"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-msi
+          path: dist/*
+      - name: Attach to Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
 
   macos:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
-
-      - uses: subosito/flutter-action@v2
+      - uses: actions/setup-java@v4
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: ${{ env.FLUTTER_CHANNEL }}
-          cache: true
-
-      - run: flutter config --enable-macos-desktop
-      - run: flutter pub get
-      - run: flutter build macos --release
-
-      # Zip the .app bundle with ditto to preserve macOS metadata. The build is
-      # unsigned/un-notarized: users may need to right-click > Open on first run.
-      - name: Package standalone zip
+          distribution: temurin
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Version
+        # A dry run from a branch has no version tag: fall back to the default.
         run: |
-          tag="${{ github.ref_name }}"
-          app=$(find build/macos/Build/Products/Release -maxdepth 1 -name "*.app" | head -1)
-          out="foxscreenshots-$tag-macos.zip"
-          ditto -c -k --sequesterRsrc --keepParent "$app" "$out"
-          echo "ASSET=$out" >> "$GITHUB_ENV"
-
+          v="$(echo '${{ github.ref_name }}' | sed 's/^v//')"
+          case "$v" in [0-9]*) ;; *) v=1.0.0 ;; esac
+          echo "VERSION=$v" >> "$GITHUB_ENV"
+      # iconutil only exists on macOS, so the .icns is made here from the PNG.
+      - name: Build the app icon
+        run: |
+          mkdir icon.iconset
+          for size in 16 32 64 128 256 512; do
+            sips -z $size $size composeApp/packaging/icon.png --out icon.iconset/icon_${size}x${size}.png >/dev/null
+          done
+          cp icon.iconset/icon_32x32.png icon.iconset/icon_16x16@2x.png
+          cp icon.iconset/icon_64x64.png icon.iconset/icon_32x32@2x.png
+          cp icon.iconset/icon_256x256.png icon.iconset/icon_128x128@2x.png
+          cp icon.iconset/icon_512x512.png icon.iconset/icon_256x256@2x.png
+          iconutil -c icns icon.iconset -o composeApp/packaging/icon.icns
+      - run: ./gradlew :composeApp:packageDmg -PappVersion="$VERSION" --console=plain
+      - name: Name the asset
+        run: |
+          mkdir -p dist
+          cp composeApp/build/compose/binaries/main/dmg/*.dmg "dist/foxscreenshots-${{ github.ref_name }}-macos.dmg"
       - uses: actions/upload-artifact@v4
         with:
-          name: macos
-          path: ${{ env.ASSET }}
-
+          name: macos-dmg
+          path: dist/*
       - name: Attach to Release
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.ASSET }}
-
-  linux:
-    # Built on 22.04 for an older glibc floor than ubuntu-latest, so the
-    # AppImage and .deb run on more distributions.
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: ${{ env.FLUTTER_CHANNEL }}
-          cache: true
-
-      # The desktop build deps plus the tray and global-hotkey libraries the app
-      # links against (mirrors ci.yml).
-      - name: Install Linux build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y clang cmake ninja-build pkg-config \
-            libgtk-3-dev libkeybinder-3.0-dev libayatana-appindicator3-dev
-
-      - run: flutter config --enable-linux-desktop
-      - run: flutter pub get
-      - run: flutter build linux --release
-
-      - name: Fetch appimagetool
-        run: |
-          wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -O /tmp/appimagetool
-          chmod +x /tmp/appimagetool
-
-      # APPIMAGE_EXTRACT_AND_RUN lets both appimagetool and its output run without
-      # FUSE, which the runners do not provide.
-      - name: Package AppImage and .deb
-        env:
-          APPIMAGE_EXTRACT_AND_RUN: "1"
-          APPIMAGETOOL: /tmp/appimagetool
-        run: |
-          tool/build_appimage.sh --no-flutter-build
-          tool/build_deb.sh --no-flutter-build
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux
-          path: |
-            build/*.AppImage
-            build/*.deb
-
-      - name: Attach to Release
-        if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            build/*.AppImage
-            build/*.deb
+          files: dist/*

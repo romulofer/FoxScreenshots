@@ -10,7 +10,8 @@
 [![CI](https://github.com/romulofer/FoxScreenshots/actions/workflows/ci.yml/badge.svg)](https://github.com/romulofer/FoxScreenshots/actions/workflows/ci.yml)
 [![Licença: MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-A63F10.svg)](LICENSE)
 
-Feito em Flutter. Código aberto sob a [Licença MIT](LICENSE).
+Feito em Kotlin Multiplatform (Compose Multiplatform para desktop). Código
+aberto sob a [Licença MIT](LICENSE).
 
 **Português (Brasil)** · [English](#-foxscreenshots--english)
 
@@ -26,10 +27,11 @@ Ferramenta de desktop para capturar e anotar screenshots rapidamente.
   um retângulo para recortar.
 - **Modo temporizador** — escolha a região antes; a foto sai depois de alguns
   segundos, dando tempo de abrir menus, dicas de ferramenta e estados de hover.
+- **Tela cheia, janela ativa e repetir a última captura.**
 - **Editor** — recorte, seta, retângulo/elipse, texto, marca-texto,
   desfoque/pixelagem, caneta livre e marcadores numerados. Desfazer/refazer.
 - **Saída** — copia para a área de transferência **e** salva em PNG.
-- **Roda na bandeja do sistema**, com atalho global reconfigurável.
+- **Roda na bandeja do sistema**, com atalhos globais reconfiguráveis.
 - **Localizado** em português (pt-BR) e inglês (en-US).
 - **Temas claro e escuro.**
 
@@ -51,110 +53,80 @@ acertar a borda pixel a pixel:
 
 ![Editor de anotações](docs/images/editor-pt.png)
 
-**Configurações** — tema, idioma, atraso do temporizador e atalho:
+**Configurações** — tema, idioma, atraso do temporizador e atalhos:
 
 ![Tela de configurações](docs/images/configuracoes-pt.png)
 
-> As imagens são geradas pelo próprio app, sobre uma área de trabalho sintética:
-> `xvfb-run -a flutter test integration_test/screenshots_test.dart -d linux`.
+> As imagens são geradas pelo próprio app, sobre uma área de trabalho sintética
+> num servidor X virtual (xvfb).
 
 ## Situação atual
 
-🚧 Em desenvolvimento inicial — **0.3.1** é a versão marcada mais recente.
-Captura (instantânea, temporizador, tela cheia, janela ativa), galeria da
-sessão, editor de anotações, bandeja e atalho global funcionam no Linux/X11,
-inclusive com vários monitores; o Wayland captura pelo xdg-desktop-portal, sem
-janela ativa nem atalho global. No Windows 10 a 0.3.0 sequer abria, por faltar
-o runtime do Visual C++ no pacote; a 0.3.1 empacota esses DLLs e usa um ícone
-`.ico` na bandeja (ver [Windows](#windows)). O macOS compila do mesmo código,
-mas ainda não foi exercitado em hardware real.
+A **1.0.0** é a reescrita do app de Flutter para Kotlin Multiplatform. Funciona
+no Linux/X11 (testado, inclusive com vários monitores); no Wayland a captura
+passa pelo xdg-desktop-portal, sem janela ativa nem atalho global. Os backends
+de Windows (GDI) e macOS (CoreGraphics) compilam e têm a CI nos dois sistemas,
+mas ainda não foram exercitados em hardware real.
 
 A especificação completa está em [`SPEC.md`](SPEC.md).
 
-## Como começar
+## Instalação
 
-Requer o [SDK do Flutter](https://docs.flutter.dev/get-started/install) com
-suporte a desktop habilitado.
+Baixe o instalador da [última release](https://github.com/romulofer/FoxScreenshots/releases/latest):
 
-### Pacotes de sistema no Linux
+| Sistema | Arquivo |
+|---|---|
+| Linux (Debian/Ubuntu/Mint) | `foxscreenshots-vX.Y.Z-linux-amd64.deb` — `sudo apt install ./foxscreenshots-*.deb` |
+| Windows 10/11 (64 bits) | `foxscreenshots-vX.Y.Z-windows-x64.msi` |
+| macOS | `foxscreenshots-vX.Y.Z-macos.dmg` |
 
-A captura fala direto com o X11, e a bandeja e o atalho global vêm de
-bibliotecas GTK, então alguns pacotes são necessários. Debian/Ubuntu/Mint:
+Os instaladores já trazem o runtime do Java: não é preciso instalar o JDK.
 
-```bash
-# para compilar
-sudo apt install clang cmake ninja-build pkg-config libgtk-3-dev \
-                 libkeybinder-3.0-dev libayatana-appindicator3-dev
+**Linux.** O `.deb` declara as bibliotecas que usa (X11, XTest, xkbcommon…); o
+`apt` instala o que faltar. **Wayland** captura pelo `xdg-desktop-portal`: a
+área de trabalho pede autorização na primeira captura. Em troca, capturar a
+*janela ativa* e o *atalho global* não funcionam — o Wayland não deixa um
+aplicativo saber nada sobre as janelas dos outros nem prender uma tecla do
+sistema. A seleção de região continua funcionando: o quadro congelado é
+encaixado dentro da janela em tela cheia.
 
-# para executar (normalmente já instalados)
-sudo apt install libx11-6 libkeybinder-3.0-0 libayatana-appindicator3-1
-```
+**macOS.** Autorize o app em *Ajustes do Sistema → Privacidade e Segurança →
+Gravação de Tela* (captura) e *Acessibilidade* (atalhos globais).
 
-| Biblioteca | Para quê | Sem ela |
-|---|---|---|
-| `libX11.so.6` | captura de tela | a captura fica indisponível |
-| `libkeybinder-3.0.so.0` | atalho global | o atalho não dispara |
-| `libayatana-appindicator3.so.1` | ícone na bandeja | sem ícone na bandeja |
+**Windows e macOS não são assinados digitalmente.** O SmartScreen pede *Mais
+informações → Executar assim mesmo*; no macOS, abra com *clique direito →
+Abrir* na primeira vez.
 
-O app verifica todas na inicialização e mostra um aviso nomeando a que estiver
-faltando — ninguém fica com um botão que não faz nada em silêncio.
+O app verifica o ambiente na inicialização e mostra um aviso nomeando o que
+estiver faltando — ninguém fica com um botão que não faz nada em silêncio.
 
-**Wayland** captura pelo `xdg-desktop-portal`: a área de trabalho pede
-autorização na primeira captura e o portal entrega a imagem pronta. Em troca,
-capturar a *janela ativa* e o *atalho global* não funcionam — o Wayland não
-deixa um aplicativo saber nada sobre as janelas dos outros nem prender uma
-tecla do sistema. A seleção de região continua funcionando: o quadro congelado
-é encaixado dentro da janela em tela cheia, já que ali nenhuma janela pode
-escolher onde ficar.
+## Desenvolvimento
+
+Requer o **JDK 25 ou mais novo**. O Gradle vem pelo wrapper.
 
 ```bash
-# habilitar desktop (uma vez)
-flutter config --enable-linux-desktop --enable-windows-desktop --enable-macos-desktop
-
-# instalar dependências e rodar
-flutter pub get
-flutter gen-l10n
-flutter run -d linux        # ou: -d windows / -d macos
+./gradlew :composeApp:run                 # roda o app
+./gradlew :composeApp:desktopTest         # testes de unidade e de UI
+./gradlew :composeApp:packageDeb          # instalador do sistema atual (.deb / .msi via packageMsi / .dmg via packageDmg)
 ```
 
-### Windows
-
-Requer **Windows 10 (64 bits) ou Windows 11**. Windows 7 e 8 não são
-suportados: o Flutter só tem suporte a Windows 10 ou superior, e o motor usa
-APIs que não existem nas versões antigas — não é uma escolha do app.
-
-O `.zip` da release é autocontido: além do `.exe`, dos DLLs dos plugins e da
-pasta `data`, ele traz o runtime do Visual C++ (`msvcp140.dll`,
-`vcruntime140.dll`, `vcruntime140_1.dll`) ao lado do executável. **Até a v0.3.0
-esses três DLLs faltavam**, e em máquina sem o *Redistribuível do Visual C++
-2015-2022* o app não abria.
-
-O zip vem sem assinatura digital. Baixado pelo navegador, o Windows o marca:
-antes de extrair, **Propriedades → Desbloquear**; na primeira execução o
-SmartScreen pede **Mais informações → Executar assim mesmo**.
-
-### Comandos usuais
-
-O SDK usado pela CI e pelas releases está fixado em **Flutter 3.47.0 (stable,
-Dart 3.13.0)**. Use a mesma versão localmente: o `dart format` muda de estilo
-entre versões do Dart, e a CI reprova o que estiver formatado por outra.
+Os testes que injetam teclas e escrevem na área de transferência só rodam num
+display descartável, nunca na sua sessão:
 
 ```bash
-flutter analyze                 # análise estática
-dart format .                   # formatação (Dart 3.13.0)
-flutter test                    # testes de unidade e de widget
-# e2e (precisa de display; xvfb na CI). Um único ponto de entrada: o runner de
-# desktop não relança o app para um segundo arquivo na mesma execução.
-flutter test integration_test/all_tests.dart -d linux
-flutter build linux             # build de release (também windows / macos)
+FOX_ISOLATED_DISPLAY=1 xvfb-run -a ./gradlew :composeApp:desktopTest
 ```
+
+(precisa de `xvfb`, `xdotool` e `x11-apps` no Linux).
 
 ## Organização do projeto
 
-Detalhes em [`SPEC.md` §4](SPEC.md). Em resumo: `lib/core/` guarda os serviços de
-plataforma (captura, bandeja, atalho, armazenamento, tema, l10n);
-`lib/features/` guarda a sobreposição de captura, o editor e as configurações;
-os testes ficam em `test/` e `integration_test/`.
+Detalhes em [`SPEC.md` §4](SPEC.md). Em resumo, em `composeApp/src/`:
+`commonMain` guarda o que não depende de sistema (modelos, fluxos de captura,
+editor, configurações, textos pt-BR/en-US, tema e as telas em Compose);
+`desktopMain` guarda o que toca no sistema (captura por X11/portal/GDI/
+CoreGraphics via JNA, Skia, bandeja, atalhos globais, área de transferência,
+diálogos de arquivo); os testes ficam em `commonTest` e `desktopTest`.
 
 ## Contribuindo
 
@@ -176,7 +148,8 @@ projeto estão em [`SPEC.md` §7](SPEC.md). Vulnerabilidade de segurança? Veja
 
 **Cross-platform screenshot capture & light editing — Windows · Linux · macOS**
 
-Built with Flutter. Open source under the [MIT License](LICENSE).
+Built with Kotlin Multiplatform (Compose Multiplatform for desktop). Open
+source under the [MIT License](LICENSE).
 
 [Português (Brasil)](#-foxscreenshots) · **English**
 
@@ -190,10 +163,11 @@ A desktop tool to capture and quickly annotate screenshots.
   selection to crop.
 - **Timer mode** — pick the region first, then capture after a delay, so you can
   open menus, tooltips, and hover states before the shot is taken.
+- **Full screen, active window, and repeat the last capture.**
 - **Editor** — crop, arrow, rectangle/ellipse, text, highlight, blur/pixelate,
   freehand pen, and numbered step markers. Undo/redo.
 - **Output** — copy to clipboard **and** save as PNG.
-- **Runs in the system tray** with a rebindable global hotkey.
+- **Runs in the system tray** with rebindable global hotkeys.
 - **Localized** in Portuguese (pt-BR) and English (en-US).
 - **Light & dark themes.**
 
@@ -215,108 +189,79 @@ for pixel-precise edges:
 
 ![Annotation editor](docs/images/editor-en.png)
 
-**Settings** — theme, language, timer delay and hotkey:
+**Settings** — theme, language, timer delay and hotkeys:
 
 ![Settings screen](docs/images/configuracoes-en.png)
 
-> The images are generated by the app itself, over a synthetic desktop:
-> `xvfb-run -a flutter test integration_test/screenshots_test.dart -d linux`.
+> The images are generated by the app itself, over a synthetic desktop on a
+> virtual X server (xvfb).
 
 ## Status
 
-🚧 Early development — **0.3.1** is the latest tagged release. Capture (instant,
-timer, full screen, active window), the session gallery, the annotation editor,
-tray and global hotkey all work on Linux/X11, multiple monitors included;
-Wayland captures through xdg-desktop-portal, without active-window capture or
-the global hotkey. On Windows 10, 0.3.0 would not even start — the Visual C++
-runtime was missing from the package; 0.3.1 bundles those DLLs and uses an
-`.ico` tray icon (see [Windows](#windows-1)). macOS builds from the same code
-but has not been exercised on real hardware yet.
+**1.0.0** is the rewrite of the app from Flutter to Kotlin Multiplatform. It
+works on Linux/X11 (tested, multiple monitors included); on Wayland capture goes
+through xdg-desktop-portal, without active-window capture or the global hotkey.
+The Windows (GDI) and macOS (CoreGraphics) backends compile and have CI on both
+systems, but have not been exercised on real hardware yet.
 
 See [`SPEC.md`](SPEC.md) for the full specification (written in Portuguese).
 
-## Getting started
+## Install
 
-Requires the [Flutter SDK](https://docs.flutter.dev/get-started/install) with
-desktop support enabled.
+Download the installer from the [latest release](https://github.com/romulofer/FoxScreenshots/releases/latest):
 
-### Linux system packages
+| System | File |
+|---|---|
+| Linux (Debian/Ubuntu/Mint) | `foxscreenshots-vX.Y.Z-linux-amd64.deb` — `sudo apt install ./foxscreenshots-*.deb` |
+| Windows 10/11 (64-bit) | `foxscreenshots-vX.Y.Z-windows-x64.msi` |
+| macOS | `foxscreenshots-vX.Y.Z-macos.dmg` |
 
-Capture talks to X11 directly, and the tray and global hotkey come from GTK
-libraries, so a few system packages are needed. Debian/Ubuntu/Mint:
+The installers bundle the Java runtime: no JDK needed.
 
-```bash
-# to build
-sudo apt install clang cmake ninja-build pkg-config libgtk-3-dev \
-                 libkeybinder-3.0-dev libayatana-appindicator3-dev
+**Linux.** The `.deb` declares the libraries it uses (X11, XTest, xkbcommon…);
+`apt` installs whatever is missing. **Wayland** captures through
+`xdg-desktop-portal`: the desktop asks for permission on the first capture. In
+exchange, *active window* capture and the *global hotkey* do not work there —
+Wayland lets an app know nothing about other windows and grab no system-wide
+key. Region selection still works: the frozen frame is fitted inside the
+fullscreen overlay.
 
-# to run (usually already installed)
-sudo apt install libx11-6 libkeybinder-3.0-0 libayatana-appindicator3-1
-```
+**macOS.** Allow the app under *System Settings → Privacy & Security → Screen
+Recording* (capture) and *Accessibility* (global hotkeys).
 
-| Library | Used for | Without it |
-|---|---|---|
-| `libX11.so.6` | screen capture | capture is unavailable |
-| `libkeybinder-3.0.so.0` | global hotkey | hotkey does not fire |
-| `libayatana-appindicator3.so.1` | tray icon | no tray icon |
+**Windows and macOS builds are not code-signed.** SmartScreen asks for *More
+info → Run anyway*; on macOS, *right click → Open* the first time.
 
-The app checks all of these at startup and shows a banner naming whatever is
+The app checks its environment at startup and shows a banner naming whatever is
 missing, so users are never left with a button that silently does nothing.
 
-**Wayland** captures through `xdg-desktop-portal`: the desktop asks for
-permission on the first capture and hands back a finished image. In exchange,
-*active window* capture and the *global hotkey* do not work there — Wayland
-lets an app know nothing about other windows and grab no system-wide key.
-Region selection still works: the frozen frame is fitted inside the fullscreen
-overlay, since no window there may choose where it goes.
+## Development
+
+Requires **JDK 25 or newer**. Gradle comes through the wrapper.
 
 ```bash
-# enable desktop (once)
-flutter config --enable-linux-desktop --enable-windows-desktop --enable-macos-desktop
-
-# install deps and run
-flutter pub get
-flutter gen-l10n
-flutter run -d linux        # or: -d windows / -d macos
+./gradlew :composeApp:run                 # run the app
+./gradlew :composeApp:desktopTest         # unit and UI tests
+./gradlew :composeApp:packageDeb          # installer for this OS (.deb / packageMsi for .msi / packageDmg for .dmg)
 ```
 
-### Windows
-
-Requires **Windows 10 (64-bit) or Windows 11**. Windows 7 and 8 are not
-supported: Flutter itself supports Windows 10 and later only, and the engine
-calls APIs the older releases do not have — this is not the app's choice.
-
-The release `.zip` is self-contained: alongside the `.exe`, the plugin DLLs and
-the `data` folder, it ships the Visual C++ runtime (`msvcp140.dll`,
-`vcruntime140.dll`, `vcruntime140_1.dll`) next to the executable. **Up to
-v0.3.0 those three DLLs were missing**, and the app would not start on a
-machine without the *Visual C++ 2015-2022 Redistributable*.
-
-The zip is unsigned. Downloaded through a browser, Windows marks it: before
-extracting, use **Properties → Unblock**; on first run SmartScreen asks for
-**More info → Run anyway**.
-
-### Common commands
-
-CI and the release builds are pinned to **Flutter 3.47.0 (stable, Dart
-3.13.0)**. Use the same version locally: `dart format` changes style between
-Dart versions, and CI rejects anything formatted by a different one.
+The tests that inject keystrokes and write to the clipboard only run on a
+throwaway display, never on your session:
 
 ```bash
-flutter analyze                 # lint / static analysis
-dart format .                   # format (Dart 3.13.0)
-flutter test                    # unit + widget tests
-# e2e (needs a display; xvfb on CI). One entry point: the desktop runner cannot
-# relaunch the app for a second file in the same run.
-flutter test integration_test/all_tests.dart -d linux
-flutter build linux             # release build (also windows / macos)
+FOX_ISOLATED_DISPLAY=1 xvfb-run -a ./gradlew :composeApp:desktopTest
 ```
+
+(needs `xvfb`, `xdotool` and `x11-apps` on Linux).
 
 ## Project layout
 
-See [`SPEC.md` §4](SPEC.md). In short: `lib/core/` holds platform services
-(capture, tray, hotkey, storage, theme, l10n); `lib/features/` holds the capture
-overlay, editor, and settings; tests live in `test/` and `integration_test/`.
+See [`SPEC.md` §4](SPEC.md). In short, under `composeApp/src/`: `commonMain`
+holds everything that does not depend on the OS (models, capture flows, editor,
+settings, pt-BR/en-US strings, theme, and the Compose screens); `desktopMain`
+holds what touches the OS (X11/portal/GDI/CoreGraphics capture through JNA,
+Skia, tray, global hotkeys, clipboard, file dialogs); tests live in
+`commonTest` and `desktopTest`.
 
 ## Contributing
 
