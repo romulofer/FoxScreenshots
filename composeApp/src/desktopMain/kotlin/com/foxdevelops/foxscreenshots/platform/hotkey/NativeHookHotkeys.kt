@@ -10,6 +10,9 @@ import com.github.kwhat.jnativehook.NativeHookException
 import com.github.kwhat.jnativehook.NativeInputEvent
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -26,8 +29,13 @@ class HotkeyUnavailableException(message: String, cause: Throwable? = null) : Ex
  * exactly and lock keys (Caps, Num, Scroll Lock) never get in the way — the
  * reason a global-grab based implementation silently stops working under Scroll
  * Lock. A held key fires once, not on every auto-repeat.
+ *
+ * The library unpacks its native code next to the jar by default. Installed
+ * under `/opt`, `Program Files` or `/Applications` that folder is read-only for
+ * the user, the unpacking fails and every hotkey silently dies; [libraryDir]
+ * (a per-user folder) is where it unpacks instead.
  */
-class NativeHookHotkeys : GlobalHotkeys, NativeKeyListener {
+class NativeHookHotkeys(private val libraryDir: Path? = null) : GlobalHotkeys, NativeKeyListener {
     @Volatile
     private var bindings: Map<HotkeyAction, HotkeyBinding> = emptyMap()
 
@@ -44,7 +52,7 @@ class NativeHookHotkeys : GlobalHotkeys, NativeKeyListener {
         this.bindings = bindings
         this.onTriggered = onTriggered
         if (listening) return
-        installHook()
+        installHook(libraryDir)
         GlobalScreen.addNativeKeyListener(this)
         listening = true
     }
@@ -82,9 +90,14 @@ class NativeHookHotkeys : GlobalHotkeys, NativeKeyListener {
         private var hookInstalled = false
 
         @Synchronized
-        private fun installHook() {
+        private fun installHook(libraryDir: Path?) {
             if (hookInstalled) return
             try {
+                // Must be set before GlobalScreen initialises: that is when the library is located and unpacked.
+                if (libraryDir != null) {
+                    Files.createDirectories(libraryDir)
+                    System.setProperty("jnativehook.lib.path", libraryDir.toString())
+                }
                 // JNativeHook logs every event at INFO through java.util.logging; that would put keystrokes in a log.
                 Logger.getLogger(GlobalScreen::class.java.packageName).apply {
                     level = Level.OFF
@@ -97,8 +110,11 @@ class NativeHookHotkeys : GlobalHotkeys, NativeKeyListener {
                 hookInstalled = true
             } catch (e: NativeHookException) {
                 throw HotkeyUnavailableException("The system keyboard hook could not be installed: ${e.message}", e)
-            } catch (e: UnsatisfiedLinkError) {
+            } catch (e: LinkageError) {
+                // Includes the NoClassDefFoundError a retry gets after a failed first load.
                 throw HotkeyUnavailableException("The keyboard hook library could not be loaded: ${e.message}", e)
+            } catch (e: IOException) {
+                throw HotkeyUnavailableException("The keyboard hook folder could not be created: ${e.message}", e)
             }
         }
 

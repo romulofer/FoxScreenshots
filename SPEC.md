@@ -73,15 +73,18 @@ sem perda.
   *Implementado:* o diálogo abre na última pasta usada; o padrão de nome aceita
   `{date}`, `{time}`, `{year}`, `{month}`, `{day}`, `{hour}`, `{minute}` e
   `{second}`, e separadores de caminho ou caracteres reservados são descartados.
-- **Abrir imagem** (Arquivo ▸ Abrir imagem…): carrega PNG/JPEG/BMP/GIF, converte
+- **Abrir imagem** (botão na barra do hub): carrega PNG/JPEG/BMP/GIF, converte
   para PNG e abre no editor.
 
 **Aceite:** a área de transferência recebe um PNG válido nos três sistemas
 operacionais; o arquivo salvo abre em um visualizador comum.
 
-### 2.4 Barra de ferramentas / menus
-- Barra de menus do app: **Arquivo**, **Configurações** e **Ajuda**. O
-  menu da bandeja espelha as ações principais.
+### 2.4 Barra de ferramentas / menus — *decidido*
+- **Sem barra de menus** na janela (decisão do autor). As ações vivem na barra
+  superior do hub (abrir imagem, salvar tudo, limpar, configurações, sobre) e
+  no menu da bandeja (mostrar, capturas, configurações, sair).
+- **Ícone da bandeja:** no Linux, via StatusNotifierItem/D-Bus (Cinnamon, KDE,
+  GNOME com AppIndicator), com o AWT como reserva; Windows e macOS usam o AWT.
 
 ### 2.5 Janela principal — *hub no estilo do Shutter — decidido*
 O clique esquerdo no ícone da bandeja abre um hub inspirado no app **Shutter**:

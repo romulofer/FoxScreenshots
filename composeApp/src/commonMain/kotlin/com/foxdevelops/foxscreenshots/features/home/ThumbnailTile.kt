@@ -60,7 +60,11 @@ fun ThumbnailTile(
         thumbnail = withContext(Dispatchers.Default) { processor.thumbnail(capture.pngBytes, THUMBNAIL_WIDTH) }
     }
 
-    Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+    Card(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ) {
         Column {
             Box(
                 Modifier.fillMaxWidth().aspectRatio(4f / 3f).clip(MaterialTheme.shapes.medium).clickable(onClick = onPreview),

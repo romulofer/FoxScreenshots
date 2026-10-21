@@ -31,7 +31,7 @@ sealed interface Screen {
 class AppNavigator {
     private val stack = mutableStateListOf<Screen>(Screen.Home)
 
-    /** Whether the About dialog is open. Lives here because the menu bar and the hub window both ask for it. */
+    /** Whether the About dialog is open. Lives here so any window can ask for it. */
     var aboutVisible by mutableStateOf(false)
 
     val current: Screen get() = stack.last()

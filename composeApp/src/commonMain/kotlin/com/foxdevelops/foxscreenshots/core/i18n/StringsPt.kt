@@ -4,9 +4,6 @@ package com.foxdevelops.foxscreenshots.core.i18n
 object StringsPt : Strings {
     override val appTitle = "FoxScreenShots"
 
-    override val menuFile = "Arquivo"
-    override val menuSettings = "Configurações"
-    override val menuHelp = "Ajuda"
     override val showWindow = "Mostrar janela"
     override val quit = "Sair"
 

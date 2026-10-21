@@ -65,7 +65,9 @@ class SystemDesktopIntegration(
         try {
             hotkeys.register(bindings, events::onHotkey)
             issues.clear(SystemDependency.Hotkeys)
-        } catch (_: HotkeyUnavailableException) {
+        } catch (e: HotkeyUnavailableException) {
+            // The reason never contains key input; stderr is where someone running from a terminal looks.
+            System.err.println("[foxscreenshots] global hotkeys unavailable: ${e.message}")
             issues.report(DependencyIssue(SystemDependency.Hotkeys, DependencySeverity.Degraded))
         }
     }

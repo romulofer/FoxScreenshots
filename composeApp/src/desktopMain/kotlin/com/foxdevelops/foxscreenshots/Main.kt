@@ -24,7 +24,6 @@ import com.foxdevelops.foxscreenshots.core.desktop.DesktopEvents
 import com.foxdevelops.foxscreenshots.core.desktop.SystemDependency
 import com.foxdevelops.foxscreenshots.core.desktop.TrayAction
 import com.foxdevelops.foxscreenshots.core.hotkey.HotkeyAction
-import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
 import com.foxdevelops.foxscreenshots.core.i18n.stringsFor
 import com.foxdevelops.foxscreenshots.core.theme.FoxTheme
 import com.foxdevelops.foxscreenshots.features.capture.CaptureSelectionOverlay
@@ -33,7 +32,6 @@ import com.foxdevelops.foxscreenshots.features.home.runCapture
 import com.foxdevelops.foxscreenshots.ui.AppRoot
 import io.github.vinceglb.filekit.FileKit
 import kotlinx.coroutines.launch
-import androidx.compose.runtime.CompositionLocalProvider
 
 private const val APP_ID = "com.foxdevelops.foxscreenshots"
 
@@ -100,9 +98,6 @@ fun main() {
             onCloseRequest = { if (issues.any { it.dependency == SystemDependency.Tray }) quit() else surface.hideToTray() },
         ) {
             window.minimumSize = java.awt.Dimension(640, 480)
-            CompositionLocalProvider(LocalStrings provides strings) {
-                MainMenu(app, surface, strings, ::capture, ::quit)
-            }
             AppRoot(app)
         }
 

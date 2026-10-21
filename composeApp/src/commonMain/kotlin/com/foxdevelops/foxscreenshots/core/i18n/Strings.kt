@@ -11,9 +11,6 @@ import com.foxdevelops.foxscreenshots.core.settings.LanguagePreference
 interface Strings {
     val appTitle: String
 
-    val menuFile: String
-    val menuSettings: String
-    val menuHelp: String
     val showWindow: String
     val quit: String
 

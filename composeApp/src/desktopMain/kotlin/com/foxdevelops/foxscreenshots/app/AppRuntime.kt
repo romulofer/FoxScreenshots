@@ -22,6 +22,9 @@ import com.foxdevelops.foxscreenshots.platform.storage.AwtClipboardService
 import com.foxdevelops.foxscreenshots.platform.storage.DesktopOutputService
 import com.foxdevelops.foxscreenshots.platform.storage.FileSettingsStore
 import com.foxdevelops.foxscreenshots.platform.tray.AwtTray
+import com.foxdevelops.foxscreenshots.platform.tray.FallbackTray
+import com.foxdevelops.foxscreenshots.platform.tray.StatusNotifierTray
+import com.foxdevelops.foxscreenshots.platform.tray.TrayPresenter
 import com.foxdevelops.foxscreenshots.platform.windows.WindowsScreenCaptureService
 import com.foxdevelops.foxscreenshots.platform.x11.X11ScreenCaptureService
 import com.foxdevelops.foxscreenshots.ui.AppContainer
@@ -39,8 +42,9 @@ class AppRuntime(
         fun create(): AppRuntime {
             val os = HostOs.detect()
             val session = DesktopSession.detect()
+            val settingsFile = FileSettingsStore.defaultFile()
             val settings = SettingsController(
-                FileSettingsStore(FileSettingsStore.defaultFile(), importFrom = FileSettingsStore.legacyFlutterPreferences()),
+                FileSettingsStore(settingsFile, importFrom = FileSettingsStore.legacyFlutterPreferences()),
             )
             val sessionList = SessionController()
             val processor = SkiaImageProcessor()
@@ -65,7 +69,7 @@ class AppRuntime(
                 output = output,
                 issues = issues,
                 capture = capture,
-                desktop = SystemDesktopIntegration(AwtTray(), NativeHookHotkeys(), issues, session),
+                desktop = SystemDesktopIntegration(trayFor(os), NativeHookHotkeys(libraryDir = settingsFile.resolveSibling("native")), issues, session),
                 systemLanguage = Locale.getDefault().language,
                 appVersion = readVersion(),
             )
@@ -84,6 +88,10 @@ class AppRuntime(
             }
             HostOs.Other -> UnsupportedScreenCaptureService(CaptureFailure.PlatformUnsupported, "no backend for this OS")
         }
+
+        /** Linux desktops speak StatusNotifierItem over D-Bus, not the AWT tray protocol; everywhere else AWT works. */
+        private fun trayFor(os: HostOs): TrayPresenter =
+            if (os == HostOs.Linux) FallbackTray(StatusNotifierTray(), AwtTray()) else AwtTray()
 
         private fun readVersion(): String {
             val packaged = System.getProperty("jpackage.app-version")

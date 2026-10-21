@@ -32,7 +32,7 @@ Ferramenta de desktop para capturar e anotar screenshots rapidamente.
   desfoque/pixelagem, caneta livre e marcadores numerados. Desfazer/refazer.
 - **Saída** — copia para a área de transferência **e** salva em PNG.
 - **Nome de arquivo configurável** (`{date}`, `{time}`…), diálogo de salvar que
-  lembra a última pasta e **Arquivo ▸ Abrir imagem…** para anotar uma imagem existente.
+  lembra a última pasta e **Abrir imagem** (botão na barra superior) para anotar uma imagem existente.
 - **Atrasos rápidos** (1, 3, 5, 10 s) direto na janela principal.
 - **Roda na bandeja do sistema**, com atalhos globais reconfiguráveis.
 - **Localizado** em português (pt-BR) e inglês (en-US).

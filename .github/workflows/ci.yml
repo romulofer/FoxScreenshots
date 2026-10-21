@@ -36,7 +36,8 @@ jobs:
         env:
           # The live tests inject keys and write the clipboard: only ever on a throwaway display.
           FOX_ISOLATED_DISPLAY: "1"
-        run: xvfb-run -a -s "-screen 0 1400x900x24" ./gradlew :composeApp:desktopTest --console=plain
+          FOX_ISOLATED_DBUS: "1"
+        run: dbus-run-session -- xvfb-run -a -s "-screen 0 1400x900x24" ./gradlew :composeApp:desktopTest --console=plain
 
       - uses: actions/upload-artifact@v4
         if: failure()

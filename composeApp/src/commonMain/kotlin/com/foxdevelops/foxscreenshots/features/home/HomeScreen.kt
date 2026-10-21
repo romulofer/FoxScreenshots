@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.FileOpen
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.SaveAlt
 import androidx.compose.material.icons.outlined.Settings
@@ -80,6 +81,9 @@ fun HomeScreen(app: AppContainer, modifier: Modifier = Modifier) {
                 }
                 IconButton(onClick = { app.navigator.openSettings() }) {
                     Icon(Icons.Outlined.Settings, contentDescription = strings.settingsTitle)
+                }
+                IconButton(onClick = { app.navigator.aboutVisible = true }) {
+                    Icon(Icons.Outlined.Info, contentDescription = strings.aboutTitle)
                 }
             },
         )

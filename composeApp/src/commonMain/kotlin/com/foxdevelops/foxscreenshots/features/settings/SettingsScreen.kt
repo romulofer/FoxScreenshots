@@ -46,6 +46,8 @@ import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
 import com.foxdevelops.foxscreenshots.core.settings.LanguagePreference
 import com.foxdevelops.foxscreenshots.core.settings.Settings
 import com.foxdevelops.foxscreenshots.core.settings.ThemePreference
+import com.foxdevelops.foxscreenshots.core.theme.foxSwitchColors
+import com.foxdevelops.foxscreenshots.core.theme.foxTextFieldColors
 import com.foxdevelops.foxscreenshots.ui.AppContainer
 import com.foxdevelops.foxscreenshots.ui.FoxSlider
 import kotlinx.coroutines.launch
@@ -141,6 +143,7 @@ fun SettingsScreen(app: AppContainer, modifier: Modifier = Modifier) {
                 supportingContent = { Text(strings.settingsAutoSaveSubtitle) },
                 trailingContent = {
                     Switch(
+                        colors = foxSwitchColors(),
                         checked = settings.autoSave,
                         onCheckedChange = { on ->
                             scope.launch {
@@ -235,6 +238,7 @@ private fun FileNameRow(pattern: String, onChange: (String) -> Unit) {
                     if (text.isNotBlank()) onChange(text)
                 },
                 singleLine = true,
+                colors = foxTextFieldColors(),
                 suffix = { Text(".png") },
                 modifier = Modifier.width(280.dp),
             )

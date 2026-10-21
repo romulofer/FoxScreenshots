@@ -11,6 +11,10 @@ import androidx.compose.ui.graphics.Color
  *
  * On light backgrounds [brand] is the darker `#A63F10`: the orange `#D9531E`
  * fails 4.5:1 on white.
+ *
+ * [brandMuted] is the solid, low-key brand fill (`fox_red_muted` in the app: the
+ * checked switch track, selected chips). The app only defines it for the dark
+ * theme; the light value is the brand tinted into the cream background.
  */
 @Immutable
 data class FoxColors(
@@ -20,6 +24,7 @@ data class FoxColors(
     val textSecondary: Color,
     val brand: Color,
     val accent: Color,
+    val brandMuted: Color,
 ) {
     companion object {
         val Light = FoxColors(
@@ -29,6 +34,7 @@ data class FoxColors(
             textSecondary = Color(0xFF6A5D56),
             brand = Color(0xFFA63F10),
             accent = Color(0xFFA65A00),
+            brandMuted = Color(0xFFF1DED4),
         )
         val Dark = FoxColors(
             appBackground = Color(0xFF000000),
@@ -37,6 +43,7 @@ data class FoxColors(
             textSecondary = Color(0xFFB8ADA6),
             brand = Color(0xFFD9531E),
             accent = Color(0xFFFFB74D),
+            brandMuted = Color(0xFF6B2A16),
         )
     }
 }
