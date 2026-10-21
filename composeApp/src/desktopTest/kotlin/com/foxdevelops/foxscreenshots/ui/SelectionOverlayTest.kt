@@ -13,7 +13,7 @@ import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.doubleClick
 import androidx.compose.ui.test.performMouseInput
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.unit.dp
 import com.foxdevelops.foxscreenshots.features.capture.CaptureSelectionOverlay

@@ -13,6 +13,7 @@ import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.attribute.PosixFilePermissions
 import java.util.concurrent.ConcurrentHashMap
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -96,6 +97,12 @@ class NativeHookHotkeys(private val libraryDir: Path? = null) : GlobalHotkeys, N
                 // Must be set before GlobalScreen initialises: that is when the library is located and unpacked.
                 if (libraryDir != null) {
                     Files.createDirectories(libraryDir)
+                    restrictToOwner(libraryDir)
+                    // Whatever is already in there gets loaded into the process: only the shipped copy may stay.
+                    NativeLibraryGuard.trustedLibrary()?.let { trusted ->
+                        val removed = NativeLibraryGuard.purgeUntrusted(libraryDir, trusted)
+                        if (removed.isNotEmpty()) System.err.println("[foxscreenshots] replaced ${removed.size} untrusted keyboard hook file(s)")
+                    }
                     System.setProperty("jnativehook.lib.path", libraryDir.toString())
                 }
                 // JNativeHook logs every event at INFO through java.util.logging; that would put keystrokes in a log.
@@ -115,6 +122,17 @@ class NativeHookHotkeys(private val libraryDir: Path? = null) : GlobalHotkeys, N
                 throw HotkeyUnavailableException("The keyboard hook library could not be loaded: ${e.message}", e)
             } catch (e: IOException) {
                 throw HotkeyUnavailableException("The keyboard hook folder could not be created: ${e.message}", e)
+            }
+        }
+
+        /** Owner-only access on systems that have POSIX permissions; Windows already scopes a profile folder to its user. */
+        private fun restrictToOwner(dir: Path) {
+            try {
+                Files.setPosixFilePermissions(dir, PosixFilePermissions.fromString("rwx------"))
+            } catch (_: UnsupportedOperationException) {
+                // Not a POSIX file system.
+            } catch (_: IOException) {
+                // Not ours to change (an odd mount): the content check still stands.
             }
         }
 

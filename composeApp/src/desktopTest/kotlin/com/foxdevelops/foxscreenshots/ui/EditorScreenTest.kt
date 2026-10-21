@@ -17,7 +17,7 @@ import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.performMouseInput
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.runComposeUiTest
+import androidx.compose.ui.test.v2.runComposeUiTest
 import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import androidx.compose.ui.test.ComposeUiTest
 import com.foxdevelops.foxscreenshots.features.editor.EDITOR_CANVAS_TAG
