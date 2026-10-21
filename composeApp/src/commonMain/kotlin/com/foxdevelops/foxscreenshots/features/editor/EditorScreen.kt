@@ -60,6 +60,7 @@ import com.foxdevelops.foxscreenshots.features.home.saveWithDialog
 import com.foxdevelops.foxscreenshots.model.CaptureResult
 import com.foxdevelops.foxscreenshots.ui.AppContainer
 import com.foxdevelops.foxscreenshots.ui.FoxIconButton
+import com.foxdevelops.foxscreenshots.ui.FoxTooltip
 import kotlinx.coroutines.launch
 
 /**
@@ -177,14 +178,12 @@ fun EditorScreen(app: AppContainer, capture: CaptureResult, modifier: Modifier =
                     enabled = image != null,
                     onClick = ::save,
                 )
-                Button(
-                    enabled = image != null && state.isDirty,
-                    onClick = ::applyEdits,
-                    modifier = Modifier.padding(horizontal = 8.dp),
-                ) {
-                    Icon(Icons.Outlined.Check, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text(strings.editorApply)
+                FoxTooltip("${strings.editorApply} (Ctrl+Enter)", modifier = Modifier.padding(horizontal = 8.dp)) {
+                    Button(enabled = image != null && state.isDirty, onClick = ::applyEdits) {
+                        Icon(Icons.Outlined.Check, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(strings.editorApply)
+                    }
                 }
             },
         )

@@ -323,6 +323,45 @@ class UxFeaturesTest {
         waitUntil(timeoutMillis = 5_000) { app.container.navigator.current == Screen.Home }
     }
 
+
+    // ---- tooltips with the hotkey ----
+
+    @Test
+    fun `the capture buttons tell their global hotkey on hover`() = runComposeUiTest {
+        val app = TestApp()
+        setContent { AppRoot(app.container) }
+        onNodeWithText("Instantâneo").performMouseInput { moveTo(center) }
+        waitUntilAtLeastOneExists(hasText("Instantâneo (PrintScreen)"), timeoutMillis = 5_000)
+    }
+
+    @Test
+    fun `the tooltip follows a rebound hotkey`() = runComposeUiTest {
+        val app = TestApp()
+        app.settings.setTimerHotkey("Ctrl+Shift+T")
+        setContent { AppRoot(app.container) }
+        onNodeWithText("Temporizador").performMouseInput { moveTo(center) }
+        waitUntilAtLeastOneExists(hasText("Temporizador (Ctrl+Shift+T)"), timeoutMillis = 5_000)
+    }
+
+    @Test
+    fun `no hotkey is promised when global hotkeys are off`() = runComposeUiTest {
+        val app = TestApp()
+        app.issues.report(DependencyIssue(SystemDependency.Hotkeys, DependencySeverity.Degraded))
+        app.settings.dismissIssues(setOf("Hotkeys"))
+        setContent { AppRoot(app.container) }
+        onNodeWithText("Instantâneo").performMouseInput { moveTo(center) }
+        Thread.sleep(1_500)
+        waitForIdle()
+        onNodeWithText("Instantâneo (PrintScreen)").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the apply button tells its shortcut`() = runComposeUiTest {
+        openEditor()
+        onNodeWithText("Aplicar na captura").performMouseInput { moveTo(center) }
+        waitUntilAtLeastOneExists(hasText("Aplicar na captura (Ctrl+Enter)"), timeoutMillis = 5_000)
+    }
+
     // ---- editor ----
 
     private val original = testCapture("a", 400, 300)

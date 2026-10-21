@@ -367,6 +367,8 @@ private fun FileNameRow(pattern: String, onChange: (String) -> Unit) {
                     if (text.isNotBlank()) onChange(text)
                 },
                 singleLine = true,
+                // A ListItem sets a small caption style for its trailing slot; a field should read like a field.
+                textStyle = MaterialTheme.typography.bodyLarge,
                 colors = foxTextFieldColors(),
                 suffix = { Text(".png") },
                 modifier = Modifier.width(280.dp),

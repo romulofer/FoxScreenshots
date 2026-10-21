@@ -54,6 +54,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.foxdevelops.foxscreenshots.core.capture.CaptureException
 import com.foxdevelops.foxscreenshots.core.capture.CaptureMode
+import com.foxdevelops.foxscreenshots.core.desktop.SystemDependency
 import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
 import com.foxdevelops.foxscreenshots.core.i18n.captureFailureMessage
 import com.foxdevelops.foxscreenshots.model.CaptureResult
@@ -75,6 +76,7 @@ fun HomeScreen(app: AppContainer, modifier: Modifier = Modifier) {
     val session by app.session.state.collectAsState()
     val savedPaths by app.session.savedPaths.collectAsState()
     val settings by app.settings.state.collectAsState()
+    val issues by app.issues.state.collectAsState()
     val scope = rememberCoroutineScope()
     val focus = remember { FocusRequester() }
     var confirmClear by remember { mutableStateOf(false) }
@@ -126,7 +128,20 @@ fun HomeScreen(app: AppContainer, modifier: Modifier = Modifier) {
                 dismissed = settings.dismissedIssues,
                 onDismiss = app.settings::dismissIssues,
             )
-            CaptureToolbar(onCapture = { mode -> scope.launch { runCapture(app, mode) } })
+            // With no global hotkeys (Wayland, hook failed) the shortcut would be a promise the app cannot keep.
+            val hotkeysWork = issues.none { it.dependency == SystemDependency.Hotkeys }
+            CaptureToolbar(
+                onCapture = { mode -> scope.launch { runCapture(app, mode) } },
+                shortcuts = if (hotkeysWork) {
+                    mapOf(
+                        CaptureMode.Instant to settings.hotkey,
+                        CaptureMode.Timer to settings.timerHotkey,
+                        CaptureMode.Repeat to settings.repeatHotkey,
+                    )
+                } else {
+                    emptyMap()
+                },
+            )
             Spacer(Modifier.height(8.dp))
             TimerDelayChips(selected = settings.timerDelaySeconds, onSelect = app.settings::setTimerDelaySeconds)
             Spacer(Modifier.height(16.dp))
