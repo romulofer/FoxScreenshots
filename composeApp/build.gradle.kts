@@ -8,7 +8,7 @@ plugins {
 }
 
 // The release workflow passes the tag as -PappVersion=X.Y.Z; a local build uses this default.
-val appVersion = providers.gradleProperty("appVersion").getOrElse("1.0.0")
+val appVersion = providers.gradleProperty("appVersion").getOrElse("1.1.0")
 
 kotlin {
     jvm("desktop") {

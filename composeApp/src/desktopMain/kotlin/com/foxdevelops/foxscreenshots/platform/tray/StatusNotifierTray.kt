@@ -66,7 +66,7 @@ class StatusNotifierTray(
             true
         } catch (e: Exception) {
             // No watcher on the bus (or no bus at all): this desktop has no StatusNotifier tray.
-            System.err.println("[foxscreenshots] StatusNotifier tray unavailable: " + e.stackTraceToString().lines().take(14).joinToString("\n"))
+            System.err.println("[foxscreenshots] StatusNotifier tray unavailable: ${e.message}")
             teardown()
             false
         }
