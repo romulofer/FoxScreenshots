@@ -241,4 +241,109 @@ class EditorControllerTest {
         editor.addStep(Offset(1f, 1f))
         assertEquals(1, processor.released.size)
     }
+
+    private suspend fun EditorController.withArrow(): EditorController {
+        load()
+        drag(EditorTool.Arrow, Offset(10f, 10f), Offset(110f, 10f))
+        return this
+    }
+
+    @Test
+    fun `the select tool picks the annotation under the pointer`() = runTest {
+        val editor = controller().withArrow()
+        editor.selectTool(EditorTool.Select)
+        editor.startDraft(Offset(60f, 11f))
+        editor.endDraft()
+        assertEquals(editor.state.value.annotations.single().id, editor.state.value.selectedId)
+        assertNotNull(editor.state.value.selected)
+    }
+
+    @Test
+    fun `pressing on nothing clears the selection`() = runTest {
+        val editor = controller().withArrow()
+        editor.selectTool(EditorTool.Select)
+        editor.startDraft(Offset(60f, 10f)); editor.endDraft()
+        editor.startDraft(Offset(150f, 90f)); editor.endDraft()
+        assertNull(editor.state.value.selectedId)
+    }
+
+    @Test
+    fun `dragging a picked annotation moves it live and as one undo step`() = runTest {
+        val editor = controller().withArrow()
+        val original = editor.state.value.annotations.single()
+        editor.selectTool(EditorTool.Select)
+        editor.startDraft(Offset(60f, 10f))
+        editor.updateDraft(Offset(70f, 30f))
+        // Mid-drag the mark is already at its new place, without a history entry.
+        assertEquals(original.translated(Offset(10f, 20f)), editor.state.value.annotations.single())
+        editor.updateDraft(Offset(80f, 40f))
+        editor.endDraft()
+
+        assertEquals(original.translated(Offset(20f, 30f)), editor.state.value.annotations.single())
+        editor.undo()
+        assertEquals(original, editor.state.value.annotations.single())
+    }
+
+    @Test
+    fun `a click without movement is not an edit`() = runTest {
+        val editor = controller().withArrow()
+        editor.undo()
+        editor.redo()
+        val undoable = editor.state.value.canUndo
+        editor.selectTool(EditorTool.Select)
+        editor.startDraft(Offset(60f, 10f))
+        editor.endDraft()
+        assertEquals(undoable, editor.state.value.canUndo)
+        assertEquals(1, editor.state.value.annotations.size)
+    }
+
+    @Test
+    fun `delete removes the picked annotation and can be undone`() = runTest {
+        val editor = controller().withArrow()
+        editor.selectTool(EditorTool.Select)
+        editor.startDraft(Offset(60f, 10f)); editor.endDraft()
+        editor.deleteSelected()
+        assertTrue(editor.state.value.annotations.isEmpty())
+        assertNull(editor.state.value.selectedId)
+        editor.undo()
+        assertEquals(1, editor.state.value.annotations.size)
+    }
+
+    @Test
+    fun `delete with nothing picked does nothing`() = runTest {
+        val editor = controller().withArrow()
+        editor.deleteSelected()
+        assertEquals(1, editor.state.value.annotations.size)
+    }
+
+    @Test
+    fun `the topmost of overlapping annotations wins`() = runTest {
+        val editor = controller()
+        editor.load()
+        editor.drag(EditorTool.Rectangle, Offset(0f, 0f), Offset(100f, 100f))
+        editor.drag(EditorTool.Rectangle, Offset(0f, 0f), Offset(100f, 100f))
+        val top = editor.state.value.annotations.last().id
+        editor.selectTool(EditorTool.Select)
+        editor.startDraft(Offset(50f, 1f)); editor.endDraft()
+        assertEquals(top, editor.state.value.selectedId)
+    }
+
+    @Test
+    fun `changing tool or undoing drops the selection`() = runTest {
+        val editor = controller().withArrow()
+        editor.selectTool(EditorTool.Select)
+        editor.startDraft(Offset(60f, 10f)); editor.endDraft()
+        editor.selectTool(EditorTool.Arrow)
+        assertNull(editor.state.value.selectedId)
+
+        editor.selectTool(EditorTool.Select)
+        editor.startDraft(Offset(60f, 10f)); editor.endDraft()
+        editor.undo()
+        assertNull(editor.state.value.selectedId)
+    }
+
+    @Test
+    fun `the select tool creates nothing`() {
+        assertFalse(EditorTool.Select.createsAnnotation)
+    }
 }

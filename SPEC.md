@@ -48,6 +48,17 @@ revisto no futuro.
 - Backend de captura multiplataforma atrás de um único serviço; nativo por
   sistema operacional (veja §4).
 
+- **Seleção ajustável** (padrão; desliga nas Configurações): ao soltar o mouse a
+  seleção fica *pendente*, com alças nos cantos e nas bordas, arrastar por
+  dentro a move, as setas ajustam 1 px (Shift: 10 px) e **Enter**, duplo clique
+  ou o botão "Capturar" confirmam; Esc ou clique direito cancelam. Desligada, a
+  captura sai ao soltar o mouse.
+- **O temporizador pode ser cancelado** pelo clique no selo ou por Esc (atalho
+  global, vale com outro app em foco).
+- **Toda captura se confirma**: snackbar com a janela aberta, *toast* próprio
+  (janela sem foco, canto inferior direito) quando ela está na bandeja. Se a
+  sessão estava cheia, o aviso diz que a mais antiga foi descartada.
+
 **Aceite:** os dois modos produzem um bitmap recortado correto no Linux
 (ambiente de desenvolvimento); Windows e macOS atrás da mesma interface, com
 testes de plataforma.
@@ -59,6 +70,16 @@ testes de plataforma.
 - **Caneta livre** + **marcadores numerados** (1, 2, 3…).
 - Desfazer/refazer. Seletor de cor e de espessura. Camada de anotação não
   destrutiva, achatada na exportação.
+- **Selecionar e mover** (V): clique escolhe a anotação mais acima sob o ponteiro
+  (linhas e contornos se pegam pela borda, para não esconder o que está embaixo),
+  arrastar a move, **Delete** a exclui; tudo vira um passo de desfazer.
+- **Zoom e pan**: roda do mouse amplia em torno do ponteiro, botão do meio
+  arrasta, Ctrl+= / Ctrl+- / Ctrl+0; acima de 1:1 os pixels não são suavizados.
+- **Texto** em várias linhas (Enter quebra, Ctrl+Enter confirma); o controle
+  "Tamanho" substitui "Espessura" para texto e marcadores.
+- **Atalhos:** uma letra por ferramenta (V, C, A, R, E, H, B, X, P, T, N, nos
+  tooltips), Ctrl+C copia, Ctrl+S salva, Ctrl+Enter aplica, Esc sai (pergunta
+  antes se há edições não aplicadas, e a barra avisa "alterações não aplicadas").
 
 **Aceite:** cada ferramenta tem teste de unidade do seu modelo/geometria e teste
 de widget da sua interação; a exportação compõe as anotações sobre a imagem base
@@ -94,7 +115,12 @@ O clique esquerdo no ícone da bandeja abre um hub inspirado no app **Shutter**:
 - **Galeria da sessão** (centro): miniaturas dos screenshots tirados na sessão,
   do mais recente para o mais antigo. Selecionar uma miniatura mostra a prévia.
 - **Ações por item:** Editar (abre o editor §2.2), Copiar, Salvar, Excluir,
-  Mostrar no gerenciador de arquivos.
+  Mostrar no gerenciador de arquivos (só depois de salva: o item guarda onde o
+  arquivo foi parar). **Excluir oferece "Desfazer"** na hora. A miniatura mostra
+  a captura inteira (sem cortar) com dimensões e hora.
+- A pré-visualização também edita, copia e salva.
+- **Todo botão só de ícone tem tooltip** (rótulo e atalho). Atalhos do hub:
+  Ctrl+O abre imagem, Ctrl+, abre as Configurações.
 - **Rodapé / barra:** Configurações e atalhos rápidos de atraso e de modo.
 - A lista da sessão fica em memória, opcionalmente persistida na pasta de saída;
   **não** é uma biblioteca permanente (veja o que está fora do escopo).
@@ -102,6 +128,14 @@ O clique esquerdo no ícone da bandeja abre um hub inspirado no app **Shutter**:
 **Aceite:** o clique esquerdo na bandeja mostra a janela; uma captura nova
 aparece como miniatura; Editar/Copiar/Salvar/Excluir agem sobre o item
 selecionado; fechar esconde na bandeja.
+
+### 2.5.1 Configurações — *decidido*
+- Atalhos globais: lista de combinações prontas **ou gravar** qualquer uma;
+  duas ações não podem usar a mesma combinação, letra solta e Esc são
+  recusadas (o gancho observa todas as teclas do sistema) e o motivo aparece.
+- Atraso do temporizador de 1 a 30 s; nome do arquivo com exemplo ao vivo.
+- Os avisos de dependências (bandeja, atalhos…) dizem o que fazer e, depois de
+  "Dispensar", não voltam a cada abertura (volta só um aviso *novo*).
 
 ### 2.6 Localização — *obrigatório*
 - **pt-BR (principal)** e **en-US**, em duas implementações da interface

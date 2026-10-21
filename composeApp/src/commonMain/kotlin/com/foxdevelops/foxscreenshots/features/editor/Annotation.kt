@@ -31,13 +31,29 @@ sealed class Annotation {
     /** Painted extent, stroke included. */
     abstract val bounds: Rect
 
-    /** The same annotation moved by [shift]; used when a crop re-origins the image. */
+    /** The same annotation moved by [shift]; used when a crop re-origins the image and when the user drags it. */
     abstract fun translated(shift: Offset): Annotation
+
+    /**
+     * Whether a click at [point] (image pixels) grabs this annotation, with
+     * [tolerance] of slack so a thin line is still easy to hit. The default is the
+     * painted box; shapes that are mostly empty inside override it.
+     */
+    open fun hitTest(point: Offset, tolerance: Float): Boolean = bounds.inflate(tolerance).contains(point)
 
     companion object {
         /** Drags shorter than this are a stray click, not a shape. */
         const val MIN_DRAG_EXTENT = 4f
     }
+}
+
+/** Distance from [p] to the segment [a]–[b]. */
+fun distanceToSegment(p: Offset, a: Offset, b: Offset): Float {
+    val ab = b - a
+    val lengthSquared = ab.x * ab.x + ab.y * ab.y
+    if (lengthSquared == 0f) return (p - a).getDistance()
+    val t = (((p.x - a.x) * ab.x + (p.y - a.y) * ab.y) / lengthSquared).coerceIn(0f, 1f)
+    return (p - (a + ab * t)).getDistance()
 }
 
 /** Normalized rectangle spanned by two corners, in any drag direction. */
@@ -76,6 +92,9 @@ data class ArrowAnnotation(
 
     override val bounds: Rect get() = rect.inflate(headLength)
 
+    override fun hitTest(point: Offset, tolerance: Float): Boolean =
+        distanceToSegment(point, start, end) <= max(strokeWidth * 1.5f, headLength / 2f) + tolerance
+
     companion object {
         const val HEAD_SCALE = 4f
     }
@@ -92,6 +111,14 @@ data class RectangleAnnotation(
 ) : ShapeAnnotation() {
     override fun dragTo(point: Offset) = copy(end = point)
     override fun translated(shift: Offset) = copy(start = start + shift, end = end + shift)
+
+    /** An outline is grabbed by its edge, so the shapes underneath stay reachable; a filled block by its whole area. */
+    override fun hitTest(point: Offset, tolerance: Float): Boolean {
+        if (filled) return super.hitTest(point, tolerance)
+        val reach = strokeWidth / 2f + tolerance
+        val inner = rect.deflate(reach)
+        return rect.inflate(reach).contains(point) && !(inner.width > 0f && inner.height > 0f && inner.contains(point))
+    }
 }
 
 /** Hollow ellipse inscribed in the dragged rectangle. */
@@ -104,6 +131,17 @@ data class EllipseAnnotation(
 ) : ShapeAnnotation() {
     override fun dragTo(point: Offset) = copy(end = point)
     override fun translated(shift: Offset) = copy(start = start + shift, end = end + shift)
+
+    /** Grabbed by its outline: how far [point] is from the ellipse, measured along the radius, within the stroke plus slack. */
+    override fun hitTest(point: Offset, tolerance: Float): Boolean {
+        val a = rect.width / 2f
+        val b = rect.height / 2f
+        if (a <= 0f || b <= 0f) return super.hitTest(point, tolerance)
+        val dx = (point.x - rect.center.x) / a
+        val dy = (point.y - rect.center.y) / b
+        val radial = kotlin.math.abs(kotlin.math.sqrt(dx * dx + dy * dy) - 1f) * min(a, b)
+        return radial <= strokeWidth / 2f + tolerance
+    }
 }
 
 /** Translucent marker over a region — the content stays readable underneath. */
@@ -176,6 +214,12 @@ data class PenAnnotation(
 
     override fun translated(shift: Offset) = copy(points = points.map { it + shift })
 
+    override fun hitTest(point: Offset, tolerance: Float): Boolean {
+        val reach = strokeWidth / 2f + tolerance
+        if (points.size == 1) return (points.first() - point).getDistance() <= reach
+        return points.zipWithNext().any { (a, b) -> distanceToSegment(point, a, b) <= reach }
+    }
+
     /** A dot counts: lifting the pen immediately is a legitimate mark. */
     override val isMeaningful: Boolean get() = points.isNotEmpty()
 
@@ -213,13 +257,25 @@ data class TextAnnotation(
     override fun translated(shift: Offset) = copy(position = position + shift)
     override val isMeaningful: Boolean get() = text.isNotBlank()
 
-    /** Rough box: exact metrics need a laid-out paragraph, which lives in the painter. */
+    /** Rough box: exact metrics need a laid-out paragraph, which lives in the painter. One entry per typed line. */
     override val bounds: Rect
-        get() = Rect(position.x, position.y, position.x + text.length * fontSize * 0.6f, position.y + fontSize * 1.4f)
+        get() {
+            val lines = text.lines()
+            val widest = lines.maxOfOrNull { it.length } ?: 0
+            return Rect(
+                position.x,
+                position.y,
+                position.x + widest * fontSize * 0.6f,
+                position.y + lines.size * fontSize * LINE_HEIGHT_SCALE,
+            )
+        }
 
     companion object {
         /** Font size derived from the stroke slider, so text scales with the same control as every tool. */
         const val FONT_SCALE = 6f
+
+        /** Distance between two lines of a multi-line caption, as a multiple of the font size. */
+        const val LINE_HEIGHT_SCALE = 1.4f
 
         fun fontSizeFor(strokeWidth: Float): Float = strokeWidth * FONT_SCALE
     }

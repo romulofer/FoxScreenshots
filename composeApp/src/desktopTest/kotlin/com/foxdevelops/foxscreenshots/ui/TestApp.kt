@@ -37,7 +37,7 @@ class TestApp(language: String = "pt") {
     val surface = FakeSurface()
     val issues = SystemIssues()
     val processor = SkiaImageProcessor()
-    val service = FakeCaptureService()
+    val service = FakeCaptureService(png = solidPng(200, 100))
 
     val container = AppContainer(
         settings = settings,

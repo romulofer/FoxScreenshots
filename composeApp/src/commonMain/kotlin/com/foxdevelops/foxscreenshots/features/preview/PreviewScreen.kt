@@ -11,9 +11,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -25,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -48,7 +50,12 @@ import androidx.compose.ui.unit.dp
 import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
 import com.foxdevelops.foxscreenshots.features.editor.CanvasFit
 import com.foxdevelops.foxscreenshots.model.CaptureResult
+import com.foxdevelops.foxscreenshots.features.home.copyToClipboard
+import com.foxdevelops.foxscreenshots.features.home.saveWithDialog
 import com.foxdevelops.foxscreenshots.ui.AppContainer
+import com.foxdevelops.foxscreenshots.ui.FoxIconButton
+import com.foxdevelops.foxscreenshots.ui.Screen
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.exp
@@ -62,6 +69,7 @@ private const val MAX_ZOOM = 8f
 fun PreviewScreen(app: AppContainer, capture: CaptureResult, modifier: Modifier = Modifier) {
     val strings = LocalStrings.current
     val focus = remember { FocusRequester() }
+    val scope = rememberCoroutineScope()
     var image by remember(capture) { mutableStateOf<ImageBitmap?>(null) }
 
     // Focus first, on its own: it touches the layout, so it must not run after a hop to a background thread.
@@ -94,14 +102,31 @@ fun PreviewScreen(app: AppContainer, capture: CaptureResult, modifier: Modifier 
                 }
             },
             navigationIcon = {
-                IconButton(onClick = { app.navigator.back() }) {
-                    Icon(Icons.Outlined.Close, contentDescription = strings.actionClose)
-                }
+                FoxIconButton(Icons.Outlined.Close, strings.actionClose, shortcut = "Esc", onClick = { app.navigator.back() })
+            },
+            // The preview is where you decide what to do with a shot: act on it from here instead of backing out first.
+            actions = {
+                FoxIconButton(
+                    Icons.Outlined.Edit, strings.actionEdit,
+                    onClick = {
+                        app.navigator.back()
+                        app.navigator.push(Screen.Editor(capture))
+                    },
+                )
+                FoxIconButton(
+                    Icons.Outlined.ContentCopy, strings.actionCopy,
+                    onClick = { scope.launch { copyToClipboard(app, capture.pngBytes) } },
+                )
+                FoxIconButton(
+                    Icons.Outlined.Save, strings.actionSave,
+                    onClick = { scope.launch { saveWithDialog(app, capture.pngBytes, capture.id) } },
+                )
             },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = Color.Black,
                 titleContentColor = Color.White,
                 navigationIconContentColor = Color.White,
+                actionIconContentColor = Color.White,
             ),
         )
         ZoomableImage(image, Modifier.fillMaxWidth().weight(1f))

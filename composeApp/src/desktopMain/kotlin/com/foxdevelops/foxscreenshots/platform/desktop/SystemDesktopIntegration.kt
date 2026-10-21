@@ -61,6 +61,8 @@ class SystemDesktopIntegration(
             HotkeyAction.Instant to HotkeyBinding.parse(settings.hotkey, HotkeyKey.PrintScreen),
             HotkeyAction.Timer to HotkeyBinding.parse(settings.timerHotkey, HotkeyKey.F7),
             HotkeyAction.Repeat to HotkeyBinding.parse(settings.repeatHotkey, HotkeyKey.F6),
+            // Fixed: lets Esc cancel a timer that is counting down while another app has the focus.
+            HotkeyAction.Cancel to HotkeyBinding(HotkeyKey.Escape),
         )
         try {
             hotkeys.register(bindings, events::onHotkey)

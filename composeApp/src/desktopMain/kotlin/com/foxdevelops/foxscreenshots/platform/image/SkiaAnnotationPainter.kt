@@ -123,15 +123,20 @@ class SkiaAnnotationPainter(private val base: ImageBitmap?) {
 
     private fun paintText(canvas: Canvas, text: TextAnnotation) {
         val font = Font(boldTypeface, text.fontSize)
-        val baseline = text.position.y - font.metrics.ascent
+        val metrics = font.metrics
+        val firstBaseline = text.position.y - metrics.ascent
+        val lineHeight = text.fontSize * TextAnnotation.LINE_HEIGHT_SCALE
         // Screenshots are busy; a dark halo keeps light text readable over light content and vice versa.
         val halo = Paint().apply {
             color = HALO_COLOR
             maskFilter = MaskFilter.makeBlur(FilterBlurMode.NORMAL, 1.5f)
             isAntiAlias = true
         }
-        canvas.drawString(text.text, text.position.x, baseline, font, halo)
-        canvas.drawString(text.text, text.position.x, baseline, font, fill(text))
+        text.text.lines().forEachIndexed { index, line ->
+            val baseline = firstBaseline + index * lineHeight
+            canvas.drawString(line, text.position.x, baseline, font, halo)
+            canvas.drawString(line, text.position.x, baseline, font, fill(text))
+        }
     }
 
     private fun paintStep(canvas: Canvas, step: StepAnnotation) {

@@ -31,6 +31,22 @@ data class CanvasFit(val scale: Float, val offset: Offset, val imageSize: Size) 
         )
     }
 
+    /**
+     * This fit magnified [zoom] times and shifted by [pan] (widget pixels): the
+     * image stays centred while it is smaller than the viewport and can be panned
+     * once it is not. [viewport] is needed to keep the centre where it was.
+     */
+    fun zoomed(zoom: Float, pan: Offset, viewport: Size): CanvasFit {
+        val newScale = scale * zoom
+        val width = imageSize.width * newScale
+        val height = imageSize.height * newScale
+        return CanvasFit(
+            scale = newScale,
+            offset = Offset((viewport.width - width) / 2f + pan.x, (viewport.height - height) / 2f + pan.y),
+            imageSize = imageSize,
+        )
+    }
+
     companion object {
         /**
          * Largest scale that fits [imageSize] inside [viewport] without cropping,

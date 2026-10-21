@@ -24,12 +24,14 @@ aberto sob a [Licença MIT](LICENSE).
 Ferramenta de desktop para capturar e anotar screenshots rapidamente.
 
 - **Modo instantâneo** — aperte o atalho global; a tela congela e você arrasta
-  um retângulo para recortar.
+  um retângulo; ajuste as bordas e confirme com Enter (ou desligue o ajuste e
+  a captura sai ao soltar o mouse).
 - **Modo temporizador** — escolha a região antes; a foto sai depois de alguns
   segundos, dando tempo de abrir menus, dicas de ferramenta e estados de hover.
 - **Tela cheia, janela ativa e repetir a última captura.**
 - **Editor** — recorte, seta, retângulo/elipse, texto, marca-texto,
-  desfoque/pixelagem, caneta livre e marcadores numerados. Desfazer/refazer.
+  desfoque/pixelagem, caneta livre e marcadores numerados. Selecionar, mover e
+  excluir anotações, zoom, atalhos de teclado e desfazer/refazer.
 - **Saída** — copia para a área de transferência **e** salva em PNG.
 - **Nome de arquivo configurável** (`{date}`, `{time}`…), diálogo de salvar que
   lembra a última pasta e **Abrir imagem** (botão na barra superior) para anotar uma imagem existente.

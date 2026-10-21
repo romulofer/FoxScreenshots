@@ -37,8 +37,6 @@ interface Strings {
     val dependencyHotkeys: String
     val dependencyTray: String
     val dependencyDismiss: String
-    val scrollLockTitle: String
-    val scrollLockMessage: String
 
     val sessionEmpty: String
     val sessionGalleryTitle: String
@@ -118,6 +116,33 @@ interface Strings {
     val actionDiscard: String
     val actionCancel: String
     val actionConfirm: String
+
+    val captureDeleted: String
+    val captureTakenReplaced: String
+    val sessionFullHint: String
+    fun captureMeta(width: Int, height: Int, time: String): String
+    val revealNeedsSave: String
+    val revealFailed: String
+
+    val timerCancelHint: String
+    val selectionHintAdjust: String
+    val selectionCapture: String
+
+    val toolSelect: String
+    val editorDeleteAnnotation: String
+    val editorZoomIn: String
+    val editorZoomOut: String
+    val editorZoomFit: String
+    val editorSize: String
+    val editorUnsaved: String
+
+    val settingsSelectionConfirm: String
+    val settingsSelectionConfirmSubtitle: String
+    val settingsHotkeyRecord: String
+    val hotkeyRecordHint: String
+    val hotkeyNotAllowed: String
+    fun hotkeyInUse(by: String): String
+    fun settingsFileNamePreview(example: String): String
 
     val actionOpenImage: String
     val openImageFailed: String

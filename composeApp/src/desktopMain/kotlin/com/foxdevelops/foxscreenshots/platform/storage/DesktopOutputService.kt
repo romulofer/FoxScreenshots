@@ -14,6 +14,7 @@ import io.github.vinceglb.filekit.dialogs.openFilePicker
 import io.github.vinceglb.filekit.dialogs.openFileSaver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.awt.Desktop
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -57,6 +58,23 @@ class DesktopOutputService(private val now: () -> LocalDateTime = LocalDateTime:
             val root = dir.toRealPath()
             val name = uniqueFileName(defaultName(namePattern)) { Files.exists(root.resolve(it)) }
             write(root.resolve(name), pngBytes).toString()
+        }
+    }
+
+    override suspend fun reveal(path: String): Boolean = withContext(Dispatchers.IO) {
+        val file = Paths.get(path).toFile()
+        if (!file.exists() || !Desktop.isDesktopSupported()) return@withContext false
+        val desktop = Desktop.getDesktop()
+        try {
+            when {
+                desktop.isSupported(Desktop.Action.BROWSE_FILE_DIR) -> desktop.browseFileDirectory(file)
+                // Linux has no "select this file": open its folder instead.
+                desktop.isSupported(Desktop.Action.OPEN) -> desktop.open(file.parentFile)
+                else -> return@withContext false
+            }
+            true
+        } catch (_: Exception) {
+            false
         }
     }
 

@@ -26,6 +26,9 @@ interface OutputService {
      */
     suspend fun savePngToDir(pngBytes: ByteArray, directory: String, namePattern: String = DEFAULT_FILE_NAME_PATTERN): String
 
+    /** Shows [path] in the system file manager. Returns `false` when this desktop cannot. */
+    suspend fun reveal(path: String): Boolean
+
     /** Asks the user for a folder. Returns `null` if cancelled. */
     suspend fun pickDirectory(initialDirectory: String? = null): String?
 }

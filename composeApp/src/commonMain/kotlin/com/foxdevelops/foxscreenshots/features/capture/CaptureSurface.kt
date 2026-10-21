@@ -24,6 +24,9 @@ interface CaptureSurface {
      */
     suspend fun selectRegion(frame: FrozenFrame): CaptureRegion?
 
-    /** Shows a countdown badge for [wait] and removes it again before returning. */
-    suspend fun countdown(wait: Duration)
+    /**
+     * Shows a countdown badge for [wait] and removes it again before returning.
+     * Resolves `true` when the time ran out, `false` when the user cancelled.
+     */
+    suspend fun countdown(wait: Duration): Boolean
 }

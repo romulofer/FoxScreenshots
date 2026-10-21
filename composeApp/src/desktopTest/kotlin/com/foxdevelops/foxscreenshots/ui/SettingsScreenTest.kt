@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.runComposeUiTest
 import com.foxdevelops.foxscreenshots.core.settings.LanguagePreference
 import com.foxdevelops.foxscreenshots.core.settings.ThemePreference
@@ -100,7 +101,8 @@ class SettingsScreenTest {
         app.openSettings()
         setContent { AppRoot(app.container) }
         assertFalse(app.settings.state.value.autoSave)
-        onNode(isToggleable()).performClick()
+        // The switches, top to bottom: selection confirm, then auto-save.
+        onAllNodes(isToggleable())[1].performScrollTo().performClick()
         waitUntil(timeoutMillis = 5_000) { app.settings.state.value.autoSave }
         assertEquals("/picked", app.settings.state.value.outputDir)
     }

@@ -8,6 +8,7 @@ import com.foxdevelops.foxscreenshots.features.capture.FrozenFrame
 import com.foxdevelops.foxscreenshots.model.CaptureRegion
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -39,7 +40,26 @@ class ComposeCaptureSurface(
     var countdown by mutableStateOf<Int?>(null)
         private set
 
+    /** The toast to show, or `null`. A new request is a new object, so the same text twice still restarts its timer. */
+    var toast by mutableStateOf<ToastRequest?>(null)
+        private set
+
+    private var countdownCancel: CompletableDeferred<Unit>? = null
     private var hubWasVisible = true
+
+    /** A short message in a window of its own, for when the hub is hidden and a snackbar would have nowhere to appear. */
+    fun showToast(text: String) {
+        toast = ToastRequest(text)
+    }
+
+    fun clearToast() {
+        toast = null
+    }
+
+    /** Aborts the countdown in progress (badge click, Esc), if any. */
+    fun cancelCountdown() {
+        countdownCancel?.complete(Unit)
+    }
 
     fun showHub() {
         hubVisible = true
@@ -51,6 +71,8 @@ class ComposeCaptureSurface(
     }
 
     override suspend fun hideHub() {
+        // A leftover toast must not end up in the shot that is about to be taken.
+        toast = null
         hubWasVisible = hubVisible
         if (hubWasVisible) {
             hubVisible = false
@@ -74,23 +96,28 @@ class ComposeCaptureSurface(
         }
     }
 
-    override suspend fun countdown(wait: Duration) {
-        val seconds = wait.inWholeSeconds.toInt()
-        if (seconds < 1) {
-            delay(wait)
-            return
-        }
+    override suspend fun countdown(wait: Duration): Boolean {
+        val cancel = CompletableDeferred<Unit>()
+        countdownCancel = cancel
+        // Waiting is "sleep until the time is up, unless cancelled first": a non-null result means cancelled.
+        suspend fun cancelledWithin(time: Duration) = withTimeoutOrNull(time) { cancel.await() } != null
         try {
+            val seconds = wait.inWholeSeconds.toInt()
+            if (seconds < 1) return !cancelledWithin(wait)
             for (s in seconds downTo 1) {
                 countdown = s
-                delay(1.seconds)
+                if (cancelledWithin(1.seconds)) return false
             }
             val remainder = wait - seconds.seconds
-            if (remainder > Duration.ZERO) delay(remainder)
+            return remainder <= Duration.ZERO || !cancelledWithin(remainder)
         } finally {
+            countdownCancel = null
             countdown = null
             // Let the compositor drop the badge before the frame is grabbed.
             delay(compositorDelay)
         }
     }
 }
+
+/** One toast on screen. */
+class ToastRequest(val text: String)

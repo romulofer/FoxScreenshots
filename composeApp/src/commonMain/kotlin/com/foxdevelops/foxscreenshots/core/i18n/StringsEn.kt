@@ -32,12 +32,13 @@ object StringsEn : Strings {
     override val dependencyWaylandSession =
         "Wayland session: capture goes through the system portal, which asks for permission; " +
             "active-window capture and the global hotkey are unavailable here."
-    override val dependencyHotkeys = "Global hotkeys are off — the system keyboard hook could not be installed."
-    override val dependencyTray = "The tray icon is not available on this system."
+    override val dependencyHotkeys =
+        "Global hotkeys are off — the system keyboard hook could not be installed. " +
+            "Use the window's buttons; restart the app or check the terminal for the reason."
+    override val dependencyTray =
+        "No tray icon: your desktop does not offer the StatusNotifier protocol (on GNOME, enable the " +
+            "AppIndicator extension). Without the tray, closing the window quits the app."
     override val dependencyDismiss = "Dismiss"
-    override val scrollLockTitle = "Scroll Lock is on"
-    override val scrollLockMessage =
-        "While Scroll Lock is on, the global capture hotkeys may not work. Turn it off to use them again."
 
     override val sessionEmpty = "No captures yet. Use the toolbar above to start."
     override val sessionGalleryTitle = "Captures this session"
@@ -96,7 +97,7 @@ object StringsEn : Strings {
     override val settingsAutoSaveSubtitle = "Write every new capture to the output folder as soon as it is taken."
     override fun settingsVersion(version: String) = "v.$version"
 
-    override val captureTaken = "Capture added to the session"
+    override val captureTaken = "Capture copied and added to the session"
     override val copiedToClipboard = "Copied to clipboard"
     override val copyToClipboardFailed = "Could not copy to the clipboard"
     override fun savedTo(path: String) = "Saved to $path"
@@ -129,4 +130,32 @@ object StringsEn : Strings {
     override val actionDiscard = "Discard"
     override val actionCancel = "Cancel"
     override val actionConfirm = "OK"
+
+    override val captureDeleted = "Capture deleted"
+    override val captureTakenReplaced = "Capture copied — the oldest one in the session was dropped"
+    override val sessionFullHint = "Session full: the next capture drops the oldest one"
+    override fun captureMeta(width: Int, height: Int, time: String) = "$width×$height · $time"
+    override val revealNeedsSave = "Save the capture to reveal it in its folder"
+    override val revealFailed = "Could not open the folder"
+
+    override val timerCancelHint = "Click or press Esc to cancel"
+    override val selectionHintAdjust = "Drag the edges to adjust · Enter captures · Esc cancels"
+    override val selectionCapture = "Capture"
+
+    override val toolSelect = "Select and move"
+    override val editorDeleteAnnotation = "Delete annotation"
+    override val editorZoomIn = "Zoom in"
+    override val editorZoomOut = "Zoom out"
+    override val editorZoomFit = "Fit to window"
+    override val editorSize = "Size"
+    override val editorUnsaved = "changes not applied"
+
+    override val settingsSelectionConfirm = "Adjust selection before capturing"
+    override val settingsSelectionConfirmSubtitle =
+        "After dragging, fine-tune the edges and confirm with Enter. Off, the shot is taken when you release the mouse."
+    override val settingsHotkeyRecord = "Record…"
+    override val hotkeyRecordHint = "Press the combination…"
+    override val hotkeyNotAllowed = "Letters need Ctrl, Alt or Meta with them; Esc is reserved"
+    override fun hotkeyInUse(by: String) = "That hotkey is already used by “$by”"
+    override fun settingsFileNamePreview(example: String) = "Example: $example"
 }

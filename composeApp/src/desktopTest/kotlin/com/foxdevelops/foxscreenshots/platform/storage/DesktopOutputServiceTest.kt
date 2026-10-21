@@ -9,6 +9,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class DesktopOutputServiceTest {
@@ -54,5 +55,10 @@ class DesktopOutputServiceTest {
         runCatching { Files.createSymbolicLink(link, real) }.onFailure { return@runTest }
         val path = Paths.get(service.savePngToDir(fakePngBytes, link.toString()))
         assertEquals(real.toRealPath(), path.parent)
+    }
+
+    @Test
+    fun `revealing a file that is not there fails instead of throwing`() = runTest {
+        assertFalse(service.reveal("/definitely/not/here.png"))
     }
 }

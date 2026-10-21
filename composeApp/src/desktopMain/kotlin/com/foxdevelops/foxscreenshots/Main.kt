@@ -1,6 +1,7 @@
 package com.foxdevelops.foxscreenshots
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -29,7 +30,10 @@ import com.foxdevelops.foxscreenshots.core.theme.FoxTheme
 import com.foxdevelops.foxscreenshots.features.capture.CaptureSelectionOverlay
 import com.foxdevelops.foxscreenshots.features.capture.CountdownBadge
 import com.foxdevelops.foxscreenshots.features.home.runCapture
+import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
 import com.foxdevelops.foxscreenshots.ui.AppRoot
+import com.foxdevelops.foxscreenshots.ui.FoxToast
+import kotlinx.coroutines.delay
 import io.github.vinceglb.filekit.FileKit
 import kotlinx.coroutines.launch
 
@@ -83,9 +87,21 @@ fun main() {
                         HotkeyAction.Instant -> capture(CaptureMode.Instant)
                         HotkeyAction.Timer -> capture(CaptureMode.Timer)
                         HotkeyAction.Repeat -> capture(CaptureMode.Repeat)
+                        HotkeyAction.Cancel -> surface.cancelCountdown()
                     }
                 },
             )
+        }
+
+        // With the hub hidden in the tray a snackbar has nowhere to appear: surface the same messages as a toast.
+        LaunchedEffect(app) {
+            app.messenger.messages.collect { notice -> if (!surface.hubVisible) surface.showToast(notice.text) }
+        }
+        LaunchedEffect(surface.toast) {
+            if (surface.toast != null) {
+                delay(TOAST_MILLIS)
+                surface.clearToast()
+            }
         }
 
         val hubState = rememberWindowState(size = DpSize(960.dp, 700.dp))
@@ -101,16 +117,27 @@ fun main() {
             AppRoot(app)
         }
 
-        surface.overlay?.let { request -> SelectionWindow(request, settings.theme) }
-        surface.countdown?.let { seconds -> CountdownWindow(seconds, settings.theme) }
+        surface.overlay?.let { request -> SelectionWindow(request, settings.theme, settings.language, app, settings.selectionConfirm) }
+        surface.countdown?.let { seconds -> CountdownWindow(seconds, settings.theme, strings, surface::cancelCountdown) }
+        surface.toast?.let { toast -> ToastWindow(toast.text, settings.theme, strings) }
     }
 }
 
 private fun loadAppIcon() = AppRuntime::class.java.getResourceAsStream("/icon.png")!!.use { loadImageBitmap(it) }
 
+/** How long a toast stays up. */
+private const val TOAST_MILLIS = 2_500L
+
 /** The fullscreen overlay: its own undecorated, always-on-top window across every monitor. */
 @Composable
-private fun SelectionWindow(request: OverlayRequest, theme: com.foxdevelops.foxscreenshots.core.settings.ThemePreference) {
+private fun SelectionWindow(
+    request: OverlayRequest,
+    theme: com.foxdevelops.foxscreenshots.core.settings.ThemePreference,
+    language: com.foxdevelops.foxscreenshots.core.settings.LanguagePreference,
+    app: com.foxdevelops.foxscreenshots.ui.AppContainer,
+    adjustable: Boolean,
+) {
+    val strings = remember(language) { stringsFor(language, app.systemLanguage) }
     val bounds = remember { virtualScreenBounds() }
     val state = rememberWindowState(
         position = WindowPosition(bounds.x.dp, bounds.y.dp),
@@ -125,23 +152,31 @@ private fun SelectionWindow(request: OverlayRequest, theme: com.foxdevelops.foxs
         title = "",
     ) {
         FoxTheme(theme) {
-            CaptureSelectionOverlay(
-                frame = request.frame,
-                onSelected = { request.answer.complete(it) },
-                onCancel = { request.answer.complete(null) },
-            )
+            CompositionLocalProvider(LocalStrings provides strings) {
+                CaptureSelectionOverlay(
+                    frame = request.frame,
+                    adjustable = adjustable,
+                    onSelected = { request.answer.complete(it) },
+                    onCancel = { request.answer.complete(null) },
+                )
+            }
         }
     }
 }
 
 /** The timer badge: small, always on top, never focused, so the desktop underneath stays usable for opening menus. */
 @Composable
-private fun CountdownWindow(seconds: Int, theme: com.foxdevelops.foxscreenshots.core.settings.ThemePreference) {
+private fun CountdownWindow(
+    seconds: Int,
+    theme: com.foxdevelops.foxscreenshots.core.settings.ThemePreference,
+    strings: com.foxdevelops.foxscreenshots.core.i18n.Strings,
+    onCancel: () -> Unit,
+) {
     val bounds = remember { virtualScreenBounds() }
-    val width = 160
+    val width = 220
     val state = rememberWindowState(
         position = WindowPosition((bounds.x + (bounds.width - width) / 2).dp, (bounds.y + 24).dp),
-        size = DpSize(width.dp, 100.dp),
+        size = DpSize(width.dp, 120.dp),
     )
     Window(
         onCloseRequest = {},
@@ -152,6 +187,29 @@ private fun CountdownWindow(seconds: Int, theme: com.foxdevelops.foxscreenshots.
         focusable = false,
         title = "",
     ) {
-        FoxTheme(theme) { CountdownBadge(seconds) }
+        FoxTheme(theme) { CompositionLocalProvider(LocalStrings provides strings) { CountdownBadge(seconds, onCancel) } }
+    }
+}
+
+/** A small always-on-top message near the bottom-right corner, never focused so it cannot steal typing from the app underneath. */
+@Composable
+private fun ToastWindow(text: String, theme: com.foxdevelops.foxscreenshots.core.settings.ThemePreference, strings: com.foxdevelops.foxscreenshots.core.i18n.Strings) {
+    val bounds = remember { virtualScreenBounds() }
+    val width = 360
+    val height = 72
+    val state = rememberWindowState(
+        position = WindowPosition((bounds.x + bounds.width - width - 24).dp, (bounds.y + bounds.height - height - 72).dp),
+        size = DpSize(width.dp, height.dp),
+    )
+    Window(
+        onCloseRequest = {},
+        state = state,
+        undecorated = true,
+        resizable = false,
+        alwaysOnTop = true,
+        focusable = false,
+        title = "",
+    ) {
+        FoxTheme(theme) { CompositionLocalProvider(LocalStrings provides strings) { FoxToast(text) } }
     }
 }

@@ -3,6 +3,7 @@ package com.foxdevelops.foxscreenshots.features.capture
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,8 +47,29 @@ import com.foxdevelops.foxscreenshots.core.theme.LocalFoxColors
 import com.foxdevelops.foxscreenshots.model.CaptureRegion
 import kotlin.math.roundToInt
 
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.unit.dp
+import com.foxdevelops.foxscreenshots.core.theme.FoxColors
+
 /** Drags shorter than this (in canvas pixels) are a stray click rather than a selection. */
 const val MIN_SELECTION_DRAG = 4f
+
+/** Two presses this close in time, on the selection, confirm it. */
+private const val DOUBLE_CLICK_MILLIS = 400L
+
+/** What the pointer is doing to the selection right now. */
+private sealed interface Gesture {
+    /** Dragging out a fresh rectangle from [anchor]. */
+    data class Draw(val anchor: Offset) : Gesture
+
+    /** Dragging the whole selection; [from] is where the press landed. */
+    data class Move(val from: Offset, val original: Rect) : Gesture
+
+    /** Dragging one grip of the selection. */
+    data class Resize(val handle: SelectionHandle, val original: Rect) : Gesture
+}
 
 /**
  * Fullscreen overlay with a rubber-band selection over the frozen frame of
@@ -57,6 +79,11 @@ const val MIN_SELECTION_DRAG = 4f
  * The frame is fitted inside the window: 1:1 when the window covers the virtual
  * screen exactly, shrunk when a window manager clamped it. Either way the
  * selection is reported in exact screenshot pixels.
+ *
+ * With [adjustable] the drag leaves a *pending* selection instead of capturing
+ * on release: grab an edge or corner to resize it, drag inside to move it, nudge
+ * it with the arrow keys (Shift for 10 px), then press Enter, double-click or
+ * use the "Capture" button. Without it the shot is taken as soon as the mouse is released.
  */
 @Composable
 fun CaptureSelectionOverlay(
@@ -64,6 +91,7 @@ fun CaptureSelectionOverlay(
     onSelected: (CaptureRegion) -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
+    adjustable: Boolean = false,
 ) {
     val strings = LocalStrings.current
     val colors = LocalFoxColors.current
@@ -71,14 +99,15 @@ fun CaptureSelectionOverlay(
     val focus = remember { FocusRequester() }
 
     var canvasSize by remember { mutableStateOf(Size.Zero) }
-    var start by remember { mutableStateOf<Offset?>(null) }
-    var current by remember { mutableStateOf<Offset?>(null) }
+    var selection by remember { mutableStateOf<Rect?>(null) }
+    var gesture by remember { mutableStateOf<Gesture?>(null) }
     var pointer by remember { mutableStateOf<Offset?>(null) }
     var finished by remember { mutableStateOf(false) }
 
     val mapping = remember(canvasSize, frame) {
         ScreenMapping.fitted(Size(frame.width.toFloat(), frame.height.toFloat()), canvasSize)
     }
+    val canvasRect = Rect(Offset.Zero, canvasSize)
 
     LaunchedEffect(Unit) { focus.requestFocus() }
 
@@ -88,52 +117,94 @@ fun CaptureSelectionOverlay(
         onCancel()
     }
 
-    fun finish(from: Offset, to: Offset) {
+    /** Hands the selection over, unless it is too small or empty to be one. */
+    fun confirm(rect: Rect) {
         if (finished) return
-        if ((to - from).getDistance() < MIN_SELECTION_DRAG) {
-            start = null
-            current = null
-            return
-        }
-        val region = mapping.toRegion(from, to, frame.width, frame.height)
+        if (rect.width < MIN_SELECTION_DRAG || rect.height < MIN_SELECTION_DRAG) return
+        val region = mapping.toRegion(rect.topLeft, rect.bottomRight, frame.width, frame.height)
         if (region.isEmpty) return
         finished = true
         onSelected(region)
     }
 
+    fun nudge(delta: Offset) {
+        val current = selection ?: return
+        selection = SelectionGeometry.moved(current, delta, canvasRect)
+    }
+
     Canvas(
         modifier = modifier
             .fillMaxSize()
+            .pointerHoverIcon(PointerIcon.Crosshair)
             .focusRequester(focus)
             .focusable()
             .onKeyEvent { event ->
-                if (event.type == KeyEventType.KeyDown && event.key == Key.Escape) {
-                    cancel()
-                    true
-                } else {
-                    false
+                if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
+                val step = if (event.isShiftPressed) 10f else 1f
+                when (event.key) {
+                    Key.Escape -> { cancel(); true }
+                    Key.Enter, Key.NumPadEnter ->
+                        if (adjustable && selection != null) { confirm(selection!!); true } else false
+                    Key.DirectionLeft -> if (adjustable) { nudge(Offset(-step, 0f)); true } else false
+                    Key.DirectionRight -> if (adjustable) { nudge(Offset(step, 0f)); true } else false
+                    Key.DirectionUp -> if (adjustable) { nudge(Offset(0f, -step)); true } else false
+                    Key.DirectionDown -> if (adjustable) { nudge(Offset(0f, step)); true } else false
+                    else -> false
                 }
             }
-            .pointerInput(mapping) {
+            .pointerInput(mapping, adjustable) {
                 awaitPointerEventScope {
-                    var dragFrom: Offset? = null
+                    var lastInsidePress = -DOUBLE_CLICK_MILLIS * 2
                     while (true) {
                         val event = awaitPointerEvent()
-                        val position = event.changes.first().position
+                        val change = event.changes.first()
+                        val position = change.position
                         pointer = position
                         when (event.type) {
-                            PointerEventType.Press ->
+                            PointerEventType.Press -> {
                                 if (event.buttons.isSecondaryPressed) {
                                     cancel()
-                                } else {
-                                    dragFrom = position
-                                    start = position
-                                    current = position
+                                    continue
                                 }
-                            PointerEventType.Move -> if (dragFrom != null) current = position
+                                val pending = if (adjustable) selection else null
+                                if (pending != null) {
+                                    val button = SelectionGeometry.confirmButton(pending, canvasRect)
+                                    val handle = SelectionGeometry.handleAt(pending, position)
+                                    when {
+                                        button.contains(position) -> { confirm(pending); continue }
+                                        handle != null -> { gesture = Gesture.Resize(handle, pending); continue }
+                                        pending.contains(position) -> {
+                                            if (change.uptimeMillis - lastInsidePress <= DOUBLE_CLICK_MILLIS) {
+                                                confirm(pending)
+                                                continue
+                                            }
+                                            lastInsidePress = change.uptimeMillis
+                                            gesture = Gesture.Move(position, pending)
+                                            continue
+                                        }
+                                    }
+                                }
+                                gesture = Gesture.Draw(position)
+                                selection = Rect(position, position)
+                            }
+                            PointerEventType.Move -> when (val g = gesture) {
+                                is Gesture.Draw -> selection = rectOf(g.anchor, position)
+                                is Gesture.Move -> selection = SelectionGeometry.moved(g.original, position - g.from, canvasRect)
+                                is Gesture.Resize -> selection = SelectionGeometry.resized(g.original, g.handle, position, canvasRect)
+                                null -> Unit
+                            }
                             PointerEventType.Release -> {
-                                dragFrom?.let { finish(it, position) }
-                                dragFrom = null
+                                val g = gesture
+                                gesture = null
+                                val current = selection
+                                if (g is Gesture.Draw && current != null) {
+                                    val dragged = (position - g.anchor).getDistance() >= MIN_SELECTION_DRAG
+                                    when {
+                                        !dragged -> selection = null
+                                        adjustable -> selection = current
+                                        else -> confirm(current)
+                                    }
+                                }
                             }
                         }
                     }
@@ -144,10 +215,13 @@ fun CaptureSelectionOverlay(
         paintSelectionOverlay(
             frame = frame,
             mapping = mapping,
-            selection = if (start != null && current != null) rectOf(start!!, current!!) else null,
+            selection = selection?.takeIf { it.width > 0f || it.height > 0f || gesture != null },
             pointer = pointer,
-            accent = colors.brand,
-            hint = strings.selectionHint,
+            colors = colors,
+            hint = if (adjustable && selection != null && gesture == null) strings.selectionHintAdjust else strings.selectionHint,
+            showHint = selection == null || (adjustable && gesture == null),
+            pending = adjustable && selection != null && gesture == null,
+            confirmLabel = strings.selectionCapture,
             measurer = measurer,
         )
     }
@@ -158,25 +232,28 @@ private fun rectOf(a: Offset, b: Offset) =
 
 private const val MAGNIFIER_SIZE = 132f
 private const val MAGNIFIER_ZOOM = 6f
-private val FrozenDim = Color(0x8C000000)
 
 /**
  * Draws the whole capture overlay in one pass: the frozen backdrop, dimmed
  * surroundings, the rubber band with its live size badge, and a pixel magnifier.
  * One pass keeps the drag smooth on a 4K frame, since everything repaints on
- * every pointer move.
+ * every pointer move. A [pending] selection also gets its grips and the "Capture" button.
  */
 internal fun DrawScope.paintSelectionOverlay(
     frame: FrozenFrame,
     mapping: ScreenMapping,
     selection: Rect?,
     pointer: Offset?,
-    accent: Color,
+    colors: FoxColors,
     hint: String,
+    showHint: Boolean,
+    pending: Boolean,
+    confirmLabel: String,
     measurer: TextMeasurer,
 ) {
     val canvasRect = Rect(Offset.Zero, size)
     val scale = mapping.imagePixelsPerCanvasPixel
+    val accent = colors.brand
 
     // Draw the screenshot where the mapping says it lies, 1:1 with the desktop when the window covers it.
     drawImage(
@@ -188,20 +265,25 @@ internal fun DrawScope.paintSelectionOverlay(
         filterQuality = FilterQuality.None,
     )
 
-    paintDim(canvasRect, selection)
+    paintDim(canvasRect, selection, colors.scrim)
     if (selection == null) {
         paintCrosshair(canvasRect, pointer, accent)
-        paintHint(canvasRect, hint, measurer)
     } else {
         paintSelection(selection, accent)
-        paintSizeBadge(canvasRect, selection, scale, accent, measurer)
+        paintSizeBadge(canvasRect, selection, scale, accent, colors.onScrim, measurer)
+        if (pending) {
+            paintHandles(selection, accent)
+            paintConfirmButton(SelectionGeometry.confirmButton(selection, canvasRect), confirmLabel, colors, measurer)
+        }
     }
-    paintMagnifier(frame, mapping, canvasRect, pointer, accent)
+    if (showHint) paintHint(canvasRect, hint, colors, measurer)
+    // While adjusting, the loupe would sit on top of the grips it is meant to help place.
+    if (!pending) paintMagnifier(frame, mapping, canvasRect, pointer, accent)
 }
 
-private fun DrawScope.paintDim(canvasRect: Rect, selection: Rect?) {
+private fun DrawScope.paintDim(canvasRect: Rect, selection: Rect?, scrim: Color) {
     if (selection == null) {
-        drawRect(FrozenDim, canvasRect.topLeft, canvasRect.size)
+        drawRect(scrim, canvasRect.topLeft, canvasRect.size)
         return
     }
     val path = Path().apply {
@@ -209,7 +291,7 @@ private fun DrawScope.paintDim(canvasRect: Rect, selection: Rect?) {
         addRect(canvasRect)
         addRect(selection)
     }
-    drawPath(path, FrozenDim)
+    drawPath(path, scrim)
 }
 
 private fun DrawScope.paintCrosshair(canvasRect: Rect, at: Offset?, accent: Color) {
@@ -237,9 +319,16 @@ private fun DrawScope.paintSelection(selection: Rect, accent: Color) {
 }
 
 /** Live dimensions, in screenshot pixels: what the saved file will measure. */
-private fun DrawScope.paintSizeBadge(canvasRect: Rect, selection: Rect, scale: Float, accent: Color, measurer: TextMeasurer) {
+private fun DrawScope.paintSizeBadge(
+    canvasRect: Rect,
+    selection: Rect,
+    scale: Float,
+    accent: Color,
+    onAccent: Color,
+    measurer: TextMeasurer,
+) {
     val label = "${(selection.width * scale).roundToInt()} × ${(selection.height * scale).roundToInt()} px"
-    val text = measurer.measure(label, TextStyle(color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
+    val text = measurer.measure(label, TextStyle(color = onAccent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
     val padX = 8f
     val padY = 4f
     val badgeWidth = text.size.width + padX * 2
@@ -253,15 +342,15 @@ private fun DrawScope.paintSizeBadge(canvasRect: Rect, selection: Rect, scale: F
     drawText(text, topLeft = origin + Offset(padX, padY))
 }
 
-private fun DrawScope.paintHint(canvasRect: Rect, hint: String, measurer: TextMeasurer) {
+private fun DrawScope.paintHint(canvasRect: Rect, hint: String, colors: FoxColors, measurer: TextMeasurer) {
     val text: TextLayoutResult =
-        measurer.measure(hint, TextStyle(color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Medium))
+        measurer.measure(hint, TextStyle(color = colors.onScrim, fontSize = 15.sp, fontWeight = FontWeight.Medium))
     val padX = 14f
     val padY = 10f
     val width = text.size.width + padX * 2
     val height = text.size.height + padY * 2
     val topLeft = Offset(canvasRect.center.x - width / 2f, canvasRect.top + 64f - height / 2f)
-    drawRoundRect(Color(0xCC000000), topLeft, Size(width, height), CornerRadius(10f))
+    drawRoundRect(colors.scrimStrong, topLeft, Size(width, height), CornerRadius(10f))
     drawText(text, topLeft = topLeft + Offset(padX, padY))
 }
 
@@ -291,4 +380,24 @@ private fun DrawScope.paintMagnifier(frame: FrozenFrame, mapping: ScreenMapping,
     drawLine(accent, Offset(box.left, box.center.y), Offset(box.right, box.center.y), strokeWidth = 1f)
     drawLine(accent, Offset(box.center.x, box.top), Offset(box.center.x, box.bottom), strokeWidth = 1f)
     drawRoundRect(accent, box.topLeft, box.size, CornerRadius(10f), style = Stroke(width = 2f))
+}
+
+/** Grips at the corners and edge midpoints of a pending selection. */
+private fun DrawScope.paintHandles(selection: Rect, accent: Color) {
+    val half = 5f
+    val points = listOf(
+        selection.topLeft, selection.topCenter, selection.topRight, selection.centerRight,
+        selection.bottomRight, selection.bottomCenter, selection.bottomLeft, selection.centerLeft,
+    )
+    for (p in points) {
+        drawRect(Color.White, Offset(p.x - half, p.y - half), Size(half * 2, half * 2))
+        drawRect(accent, Offset(p.x - half, p.y - half), Size(half * 2, half * 2), style = Stroke(width = 2f))
+    }
+}
+
+/** The floating "Capture" button of a pending selection; a click anywhere on [box] confirms it. */
+private fun DrawScope.paintConfirmButton(box: Rect, label: String, colors: FoxColors, measurer: TextMeasurer) {
+    drawRoundRect(colors.brandOnSurface, box.topLeft, box.size, CornerRadius(10f))
+    val text = measurer.measure(label, TextStyle(color = colors.onBrand, fontSize = 14.sp, fontWeight = FontWeight.SemiBold))
+    drawText(text, topLeft = Offset(box.center.x - text.size.width / 2f, box.center.y - text.size.height / 2f))
 }

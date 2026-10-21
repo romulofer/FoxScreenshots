@@ -9,6 +9,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import com.foxdevelops.foxscreenshots.core.hotkey.HotkeyAction
+import com.foxdevelops.foxscreenshots.core.settings.HotkeyRejection
+import kotlin.test.assertNull
 
 class SettingsControllerTest {
     @Test
@@ -91,5 +94,59 @@ class SettingsControllerTest {
         val store = MemorySettingsStore()
         SettingsController(store).setLastSaveDir("/home/me/shots")
         assertEquals("/home/me/shots", SettingsController(store).state.value.lastSaveDir)
+    }
+
+    @Test
+    fun `selection confirm defaults on and persists`() {
+        val store = MemorySettingsStore()
+        assertTrue(SettingsController(store).state.value.selectionConfirm)
+        SettingsController(store).setSelectionConfirm(false)
+        assertFalse(SettingsController(store).state.value.selectionConfirm)
+    }
+
+    @Test
+    fun `dismissed issues accumulate and survive a reload`() {
+        val store = MemorySettingsStore()
+        val controller = SettingsController(store)
+        controller.dismissIssues(setOf("Tray"))
+        controller.dismissIssues(setOf("Hotkeys"))
+        assertEquals(setOf("Tray", "Hotkeys"), SettingsController(store).state.value.dismissedIssues)
+    }
+
+    @Test
+    fun `binding a hotkey stores it`() {
+        val controller = SettingsController(MemorySettingsStore())
+        assertNull(controller.bindHotkey(HotkeyAction.Timer, "Ctrl+Shift+T"))
+        assertEquals("Ctrl+Shift+T", controller.state.value.timerHotkey)
+    }
+
+    @Test
+    fun `a hotkey another action already uses is refused and nothing changes`() {
+        val controller = SettingsController(MemorySettingsStore())
+        val rejection = controller.bindHotkey(HotkeyAction.Timer, controller.state.value.hotkey)
+        assertEquals(HotkeyRejection.InUse(HotkeyAction.Instant), rejection)
+        assertEquals(Settings.DEFAULT_TIMER_HOTKEY, controller.state.value.timerHotkey)
+    }
+
+    @Test
+    fun `the same binding spelled differently still clashes`() {
+        val controller = SettingsController(MemorySettingsStore())
+        controller.setRepeatHotkey("Ctrl+Shift+S")
+        assertEquals(HotkeyRejection.InUse(HotkeyAction.Repeat), controller.bindHotkey(HotkeyAction.Instant, "shift+ctrl+s"))
+    }
+
+    @Test
+    fun `rebinding an action to its own key is fine`() {
+        val controller = SettingsController(MemorySettingsStore())
+        assertNull(controller.bindHotkey(HotkeyAction.Instant, "PrintScreen"))
+    }
+
+    @Test
+    fun `a bare letter or Escape cannot be a global hotkey`() {
+        val controller = SettingsController(MemorySettingsStore())
+        assertEquals(HotkeyRejection.NotAllowed, controller.bindHotkey(HotkeyAction.Instant, "S"))
+        assertEquals(HotkeyRejection.NotAllowed, controller.bindHotkey(HotkeyAction.Instant, "Shift+S"))
+        assertEquals(HotkeyRejection.NotAllowed, controller.bindHotkey(HotkeyAction.Instant, "Escape"))
+        assertEquals("PrintScreen", controller.state.value.hotkey)
     }
 }

@@ -15,10 +15,10 @@ import com.foxdevelops.foxscreenshots.core.settings.ThemePreference
 
 /** Material color scheme derived from the [FoxColors] tokens, so the UI never references raw colors. */
 fun foxColorScheme(colors: FoxColors, dark: Boolean): ColorScheme {
-    val onBrand = Color.White
+    val onBrand = colors.onBrand
     val base = if (dark) {
         darkColorScheme(
-            primary = colors.brand,
+            primary = colors.brandOnSurface,
             onPrimary = onBrand,
             secondary = colors.accent,
             onSecondary = Color.Black,
@@ -30,7 +30,7 @@ fun foxColorScheme(colors: FoxColors, dark: Boolean): ColorScheme {
         )
     } else {
         lightColorScheme(
-            primary = colors.brand,
+            primary = colors.brandOnSurface,
             onPrimary = onBrand,
             secondary = colors.accent,
             onSecondary = Color.White,

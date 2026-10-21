@@ -19,9 +19,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -39,13 +36,19 @@ import com.foxdevelops.foxscreenshots.core.i18n.Strings
  * has everything.
  */
 @Composable
-fun DependencyBanner(issues: SystemIssues, modifier: Modifier = Modifier) {
+fun DependencyBanner(
+    issues: SystemIssues,
+    dismissed: Set<String>,
+    onDismiss: (Set<String>) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val current by issues.state.collectAsState()
-    var dismissed by remember { mutableStateOf(false) }
-    if (current.isEmpty() || dismissed) return
+    // Dismissed for good, per kind of issue: a *new* problem still shows, an old one does not nag on every launch.
+    val pending = current.filter { it.dependency.name !in dismissed }
+    if (pending.isEmpty()) return
 
     val strings = LocalStrings.current
-    val blocking = current.any { it.severity == DependencySeverity.Blocking }
+    val blocking = pending.any { it.severity == DependencySeverity.Blocking }
     val container = if (blocking) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer
     val content = if (blocking) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer
 
@@ -61,7 +64,7 @@ fun DependencyBanner(issues: SystemIssues, modifier: Modifier = Modifier) {
                     color = content,
                 )
                 Spacer(Modifier.height(6.dp))
-                for (issue in current) {
+                for (issue in pending) {
                     Text(
                         "• ${dependencyMessage(strings, issue.dependency)}",
                         style = MaterialTheme.typography.bodySmall,
@@ -70,7 +73,7 @@ fun DependencyBanner(issues: SystemIssues, modifier: Modifier = Modifier) {
                     )
                 }
             }
-            TextButton(onClick = { dismissed = true }) { Text(strings.dependencyDismiss, color = content) }
+            TextButton(onClick = { onDismiss(pending.map { it.dependency.name }.toSet()) }) { Text(strings.dependencyDismiss, color = content) }
         }
     }
 }

@@ -9,6 +9,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.FitScreen
+import androidx.compose.material.icons.outlined.ZoomIn
+import androidx.compose.material.icons.outlined.ZoomOut
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -23,6 +27,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
+import com.foxdevelops.foxscreenshots.core.theme.foxSwitchColors
+import com.foxdevelops.foxscreenshots.ui.FoxIconButton
 import com.foxdevelops.foxscreenshots.ui.FoxSlider
 import kotlin.math.roundToInt
 
@@ -39,6 +45,7 @@ fun StyleBar(
     onColorSelected: (Color) -> Unit,
     onStrokeWidthChanged: (Float) -> Unit,
     onFilledChanged: (Boolean) -> Unit,
+    viewport: EditorViewport,
     modifier: Modifier = Modifier,
 ) {
     val strings = LocalStrings.current
@@ -49,7 +56,11 @@ fun StyleBar(
             Swatch(swatch, selected = swatch == color, onSelected = { onColorSelected(swatch) })
         }
         Spacer(Modifier.width(20.dp))
-        Text(strings.editorThickness, style = MaterialTheme.typography.labelLarge)
+        // Text and numbered badges scale with this slider: "thickness" would mislead.
+        Text(
+            if (tool == EditorTool.Text || tool == EditorTool.Step) strings.editorSize else strings.editorThickness,
+            style = MaterialTheme.typography.labelLarge,
+        )
         FoxSlider(
             value = strokeWidth.coerceIn(AnnotationPalette.MIN_STROKE_WIDTH, AnnotationPalette.MAX_STROKE_WIDTH),
             onValueChange = { onStrokeWidthChanged(it.roundToInt().toFloat()) },
@@ -67,8 +78,24 @@ fun StyleBar(
             Spacer(Modifier.width(20.dp))
             Text(strings.editorFill, style = MaterialTheme.typography.labelLarge)
             Spacer(Modifier.width(8.dp))
-            Switch(checked = filled, onCheckedChange = onFilledChanged)
+            Switch(colors = foxSwitchColors(), checked = filled, onCheckedChange = onFilledChanged)
         }
+        Spacer(Modifier.width(12.dp))
+        FoxIconButton(
+            Icons.Outlined.ZoomOut, strings.editorZoomOut, shortcut = "Ctrl+-",
+            enabled = viewport.zoom > EditorViewport.MIN_ZOOM,
+            onClick = { viewport.zoomBy(1f / EditorViewport.STEP) },
+        )
+        FoxIconButton(
+            Icons.Outlined.ZoomIn, strings.editorZoomIn, shortcut = "Ctrl+=",
+            enabled = viewport.zoom < EditorViewport.MAX_ZOOM,
+            onClick = { viewport.zoomBy(EditorViewport.STEP) },
+        )
+        FoxIconButton(
+            Icons.Outlined.FitScreen, strings.editorZoomFit, shortcut = "Ctrl+0",
+            enabled = viewport.zoom != EditorViewport.MIN_ZOOM,
+            onClick = viewport::reset,
+        )
     }
 }
 

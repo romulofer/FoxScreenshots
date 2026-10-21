@@ -128,6 +128,7 @@ class NativeHookHotkeys(private val libraryDir: Path? = null) : GlobalHotkeys, N
 
         internal fun virtualKey(key: HotkeyKey): Int = when (key) {
             HotkeyKey.PrintScreen -> NativeKeyEvent.VC_PRINTSCREEN
+            HotkeyKey.Escape -> NativeKeyEvent.VC_ESCAPE
             HotkeyKey.F1 -> NativeKeyEvent.VC_F1
             HotkeyKey.F2 -> NativeKeyEvent.VC_F2
             HotkeyKey.F3 -> NativeKeyEvent.VC_F3

@@ -25,6 +25,15 @@ data class FoxColors(
     val brand: Color,
     val accent: Color,
     val brandMuted: Color,
+    /** Brand shade for text, outlines and filled buttons on [surface]/[appBackground]: at least 4.5:1 there. */
+    val brandOnSurface: Color,
+    /** Text/icon color on a [brandOnSurface] fill. */
+    val onBrand: Color,
+    /** Dimming laid over a frozen screen or a crop. */
+    val scrim: Color,
+    /** Darker pill behind overlay text, so it reads on any wallpaper. */
+    val scrimStrong: Color,
+    val onScrim: Color,
 ) {
     companion object {
         val Light = FoxColors(
@@ -35,6 +44,11 @@ data class FoxColors(
             brand = Color(0xFFA63F10),
             accent = Color(0xFFA65A00),
             brandMuted = Color(0xFFF1DED4),
+            brandOnSurface = Color(0xFFA63F10),
+            onBrand = Color(0xFFFFFFFF),
+            scrim = Color(0x8C000000),
+            scrimStrong = Color(0xCC000000),
+            onScrim = Color(0xFFFFFFFF),
         )
         val Dark = FoxColors(
             appBackground = Color(0xFF000000),
@@ -44,6 +58,12 @@ data class FoxColors(
             brand = Color(0xFFD9531E),
             accent = Color(0xFFFFB74D),
             brandMuted = Color(0xFF6B2A16),
+            // `#D9531E` is 4.15:1 on the dark surface and takes 4.03:1 with white text; this lighter step clears 4.5:1 both ways.
+            brandOnSurface = Color(0xFFDC602F),
+            onBrand = Color(0xFF000000),
+            scrim = Color(0x8C000000),
+            scrimStrong = Color(0xCC000000),
+            onScrim = Color(0xFFFFFFFF),
         )
     }
 }

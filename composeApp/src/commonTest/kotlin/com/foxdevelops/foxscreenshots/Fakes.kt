@@ -50,18 +50,20 @@ class FakeImageProcessor : ImageProcessor {
 class FakeCaptureService(
     private val screen: ScreenSize = ScreenSize(200, 100),
     var activeWindow: CaptureRegion? = CaptureRegion(10, 10, 50, 40),
+    /** The bytes every grab returns; UI tests that really decode them pass a real PNG. */
+    private val png: ByteArray = fakePngBytes,
 ) : ScreenCaptureService {
     val regions = mutableListOf<CaptureRegion>()
     var fullGrabs = 0
 
     override suspend fun grabFullVirtualScreen(): CaptureResult {
         fullGrabs++
-        return fakeCapture("full-$fullGrabs", screen.width, screen.height)
+        return CaptureResult("full-$fullGrabs", png, screen.width, screen.height, takenAtMillis = 0)
     }
 
     override suspend fun grabRegion(region: CaptureRegion): CaptureResult {
         regions += region
-        return fakeCapture("region-${regions.size}", region.width, region.height)
+        return CaptureResult("region-${regions.size}", png, region.width, region.height, takenAtMillis = 0)
     }
 
     override suspend fun activeWindowRegion(): CaptureRegion? = activeWindow
@@ -71,6 +73,9 @@ class FakeCaptureService(
 class FakeSurface(var selection: CaptureRegion? = CaptureRegion(10, 20, 30, 40)) : CaptureSurface {
     val events = mutableListOf<String>()
     var countdownFor: Duration? = null
+
+    /** What the next countdown resolves to: `true` = ran out, `false` = the user cancelled. */
+    var countdownCompletes = true
 
     override suspend fun hideHub() {
         events += "hide"
@@ -85,9 +90,10 @@ class FakeSurface(var selection: CaptureRegion? = CaptureRegion(10, 20, 30, 40))
         return selection
     }
 
-    override suspend fun countdown(wait: Duration) {
+    override suspend fun countdown(wait: Duration): Boolean {
         events += "countdown"
         countdownFor = wait
+        return countdownCompletes
     }
 }
 
@@ -116,6 +122,14 @@ class FakeOutput : OutputService {
         if (failing) throw IllegalStateException("read-only")
         saved += directory to pngBytes
         return "$directory/shot.png"
+    }
+
+    var revealable = true
+    val revealed = mutableListOf<String>()
+
+    override suspend fun reveal(path: String): Boolean {
+        if (revealable) revealed += path
+        return revealable
     }
 
     override suspend fun pickDirectory(initialDirectory: String?): String? = "/picked"

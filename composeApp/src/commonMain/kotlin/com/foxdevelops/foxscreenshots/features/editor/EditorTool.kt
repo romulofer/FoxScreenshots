@@ -4,6 +4,9 @@ import androidx.compose.ui.graphics.Color
 
 /** The tools on the editor rail. */
 enum class EditorTool {
+    /** Picks an existing annotation to move (drag) or delete (Delete key); creates nothing. */
+    Select,
+
     /** Trims the base image itself — the one destructive tool. */
     Crop,
     Arrow,
@@ -20,7 +23,7 @@ enum class EditorTool {
     val isDragTool: Boolean get() = this != Text && this != Step
 
     /** Whether the tool adds an annotation layer. [Crop] does not: it rewrites the base image. */
-    val createsAnnotation: Boolean get() = this != Crop
+    val createsAnnotation: Boolean get() = this != Crop && this != Select
 }
 
 /**

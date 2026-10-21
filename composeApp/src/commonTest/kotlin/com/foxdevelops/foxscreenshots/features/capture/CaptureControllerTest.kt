@@ -173,4 +173,22 @@ class CaptureControllerTest {
         capture.captureFullScreen()
         assertEquals(2, session.state.value.map { it.id }.toSet().size)
     }
+
+    @Test
+    fun `cancelling the countdown grabs nothing and still restores the hub`() = runTest {
+        surface.countdownCompletes = false
+        assertNull(controller().captureWithTimer(2.seconds))
+        assertTrue(service.regions.isEmpty())
+        assertTrue(session.state.value.isEmpty())
+        assertTrue(clipboard.copied.isEmpty())
+        assertEquals("restore", surface.events.last())
+    }
+
+    @Test
+    fun `auto-save remembers where the file went`() = runTest {
+        settings.setOutputDir("/shots")
+        settings.setAutoSave(true)
+        val result = controller().captureInstant()!!
+        assertEquals("/shots/shot.png", session.savedPaths.value[result.id])
+    }
 }

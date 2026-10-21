@@ -61,13 +61,21 @@ class AppNavigator {
  * from the tray or a hotkey has no screen of its own to report on.
  */
 class Messenger {
-    private val mutableMessages = MutableSharedFlow<String>(extraBufferCapacity = 8)
-    val messages: SharedFlow<String> = mutableMessages.asSharedFlow()
+    private val mutableMessages = MutableSharedFlow<Notice>(extraBufferCapacity = 8)
+    val messages: SharedFlow<Notice> = mutableMessages.asSharedFlow()
 
     fun show(text: String) {
-        mutableMessages.tryEmit(text)
+        mutableMessages.tryEmit(Notice(text))
+    }
+
+    /** A message with one button, e.g. "Undo" after a delete. [onAction] runs only if the user presses it. */
+    fun show(text: String, actionLabel: String, onAction: () -> Unit) {
+        mutableMessages.tryEmit(Notice(text, actionLabel, onAction))
     }
 }
+
+/** One message for the snackbar (or the toast, when the window is hidden). */
+class Notice(val text: String, val actionLabel: String? = null, val onAction: (() -> Unit)? = null)
 
 /** Everything the screens need, wired once at startup. */
 class AppContainer(

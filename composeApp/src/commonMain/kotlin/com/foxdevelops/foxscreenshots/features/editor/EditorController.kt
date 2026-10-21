@@ -57,7 +57,11 @@ data class EditorState(
     val isBusy: Boolean = false,
     /** Whether the document differs from the last version handed back to the session. */
     val isDirty: Boolean = false,
+    /** The annotation picked with the Select tool, if any. */
+    val selectedId: String? = null,
 ) {
+    val selected: Annotation? get() = selectedId?.let { id -> annotations.firstOrNull { it.id == id } }
+
     val annotations: List<Annotation> get() = document.annotations
 }
 
@@ -79,6 +83,9 @@ class EditorController(
 
     private var savedDocument: EditorDocument
     private var cropAnchor: Offset? = null
+
+    /** An annotation being dragged with the Select tool: where the press landed and the document it started from. */
+    private var moveGrab: MoveGrab? = null
     private var nextId = 0
     private var closed = false
 
@@ -111,7 +118,8 @@ class EditorController(
     fun selectTool(tool: EditorTool) {
         if (current.isBusy) return
         cropAnchor = null
-        mutableState.update { it.copy(tool = tool, draft = null, cropDraft = null) }
+        moveGrab = null
+        mutableState.update { it.copy(tool = tool, draft = null, cropDraft = null, selectedId = null) }
     }
 
     fun selectColor(color: Color) = mutableState.update { it.copy(color = color) }
@@ -124,6 +132,13 @@ class EditorController(
     fun startDraft(point: Offset) {
         val s = current
         if (s.isBusy) return
+        if (s.tool == EditorTool.Select) {
+            // The topmost annotation under the pointer wins; pressing on nothing clears the selection.
+            val hit = s.annotations.lastOrNull { it.hitTest(point, HIT_TOLERANCE) }
+            moveGrab = hit?.let { MoveGrab(it.id, point, s.document) }
+            mutableState.update { it.copy(selectedId = hit?.id) }
+            return
+        }
         if (s.tool == EditorTool.Crop) {
             cropAnchor = point
             mutableState.update { it.copy(cropDraft = rectFromPoints(point, point)) }
@@ -134,6 +149,13 @@ class EditorController(
     }
 
     fun updateDraft(point: Offset) {
+        moveGrab?.let { grab ->
+            // The document is rewritten live so the mark follows the pointer; it only becomes an undo step on release.
+            val shift = point - grab.origin
+            val moved = grab.base.annotations.map { if (it.id == grab.id) it.translated(shift) else it }
+            mutableState.update { it.copy(document = grab.base.copy(annotations = moved)) }
+            return
+        }
         val anchor = cropAnchor
         if (anchor != null) {
             // Anchored on where the drag began, not on the rectangle's top-left: a
@@ -147,6 +169,15 @@ class EditorController(
 
     /** Ends the drag: commits the annotation, or applies the crop. */
     suspend fun endDraft() {
+        moveGrab?.let { grab ->
+            moveGrab = null
+            val moved = current.document
+            val changed = moved.annotations != grab.base.annotations
+            // Back to where the drag began, then commit the result: the pre-drag document is what undo returns to.
+            mutableState.update { it.copy(document = grab.base) }
+            if (changed) commit(moved)
+            return
+        }
         val crop = current.cropDraft
         if (crop != null) {
             cropAnchor = null
@@ -160,6 +191,15 @@ class EditorController(
         mutableState.update { it.copy(draft = null) }
         if (draft == null || !draft.isMeaningful) return
         commit(current.document.copy(annotations = current.annotations + draft))
+    }
+
+    /** Removes the annotation picked with the Select tool. One undo step; no-op when nothing is selected. */
+    fun deleteSelected() {
+        val s = current
+        val id = s.selectedId ?: return
+        if (s.isBusy || s.annotations.none { it.id == id }) return
+        commit(s.document.copy(annotations = s.annotations.filterNot { it.id == id }))
+        mutableState.update { it.copy(selectedId = null) }
     }
 
     /** Places a caption at [position]. No-op for blank text, so cancelling the dialog leaves nothing behind. */
@@ -235,6 +275,7 @@ class EditorController(
                 document = previous,
                 draft = null,
                 cropDraft = null,
+                selectedId = null,
                 canUndo = past.isNotEmpty(),
                 canRedo = true,
                 isDirty = isDirty(previous),
@@ -252,6 +293,7 @@ class EditorController(
                 document = next,
                 draft = null,
                 cropDraft = null,
+                selectedId = null,
                 canUndo = true,
                 canRedo = future.isNotEmpty(),
                 isDirty = isDirty(next),
@@ -325,14 +367,20 @@ class EditorController(
             EditorTool.Blur -> RedactionAnnotation(id, color, width, point, point, RedactionStyle.Blur)
             EditorTool.Pixelate -> RedactionAnnotation(id, color, width, point, point, RedactionStyle.Pixelate)
             // Tap tools never start a drag; crop is not an annotation.
-            EditorTool.Pen, EditorTool.Text, EditorTool.Step, EditorTool.Crop ->
+            EditorTool.Pen, EditorTool.Text, EditorTool.Step, EditorTool.Crop, EditorTool.Select ->
                 PenAnnotation(id, color, width, listOf(point))
         }
     }
 
     private fun newId(): String = "ann-${nextId++}"
 
+    /** The press that started dragging annotation [id], and the document before the drag. */
+    private class MoveGrab(val id: String, val origin: Offset, val base: EditorDocument)
+
     companion object {
+        /** Slack, in image pixels, around a thin annotation when clicking it with the Select tool. */
+        const val HIT_TOLERANCE = 8f
+
         /** Cap on undo steps; a crop-heavy session would otherwise pin every intermediate bitmap in RAM. */
         const val MAX_HISTORY = 50
         const val DEFAULT_STROKE_WIDTH = 4f

@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.Redo
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material.icons.outlined.Undo
@@ -21,7 +22,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -45,6 +45,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isAltPressed
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.isShiftPressed
@@ -53,15 +54,21 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
+import com.foxdevelops.foxscreenshots.core.theme.foxTextFieldColors
 import com.foxdevelops.foxscreenshots.features.home.copyToClipboard
 import com.foxdevelops.foxscreenshots.features.home.saveWithDialog
 import com.foxdevelops.foxscreenshots.model.CaptureResult
 import com.foxdevelops.foxscreenshots.ui.AppContainer
+import com.foxdevelops.foxscreenshots.ui.FoxIconButton
 import kotlinx.coroutines.launch
 
 /**
  * Non-destructive annotation editor. The annotation layer only becomes pixels
  * when the user copies, saves, or applies — until then every mark can be undone.
+ *
+ * Keyboard: a letter picks a tool (see the tooltips), Delete removes the picked mark, Ctrl+Z/Y undo and redo,
+ * Ctrl+C copies, Ctrl+S saves, Ctrl+Enter applies, Ctrl+= / Ctrl+- / Ctrl+0 zoom, Esc leaves. The wheel
+ * zooms and a middle-button drag pans.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,6 +76,7 @@ fun EditorScreen(app: AppContainer, capture: CaptureResult, modifier: Modifier =
     val strings = LocalStrings.current
     val scope = rememberCoroutineScope()
     val controller = remember(capture) { EditorController(capture, app.processor) }
+    val viewport = remember(capture) { EditorViewport() }
     val state by controller.state.collectAsState()
     val focus = remember { FocusRequester() }
     var askingText by remember { mutableStateOf<Offset?>(null) }
@@ -88,48 +96,90 @@ fun EditorScreen(app: AppContainer, capture: CaptureResult, modifier: Modifier =
         if (state.isDirty) confirmDiscard = true else app.navigator.back()
     }
 
+    fun copy() {
+        if (image != null) scope.launch { exportBytes(app, controller)?.let { copyToClipboard(app, it) } }
+    }
+
+    fun save() {
+        if (image != null) scope.launch { exportBytes(app, controller)?.let { saveWithDialog(app, it, capture.id) } }
+    }
+
+    fun applyEdits() {
+        if (image != null && state.isDirty) scope.launch { apply(app, controller, capture) }
+    }
+
     Column(
         modifier
             .fillMaxSize()
             .focusRequester(focus)
             .focusable()
-            // Ctrl/Cmd+Z undoes, Ctrl/Cmd+Y or Ctrl/Cmd+Shift+Z redoes: the usual editor bindings.
             .onPreviewKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                 val command = event.isCtrlPressed || event.isMetaPressed
-                if (event.type != KeyEventType.KeyDown || !command) return@onPreviewKeyEvent false
-                when {
-                    event.key == Key.Z && event.isShiftPressed -> { if (canRedo) controller.redo(); true }
-                    event.key == Key.Z -> { if (canUndo) controller.undo(); true }
-                    event.key == Key.Y -> { if (canRedo) controller.redo(); true }
-                    else -> false
+                if (command) {
+                    return@onPreviewKeyEvent when {
+                        event.key == Key.Z && event.isShiftPressed -> { if (canRedo) controller.redo(); true }
+                        event.key == Key.Z -> { if (canUndo) controller.undo(); true }
+                        event.key == Key.Y -> { if (canRedo) controller.redo(); true }
+                        event.key == Key.C -> { copy(); true }
+                        event.key == Key.S -> { save(); true }
+                        event.key == Key.Enter || event.key == Key.NumPadEnter -> { applyEdits(); true }
+                        event.key == Key.Equals || event.key == Key.Plus || event.key == Key.NumPadAdd ->
+                            { viewport.zoomBy(EditorViewport.STEP); true }
+                        event.key == Key.Minus || event.key == Key.NumPadSubtract ->
+                            { viewport.zoomBy(1f / EditorViewport.STEP); true }
+                        event.key == Key.Zero || event.key == Key.NumPad0 -> { viewport.reset(); true }
+                        else -> false
+                    }
+                }
+                if (event.isAltPressed) return@onPreviewKeyEvent false
+                when (event.key) {
+                    Key.Escape -> { leave(); true }
+                    Key.Delete, Key.Backspace -> { controller.deleteSelected(); true }
+                    else -> toolForKey(event.key)?.let { controller.selectTool(it); true } ?: false
                 }
             },
     ) {
         TopAppBar(
-            title = { Text(if (state.isDirty) "• ${strings.editorTitle}" else strings.editorTitle) },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(if (state.isDirty) "• ${strings.editorTitle}" else strings.editorTitle)
+                    if (state.isDirty) {
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            strings.editorUnsaved,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             navigationIcon = {
-                IconButton(onClick = ::leave) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = strings.actionClose) }
+                FoxIconButton(Icons.AutoMirrored.Outlined.ArrowBack, strings.actionClose, shortcut = "Esc", onClick = ::leave)
             },
             actions = {
-                IconButton(enabled = canUndo, onClick = controller::undo) {
-                    Icon(Icons.Outlined.Undo, contentDescription = strings.undo)
-                }
-                IconButton(enabled = canRedo, onClick = controller::redo) {
-                    Icon(Icons.Outlined.Redo, contentDescription = strings.redo)
-                }
+                FoxIconButton(
+                    Icons.Outlined.DeleteOutline, strings.editorDeleteAnnotation, shortcut = "Del",
+                    enabled = state.selectedId != null && !state.isBusy,
+                    onClick = controller::deleteSelected,
+                )
+                FoxIconButton(Icons.Outlined.Undo, strings.undo, shortcut = "Ctrl+Z", enabled = canUndo, onClick = controller::undo)
+                FoxIconButton(Icons.Outlined.Redo, strings.redo, shortcut = "Ctrl+Y", enabled = canRedo, onClick = controller::redo)
                 Spacer(Modifier.width(8.dp))
-                IconButton(
+                FoxIconButton(
+                    Icons.Outlined.ContentCopy, strings.actionCopy, shortcut = "Ctrl+C",
                     enabled = image != null,
-                    onClick = { scope.launch { exportBytes(app, controller)?.let { copyToClipboard(app, it) } } },
-                ) { Icon(Icons.Outlined.ContentCopy, contentDescription = strings.actionCopy) }
-                IconButton(
+                    onClick = ::copy,
+                )
+                FoxIconButton(
+                    Icons.Outlined.Save, strings.actionSave, shortcut = "Ctrl+S",
                     enabled = image != null,
-                    onClick = { scope.launch { exportBytes(app, controller)?.let { saveWithDialog(app, it) } } },
-                ) { Icon(Icons.Outlined.Save, contentDescription = strings.actionSave) }
+                    onClick = ::save,
+                )
                 Button(
                     enabled = image != null && state.isDirty,
-                    onClick = { scope.launch { apply(app, controller, capture) } },
+                    onClick = ::applyEdits,
                     modifier = Modifier.padding(horizontal = 8.dp),
                 ) {
                     Icon(Icons.Outlined.Check, contentDescription = null)
@@ -151,7 +201,9 @@ fun EditorScreen(app: AppContainer, capture: CaptureResult, modifier: Modifier =
                             annotations = state.annotations,
                             draft = state.draft,
                             cropDraft = state.cropDraft,
+                            selected = state.selected,
                             tool = state.tool,
+                            viewport = viewport,
                             onDragStart = controller::startDraft,
                             onDragUpdate = controller::updateDraft,
                             onDragEnd = { scope.launch { controller.endDraft() } },
@@ -177,6 +229,7 @@ fun EditorScreen(app: AppContainer, capture: CaptureResult, modifier: Modifier =
                 onColorSelected = controller::selectColor,
                 onStrokeWidthChanged = controller::setStrokeWidth,
                 onFilledChanged = controller::setFilled,
+                viewport = viewport,
             )
         }
     }
@@ -264,9 +317,12 @@ private fun TextPromptDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit)
                 value = text,
                 onValueChange = { text = it },
                 placeholder = { Text(strings.editorTextHint) },
-                singleLine = true,
+                // Enter starts a new line; Ctrl+Enter confirms.
+                minLines = 2,
+                maxLines = 6,
+                colors = foxTextFieldColors(),
                 modifier = Modifier.focusRequester(focus).onPreviewKeyEvent { event ->
-                    if (event.type == KeyEventType.KeyDown && event.key == Key.Enter) {
+                    if (event.type == KeyEventType.KeyDown && event.key == Key.Enter && (event.isCtrlPressed || event.isMetaPressed)) {
                         onConfirm(text)
                         true
                     } else {

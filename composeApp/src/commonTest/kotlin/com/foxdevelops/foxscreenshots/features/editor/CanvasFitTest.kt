@@ -47,4 +47,21 @@ class CanvasFitTest {
         assertEquals(1f, CanvasFit.contain(Size.Zero, Size(10f, 10f)).scale)
         assertEquals(1f, CanvasFit.contain(Size(10f, 10f), Size.Zero).scale)
     }
+
+    @Test
+    fun `zooming keeps the image centred until it is panned`() {
+        val fit = CanvasFit.contain(Size(2000f, 1000f), Size(1000f, 1000f)).zoomed(2f, Offset.Zero, Size(1000f, 1000f))
+        assertEquals(1f, fit.scale)
+        assertEquals(Offset(-500f, 0f), fit.offset)
+    }
+
+    @Test
+    fun `a zoomed and panned fit still maps widget points to image pixels`() {
+        val viewport = Size(1000f, 1000f)
+        val fit = CanvasFit.contain(Size(2000f, 1000f), viewport).zoomed(2f, Offset(100f, 0f), viewport)
+        val local = Offset(400f, 300f)
+        val image = fit.toImage(local)
+        assertEquals((400f - fit.offset.x) / fit.scale, image.x)
+        assertEquals((300f - fit.offset.y) / fit.scale, image.y)
+    }
 }

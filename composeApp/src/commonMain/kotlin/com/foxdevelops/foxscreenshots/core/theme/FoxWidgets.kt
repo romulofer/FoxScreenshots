@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Color
 fun foxSwitchColors(): SwitchColors {
     val colors = LocalFoxColors.current
     return SwitchDefaults.colors(
-        checkedThumbColor = colors.brand,
+        checkedThumbColor = colors.brandOnSurface,
         checkedTrackColor = colors.brandMuted,
         checkedBorderColor = colors.brandMuted,
         uncheckedThumbColor = colors.textSecondary,
@@ -26,11 +26,11 @@ fun foxSwitchColors(): SwitchColors {
 fun foxTextFieldColors(): TextFieldColors {
     val colors = LocalFoxColors.current
     return OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = colors.brand,
+        focusedBorderColor = colors.brandOnSurface,
         unfocusedBorderColor = colors.textSecondary,
-        focusedLabelColor = colors.brand,
+        focusedLabelColor = colors.brandOnSurface,
         unfocusedLabelColor = colors.textSecondary,
-        cursorColor = colors.brand,
+        cursorColor = colors.brandOnSurface,
         focusedContainerColor = Color.Transparent,
         unfocusedContainerColor = Color.Transparent,
     )

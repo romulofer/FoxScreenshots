@@ -99,4 +99,75 @@ class AnnotationTest {
         assertFalse(EditorTool.Crop.createsAnnotation)
         assertTrue(EditorTool.Pen.createsAnnotation)
     }
+
+    private fun arrow(from: Offset, to: Offset) = ArrowAnnotation("a", Color.Red, 4f, from, to)
+
+    @Test
+    fun `an arrow is hit along its line, not in the empty corner of its box`() {
+        val arrow = arrow(Offset(0f, 0f), Offset(100f, 100f))
+        assertTrue(arrow.hitTest(Offset(50f, 52f), tolerance = 4f))
+        assertFalse(arrow.hitTest(Offset(90f, 10f), tolerance = 4f))
+    }
+
+    @Test
+    fun `an outlined rectangle is hit on its edge but not inside`() {
+        val rect = RectangleAnnotation("r", Color.Red, 4f, Offset(0f, 0f), Offset(200f, 100f))
+        assertTrue(rect.hitTest(Offset(100f, 1f), tolerance = 4f))
+        assertTrue(rect.hitTest(Offset(199f, 50f), tolerance = 4f))
+        assertFalse(rect.hitTest(Offset(100f, 50f), tolerance = 4f))
+    }
+
+    @Test
+    fun `a filled rectangle is hit anywhere inside`() {
+        val rect = RectangleAnnotation("r", Color.Red, 4f, Offset(0f, 0f), Offset(200f, 100f), filled = true)
+        assertTrue(rect.hitTest(Offset(100f, 50f), tolerance = 4f))
+        assertFalse(rect.hitTest(Offset(300f, 50f), tolerance = 4f))
+    }
+
+    @Test
+    fun `an ellipse is hit on its outline`() {
+        val ellipse = EllipseAnnotation("e", Color.Red, 4f, Offset(0f, 0f), Offset(200f, 100f))
+        assertTrue(ellipse.hitTest(Offset(200f, 50f), tolerance = 4f))
+        assertTrue(ellipse.hitTest(Offset(100f, 0f), tolerance = 4f))
+        assertFalse(ellipse.hitTest(Offset(100f, 50f), tolerance = 4f))
+    }
+
+    @Test
+    fun `a pen stroke is hit near its path only`() {
+        val pen = PenAnnotation("p", Color.Red, 4f, listOf(Offset(0f, 0f), Offset(100f, 0f), Offset(100f, 100f)))
+        assertTrue(pen.hitTest(Offset(50f, 3f), tolerance = 4f))
+        assertTrue(pen.hitTest(Offset(101f, 60f), tolerance = 4f))
+        assertFalse(pen.hitTest(Offset(40f, 60f), tolerance = 4f))
+    }
+
+    @Test
+    fun `a single-dot pen stroke can be hit`() {
+        val dot = PenAnnotation("p", Color.Red, 6f, listOf(Offset(10f, 10f)))
+        assertTrue(dot.hitTest(Offset(12f, 11f), tolerance = 2f))
+        assertFalse(dot.hitTest(Offset(40f, 40f), tolerance = 2f))
+    }
+
+    @Test
+    fun `text and steps fall back to their box`() {
+        val text = TextAnnotation("t", Color.Red, 4f, Offset(10f, 10f), "hello", fontSize = 20f)
+        assertTrue(text.hitTest(Offset(30f, 20f), tolerance = 2f))
+        val step = StepAnnotation("s", Color.Red, 4f, Offset(50f, 50f), 1)
+        assertTrue(step.hitTest(Offset(55f, 55f), tolerance = 2f))
+        assertFalse(step.hitTest(Offset(200f, 200f), tolerance = 2f))
+    }
+
+    @Test
+    fun `a multi-line caption is as tall as its lines and as wide as its longest`() {
+        val one = TextAnnotation("t", Color.Red, 4f, Offset.Zero, "abc", fontSize = 10f)
+        val three = TextAnnotation("t", Color.Red, 4f, Offset.Zero, "abc\nabcdef\nab", fontSize = 10f)
+        assertEquals(one.bounds.height * 3f, three.bounds.height, 0.001f)
+        assertEquals(6 * 10f * 0.6f, three.bounds.width, 0.001f)
+    }
+
+    @Test
+    fun `distance to a segment is measured to its nearest point`() {
+        assertEquals(5f, distanceToSegment(Offset(5f, 5f), Offset(0f, 0f), Offset(10f, 0f)), 0.001f)
+        assertEquals(5f, distanceToSegment(Offset(-3f, 4f), Offset(0f, 0f), Offset(10f, 0f)), 0.001f)
+        assertEquals(5f, distanceToSegment(Offset(3f, 4f), Offset(0f, 0f), Offset(0f, 0f)), 0.001f)
+    }
 }

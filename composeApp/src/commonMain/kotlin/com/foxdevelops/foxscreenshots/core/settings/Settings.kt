@@ -38,10 +38,14 @@ data class Settings(
     val fileNamePattern: String = DEFAULT_FILE_NAME_PATTERN,
     /** Folder of the last file saved through the dialog; the dialog opens here next time. */
     val lastSaveDir: String? = null,
+    /** Whether a dragged selection waits for Enter (or a click on "Capture") instead of being taken on release. */
+    val selectionConfirm: Boolean = true,
+    /** Names of the system-issue notices the user dismissed for good; a new kind of issue shows again. */
+    val dismissedIssues: Set<String> = emptySet(),
 ) {
     companion object {
         const val MIN_TIMER_DELAY_SECONDS = 1
-        const val MAX_TIMER_DELAY_SECONDS = 60
+        const val MAX_TIMER_DELAY_SECONDS = 30
         const val DEFAULT_TIMER_DELAY_SECONDS = 3
         const val DEFAULT_HOTKEY = "PrintScreen"
         const val DEFAULT_TIMER_HOTKEY = "F7"

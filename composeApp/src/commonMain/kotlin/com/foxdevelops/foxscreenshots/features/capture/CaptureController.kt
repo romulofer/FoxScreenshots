@@ -88,7 +88,8 @@ class CaptureController(
                 processor.release(frame.image)
             } ?: return@run null
             lastRegion = region
-            surface.countdown(delay ?: settings.state.value.timerDelaySeconds.seconds)
+            // Cancelled while waiting: nothing is grabbed, the hub just comes back.
+            if (!surface.countdown(delay ?: settings.state.value.timerDelaySeconds.seconds)) return@run null
             record(service.grabRegion(region))
         }
     }
@@ -171,7 +172,8 @@ class CaptureController(
         val dir = current.outputDir
         if (!current.autoSave || dir == null) return
         try {
-            output.savePngToDir(result.pngBytes, dir, current.fileNamePattern)
+            val path = output.savePngToDir(result.pngBytes, dir, current.fileNamePattern)
+            session.markSaved(result.id, path)
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
