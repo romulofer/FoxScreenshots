@@ -24,7 +24,7 @@ class ShutdownTest {
         val code = AtomicInteger(-1)
         val exited = CountDownLatch(1)
 
-        Shutdown.finish(Desktop { closedOn = Thread.currentThread() }, exit = { code.set(it); exited.countDown() })
+        Shutdown.finish(Desktop { closedOn = Thread.currentThread() }, exit = { code.set(it); exited.countDown() }, halt = {})
 
         assertTrue(exited.await(5, TimeUnit.SECONDS))
         assertEquals(0, code.get())
@@ -32,10 +32,21 @@ class ShutdownTest {
     }
 
     @Test
+    fun `a cleanup that hangs is cut short by the watchdog`() {
+        val halted = CountDownLatch(1)
+        val release = CountDownLatch(1)
+
+        Shutdown.finish(Desktop { release.await() }, graceMillis = 50, exit = {}, halt = { halted.countDown() })
+
+        assertTrue(halted.await(5, TimeUnit.SECONDS))
+        release.countDown()
+    }
+
+    @Test
     fun `a failing cleanup still exits`() {
         val exited = CountDownLatch(1)
 
-        Shutdown.finish(Desktop { error("dbus gone") }, exit = { exited.countDown() })
+        Shutdown.finish(Desktop { error("dbus gone") }, exit = { exited.countDown() }, halt = {})
 
         assertTrue(exited.await(5, TimeUnit.SECONDS))
     }

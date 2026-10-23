@@ -12,7 +12,12 @@ import kotlin.system.exitProcess
  * close, and a watchdog forces the exit if a native library hangs on the way out.
  */
 object Shutdown {
-    fun finish(desktop: DesktopIntegration, graceMillis: Long = GRACE_MILLIS, exit: (Int) -> Unit = ::exitProcess) {
+    fun finish(
+        desktop: DesktopIntegration,
+        graceMillis: Long = GRACE_MILLIS,
+        exit: (Int) -> Unit = ::exitProcess,
+        halt: () -> Unit = { Runtime.getRuntime().halt(0) },
+    ) {
         Thread {
             runCatching { desktop.close() }
             exit(0)
@@ -23,7 +28,7 @@ object Shutdown {
         }
         Thread {
             Thread.sleep(graceMillis)
-            Runtime.getRuntime().halt(0)
+            halt()
         }.apply {
             name = "shutdown-watchdog"
             isDaemon = true
