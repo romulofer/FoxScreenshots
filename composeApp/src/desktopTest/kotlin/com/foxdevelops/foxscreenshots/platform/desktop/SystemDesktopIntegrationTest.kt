@@ -13,7 +13,6 @@ import com.foxdevelops.foxscreenshots.core.i18n.StringsEn
 import com.foxdevelops.foxscreenshots.core.i18n.StringsPt
 import com.foxdevelops.foxscreenshots.core.settings.Settings
 import com.foxdevelops.foxscreenshots.platform.hotkey.HotkeyUnavailableException
-import com.foxdevelops.foxscreenshots.platform.session.DesktopSession
 import com.foxdevelops.foxscreenshots.platform.tray.TrayPresenter
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -54,6 +53,12 @@ class SystemDesktopIntegrationTest {
         override fun close() {
             closed = true
         }
+
+        var status: (Boolean, String?) -> Unit = { _, _ -> }
+
+        override fun onStatus(listener: (working: Boolean, detail: String?) -> Unit) {
+            status = listener
+        }
     }
 
     private class RecordingEvents : DesktopEvents {
@@ -68,8 +73,8 @@ class SystemDesktopIntegrationTest {
     private val issues = SystemIssues()
     private val events = RecordingEvents()
 
-    private fun integration(session: DesktopSession = DesktopSession.X11) =
-        SystemDesktopIntegration(tray, hotkeys, issues, session)
+    private fun integration() =
+        SystemDesktopIntegration(tray, hotkeys, issues)
 
     @Test
     fun `the tray gets localized labels and routes clicks and menu items`() {
@@ -129,10 +134,13 @@ class SystemDesktopIntegrationTest {
     }
 
     @Test
-    fun `wayland installs no hotkeys and says so`() {
-        integration(DesktopSession.Wayland).attach(StringsEn, Settings(), events)
-        assertTrue(hotkeys.bindings.isEmpty())
+    fun `a backend that learns later that the desktop refused reports it then`() {
+        integration().attach(StringsEn, Settings(), events)
+        assertTrue(issues.state.value.isEmpty())
+        hotkeys.status(false, "the desktop refused")
         assertEquals(listOf(SystemDependency.Hotkeys), issues.state.value.map { it.dependency })
+        hotkeys.status(true, null)
+        assertTrue(issues.state.value.isEmpty())
     }
 
     @Test

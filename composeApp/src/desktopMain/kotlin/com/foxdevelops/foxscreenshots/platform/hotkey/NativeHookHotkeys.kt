@@ -36,15 +36,22 @@ class HotkeyUnavailableException(message: String, cause: Throwable? = null) : Ex
  * the user, the unpacking fails and every hotkey silently dies; [libraryDir]
  * (a per-user folder) is where it unpacks instead.
  */
-class NativeHookHotkeys(private val libraryDir: Path? = null) : GlobalHotkeys, NativeKeyListener {
+class NativeHookHotkeys(
+    private val libraryDir: Path? = null,
+    private val clock: () -> Long = System::currentTimeMillis,
+) : GlobalHotkeys, NativeKeyListener {
     @Volatile
     private var bindings: Map<HotkeyAction, HotkeyBinding> = emptyMap()
 
     @Volatile
     private var onTriggered: (HotkeyAction) -> Unit = {}
 
-    /** Keys currently held, so auto-repeat does not retrigger. */
-    private val held = ConcurrentHashMap.newKeySet<Int>()
+    /**
+     * Keys currently held, with when each was last seen, so auto-repeat does not retrigger. A release the hook
+     * never saw (screen lock, suspend, another program's keyboard grab) would otherwise swallow the next press:
+     * an entry not refreshed by auto-repeat within [STALE_HELD_MILLIS] is a key that was let go unnoticed.
+     */
+    private val held = ConcurrentHashMap<Int, Long>()
 
     private var listening = false
 
@@ -73,7 +80,9 @@ class NativeHookHotkeys(private val libraryDir: Path? = null) : GlobalHotkeys, N
     }
 
     override fun nativeKeyPressed(event: NativeKeyEvent) {
-        if (!held.add(event.keyCode)) return
+        val now = clock()
+        val previous = held.put(event.keyCode, now)
+        if (previous != null && now - previous < STALE_HELD_MILLIS) return
         val pressed = modifiersOf(event.modifiers)
         for ((action, binding) in bindings) {
             if (virtualKey(binding.key) == event.keyCode && binding.modifiers == pressed) {
@@ -88,6 +97,9 @@ class NativeHookHotkeys(private val libraryDir: Path? = null) : GlobalHotkeys, N
     }
 
     companion object {
+        /** Longer than any keyboard auto-repeat delay. */
+        internal const val STALE_HELD_MILLIS = 2_000L
+
         private var hookInstalled = false
 
         @Synchronized

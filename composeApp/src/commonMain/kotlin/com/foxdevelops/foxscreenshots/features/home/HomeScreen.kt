@@ -132,6 +132,7 @@ fun HomeScreen(app: AppContainer, modifier: Modifier = Modifier) {
             val hotkeysWork = issues.none { it.dependency == SystemDependency.Hotkeys }
             CaptureToolbar(
                 onCapture = { mode -> scope.launch { runCapture(app, mode) } },
+                windowPicksViaSystem = app.capture.windowCaptureUsesSystemPicker,
                 shortcuts = if (hotkeysWork) {
                     mapOf(
                         CaptureMode.Instant to settings.hotkey,

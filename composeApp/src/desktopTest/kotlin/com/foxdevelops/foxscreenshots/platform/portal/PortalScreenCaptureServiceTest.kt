@@ -8,17 +8,63 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class PortalScreenCaptureServiceTest {
     private fun frame(width: Int, height: Int) = Png.encodeOpaque(ByteArray(width * height * 4), width, height)
 
     private class FakePortal(val answer: () -> ByteArray) : ScreenshotPortal {
         var calls = 0
+        var interactiveCalls = 0
+
         override suspend fun capture(): ByteArray {
             calls++
             return answer()
         }
+
+        override suspend fun captureInteractive(): ByteArray {
+            interactiveCalls++
+            return answer()
+        }
+    }
+
+    @Test
+    fun `window mode hands the choice to the system picker`() = runTest {
+        val portal = FakePortal { frame(90, 60) }
+        val service = PortalScreenCaptureService(portal)
+        assertTrue(service.windowCaptureUsesSystemPicker)
+        val result = service.grabWithSystemPicker()
+        assertNotNull(result)
+        assertEquals(90 to 60, result.width to result.height)
+        assertEquals(1, portal.interactiveCalls)
+        assertEquals(0, portal.calls, "the silent capture is not used")
+    }
+
+    @Test
+    fun `closing the picker is not an error, just no capture`() = runTest {
+        val service = PortalScreenCaptureService(FakePortal { throw PortalException(PortalFailure.Cancelled) })
+        assertNull(service.grabWithSystemPicker())
+    }
+
+    @Test
+    fun `a refused picker is reported as denied`() = runTest {
+        val service = PortalScreenCaptureService(FakePortal { throw PortalException(PortalFailure.Denied) })
+        assertEquals(CaptureFailure.PortalDenied, assertFailsWith<CaptureException> { service.grabWithSystemPicker() }.failure)
+    }
+
+    @Test
+    fun `a missing portal in the picker is reported as unavailable`() = runTest {
+        val service = PortalScreenCaptureService(FakePortal { throw PortalException(PortalFailure.Unavailable) })
+        assertEquals(CaptureFailure.PortalUnavailable, assertFailsWith<CaptureException> { service.grabWithSystemPicker() }.failure)
+    }
+
+    @Test
+    fun `a cancellation outside the picker still counts as a refusal`() = runTest {
+        val service = PortalScreenCaptureService(FakePortal { throw PortalException(PortalFailure.Cancelled) })
+        // The silent capture has no picker to close: being told "cancelled" there means the permission was refused.
+        assertEquals(CaptureFailure.PortalDenied, assertFailsWith<CaptureException> { service.grabFullVirtualScreen() }.failure)
     }
 
     @Test

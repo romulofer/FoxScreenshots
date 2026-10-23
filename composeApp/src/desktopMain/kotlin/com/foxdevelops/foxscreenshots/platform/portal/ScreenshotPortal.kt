@@ -8,6 +8,9 @@ enum class PortalFailure {
     /** The user dismissed the desktop's permission dialog, or the compositor refused the request. */
     Denied,
 
+    /** The user closed the desktop's own picker without choosing anything: a normal outcome, not an error. */
+    Cancelled,
+
     /** No portal is running, or it failed mid-request. */
     Unavailable,
 }
@@ -24,6 +27,13 @@ class PortalException(val failure: PortalFailure, val details: String? = null) :
 interface ScreenshotPortal {
     /** Asks the desktop for a screenshot of everything and returns the PNG bytes. */
     suspend fun capture(): ByteArray
+
+    /**
+     * Same request, but the desktop shows its own picker so the user chooses what
+     * to capture (a window, a screen, an area). Throws [PortalFailure.Cancelled]
+     * if the picker is closed with nothing chosen.
+     */
+    suspend fun captureInteractive(): ByteArray
 }
 
 /** How long to wait for the user to answer the desktop's modal dialog before giving up. */

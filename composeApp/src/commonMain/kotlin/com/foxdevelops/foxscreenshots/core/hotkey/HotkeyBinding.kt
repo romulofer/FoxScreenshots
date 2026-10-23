@@ -80,6 +80,13 @@ interface GlobalHotkeys {
 
     /** Releases native hooks. */
     fun close()
+
+    /**
+     * Reports, from any thread, whether the hotkeys really work. Backends that can only find out later
+     * (the Wayland portal answers asynchronously, and the compositor may refuse) call it when they know;
+     * the others fail or succeed inside [register] and need not. [detail] is developer-facing.
+     */
+    fun onStatus(listener: (working: Boolean, detail: String?) -> Unit) = Unit
 }
 
 /** Does nothing; used where global hotkeys cannot work, and in tests. */

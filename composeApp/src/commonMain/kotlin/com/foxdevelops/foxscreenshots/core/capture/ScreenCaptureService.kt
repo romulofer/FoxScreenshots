@@ -57,6 +57,20 @@ interface ScreenCaptureService {
 
     /** Size of the whole virtual screen in physical pixels, without grabbing it. */
     suspend fun virtualScreenSize(): ScreenSize
+
+    /**
+     * Whether capturing "a window" works by handing the choice to the system's own
+     * picker (Wayland) instead of reading the focused window's geometry. The UI
+     * labels the button accordingly.
+     */
+    val windowCaptureUsesSystemPicker: Boolean get() = false
+
+    /**
+     * Lets the system's picker choose what to capture and returns it, or `null`
+     * if the user closed the picker. Only meaningful when [windowCaptureUsesSystemPicker].
+     */
+    suspend fun grabWithSystemPicker(): CaptureResult? =
+        throw CaptureException(CaptureFailure.PlatformUnsupported, "no system picker on this platform")
 }
 
 /** Fallback for sessions with no usable backend: boots fine, throws on capture. */

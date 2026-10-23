@@ -14,9 +14,9 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material.icons.outlined.Redo
+import androidx.compose.material.icons.automirrored.outlined.Redo
 import androidx.compose.material.icons.outlined.Save
-import androidx.compose.material.icons.outlined.Undo
+import androidx.compose.material.icons.automirrored.outlined.Undo
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -165,8 +165,8 @@ fun EditorScreen(app: AppContainer, capture: CaptureResult, modifier: Modifier =
                     enabled = state.selectedId != null && !state.isBusy,
                     onClick = controller::deleteSelected,
                 )
-                FoxIconButton(Icons.Outlined.Undo, strings.undo, shortcut = "Ctrl+Z", enabled = canUndo, onClick = controller::undo)
-                FoxIconButton(Icons.Outlined.Redo, strings.redo, shortcut = "Ctrl+Y", enabled = canRedo, onClick = controller::redo)
+                FoxIconButton(Icons.AutoMirrored.Outlined.Undo, strings.undo, shortcut = "Ctrl+Z", enabled = canUndo, onClick = controller::undo)
+                FoxIconButton(Icons.AutoMirrored.Outlined.Redo, strings.redo, shortcut = "Ctrl+Y", enabled = canRedo, onClick = controller::redo)
                 Spacer(Modifier.width(8.dp))
                 FoxIconButton(
                     Icons.Outlined.ContentCopy, strings.actionCopy, shortcut = "Ctrl+C",

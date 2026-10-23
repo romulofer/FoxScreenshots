@@ -11,6 +11,7 @@ object StringsEn : Strings {
     override val captureTimer = "Timer"
     override val captureFullScreen = "Full screen"
     override val captureActiveWindow = "Active window"
+    override val captureActiveWindowPick = "Pick a window"
     override val captureRepeat = "Repeat last"
 
     override val selectionHint = "Drag to select an area · Esc cancels"
@@ -30,11 +31,12 @@ object StringsEn : Strings {
     override val dependencyX11Library = "libX11.so.6 is missing — install it (Debian/Ubuntu: libx11-6)."
     override val dependencyXDisplay = "The X display server is unreachable — check the DISPLAY variable."
     override val dependencyWaylandSession =
-        "Wayland session: capture goes through the system portal, which asks for permission; " +
-            "active-window capture and the global hotkey are unavailable here."
+        "Wayland session: capture goes through the system portal, which asks for permission. \"Pick a window\" " +
+            "opens the system's own picker, and global hotkeys depend on your desktop's shortcuts portal " +
+            "(it may ask you to confirm, or pick another key)."
     override val dependencyHotkeys =
-        "Global hotkeys are off — the system keyboard hook could not be installed. " +
-            "Use the window's buttons; restart the app or check the terminal for the reason."
+        "Global hotkeys are off — they could not be registered with the system (on Wayland the desktop must " +
+            "offer the shortcuts portal). Use the window's buttons; restart the app or check the terminal for the reason."
     override val dependencyTray =
         "No tray icon: your desktop does not offer the StatusNotifier protocol (on GNOME, enable the " +
             "AppIndicator extension). Without the tray, closing the window quits the app."
@@ -139,6 +141,7 @@ object StringsEn : Strings {
     override val revealFailed = "Could not open the folder"
 
     override val timerCancelHint = "Click or press Esc to cancel"
+    override val timerCancelHintClickOnly = "Click to cancel"
     override val selectionHintAdjust = "Drag the edges to adjust · Enter captures · Esc cancels"
     override val selectionCapture = "Capture"
 

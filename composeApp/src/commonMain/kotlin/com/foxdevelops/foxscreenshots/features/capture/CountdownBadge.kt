@@ -32,7 +32,13 @@ import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
  * lands in the shot. A click on it (or Esc, handled globally) cancels the capture.
  */
 @Composable
-fun CountdownBadge(remainingSeconds: Int, onCancel: () -> Unit, modifier: Modifier = Modifier) {
+fun CountdownBadge(
+    remainingSeconds: Int,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier,
+    /** Whether a global Esc also cancels. Not on Wayland: there the portal would grab Esc from every program. */
+    escapeCancels: Boolean = true,
+) {
     val strings = LocalStrings.current
     // Fills the whole window with a solid color: a transparent window needs a compositing window manager,
     // and on a plain X11 session it would come out as a black box around the badge.
@@ -62,7 +68,7 @@ fun CountdownBadge(remainingSeconds: Int, onCancel: () -> Unit, modifier: Modifi
             )
         }
         Text(
-            strings.timerCancelHint,
+            if (escapeCancels) strings.timerCancelHint else strings.timerCancelHintClickOnly,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

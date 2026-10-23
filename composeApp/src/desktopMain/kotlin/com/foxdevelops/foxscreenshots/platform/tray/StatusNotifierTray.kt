@@ -24,7 +24,7 @@ import javax.imageio.ImageIO
  * a `com.canonical.dbusmenu` that the shell draws.
  */
 class StatusNotifierTray(
-    private val connect: () -> DBusConnection = { DBusConnectionBuilder.forSessionBus().build() },
+    private val connect: () -> DBusConnection = { DBusConnectionBuilder.forSessionBus().withShared(false).build() },
     private val iconSource: () -> BufferedImage = ::loadIcon,
 ) : TrayPresenter {
 

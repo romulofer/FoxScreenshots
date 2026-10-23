@@ -11,6 +11,7 @@ object StringsPt : Strings {
     override val captureTimer = "Temporizador"
     override val captureFullScreen = "Tela cheia"
     override val captureActiveWindow = "Janela ativa"
+    override val captureActiveWindowPick = "Escolher janela"
     override val captureRepeat = "Repetir último"
 
     override val selectionHint = "Arraste para selecionar uma área · Esc cancela"
@@ -31,11 +32,12 @@ object StringsPt : Strings {
     override val dependencyX11Library = "libX11.so.6 não encontrada — instale (Debian/Ubuntu: libx11-6)."
     override val dependencyXDisplay = "Servidor gráfico X inacessível — verifique a variável DISPLAY."
     override val dependencyWaylandSession =
-        "Sessão Wayland: a captura passa pelo portal do sistema, que pede autorização; " +
-            "capturar a janela ativa e o atalho global não funcionam aqui."
+        "Sessão Wayland: a captura passa pelo portal do sistema, que pede autorização. \"Escolher janela\" abre o " +
+            "seletor do sistema, e os atalhos globais dependem do portal de atalhos do seu desktop " +
+            "(ele pode pedir confirmação ou escolher outra tecla)."
     override val dependencyHotkeys =
-        "Atalhos globais desligados — não foi possível instalar o gancho de teclado do sistema. " +
-            "Use os botões da janela; reinicie o app ou veja o terminal para o motivo."
+        "Atalhos globais desligados — não foi possível registrá-los no sistema (no Wayland, o desktop precisa " +
+            "oferecer o portal de atalhos). Use os botões da janela; reinicie o app ou veja o terminal para o motivo."
     override val dependencyTray =
         "Sem ícone na bandeja: seu desktop não oferece o protocolo StatusNotifier (no GNOME, ative a extensão " +
             "AppIndicator). Sem a bandeja, fechar a janela encerra o app."
@@ -140,6 +142,7 @@ object StringsPt : Strings {
     override val revealFailed = "Não foi possível abrir a pasta"
 
     override val timerCancelHint = "Clique ou Esc para cancelar"
+    override val timerCancelHintClickOnly = "Clique para cancelar"
     override val selectionHintAdjust = "Arraste as bordas para ajustar · Enter captura · Esc cancela"
     override val selectionCapture = "Capturar"
 

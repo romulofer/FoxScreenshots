@@ -73,6 +73,10 @@ compose.desktop {
         // JNA, JNativeHook and Skia load native libraries; say so up front instead of a warning per library on newer JDKs.
         jvmArgs("--enable-native-access=ALL-UNNAMED")
 
+        // Skia bitmaps (frozen frames, thumbnails) live in native memory that only a collection frees; an idle app never
+        // fills the Java heap, so without a periodic collection that memory grows for as long as the app stays open.
+        jvmArgs("-XX:+UseG1GC", "-XX:G1PeriodicGCInterval=60000", "-XX:MinHeapFreeRatio=10", "-XX:MaxHeapFreeRatio=30")
+
         nativeDistributions {
             targetFormats(TargetFormat.Deb, TargetFormat.Dmg, TargetFormat.Msi)
             packageName = "foxscreenshots"

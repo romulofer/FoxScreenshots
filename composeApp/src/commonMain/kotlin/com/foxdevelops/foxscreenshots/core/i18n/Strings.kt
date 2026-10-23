@@ -18,6 +18,7 @@ interface Strings {
     val captureTimer: String
     val captureFullScreen: String
     val captureActiveWindow: String
+    val captureActiveWindowPick: String
     val captureRepeat: String
 
     val selectionHint: String
@@ -125,6 +126,7 @@ interface Strings {
     val revealFailed: String
 
     val timerCancelHint: String
+    val timerCancelHintClickOnly: String
     val selectionHintAdjust: String
     val selectionCapture: String
 

@@ -42,6 +42,9 @@ class CaptureController(
     /** Region selected during the last instant or timer capture; used by [captureRepeat]. */
     private var lastRegion: CaptureRegion? = null
 
+    /** Whether the "window" mode asks the user to pick the window (Wayland) instead of taking the focused one. */
+    val windowCaptureUsesSystemPicker: Boolean get() = service.windowCaptureUsesSystemPicker
+
     /** Entry point for the toolbar, the tray menu and the global hotkey. */
     suspend fun capture(mode: CaptureMode): CaptureResult? = when (mode) {
         CaptureMode.Instant -> captureInstant()
@@ -102,6 +105,11 @@ class CaptureController(
     /** The window that had focus after the hub was hidden. */
     suspend fun captureActiveWindow(): CaptureResult? = guarded {
         run {
+            // Wayland cannot say which window is focused: the system's own picker lets the user point at one.
+            if (service.windowCaptureUsesSystemPicker) {
+                val picked = service.grabWithSystemPicker() ?: return@run null
+                return@run record(picked)
+            }
             val region = resolveActiveWindow()
             if (region == null || region.isEmpty) throw CaptureException(CaptureFailure.NoActiveWindow)
             record(service.grabRegion(region))

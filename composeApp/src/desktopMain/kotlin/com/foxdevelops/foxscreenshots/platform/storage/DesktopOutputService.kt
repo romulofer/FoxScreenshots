@@ -32,7 +32,7 @@ class DesktopOutputService(private val now: () -> LocalDateTime = LocalDateTime:
         val baseName = (suggestedName ?: defaultName()).removeSuffix(".png")
         val target = FileKit.openFileSaver(
             suggestedName = baseName,
-            extension = "png",
+            defaultExtension = "png",
             directory = initialDirectory?.let(::PlatformFile),
         ) ?: return null
         return withContext(Dispatchers.IO) { write(Paths.get(target.absolutePath()), pngBytes).toString() }

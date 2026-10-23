@@ -38,6 +38,18 @@ class PortalScreenCaptureService(
     /** Always `null`: under Wayland a client cannot ask what other windows are, let alone where. */
     override suspend fun activeWindowRegion(): CaptureRegion? = null
 
+    /** So "active window" hands the choice to the desktop's own picker, the only way a Wayland client can capture one window. */
+    override val windowCaptureUsesSystemPicker: Boolean = true
+
+    override suspend fun grabWithSystemPicker(): CaptureResult? {
+        val frame = try {
+            capture(interactive = true)
+        } catch (e: CaptureCancelled) {
+            return null
+        }
+        return result(frame.png, frame.width, frame.height)
+    }
+
     override suspend fun virtualScreenSize(): ScreenSize {
         val frame = capture()
         return ScreenSize(frame.width, frame.height)
@@ -45,16 +57,20 @@ class PortalScreenCaptureService(
 
     private class Frame(val png: ByteArray, val width: Int, val height: Int)
 
+    /** The user closed the picker: unwinds to [grabWithSystemPicker], which turns it into `null`. */
+    private class CaptureCancelled : Exception()
+
     /** Runs a portal request and measures what came back, translating every failure into [CaptureException]. */
-    private suspend fun capture(): Frame {
+    private suspend fun capture(interactive: Boolean = false): Frame {
         try {
-            val png = portal.capture()
+            val png = if (interactive) portal.captureInteractive() else portal.capture()
             val (width, height) = Png.size(png)
             return Frame(png, width, height)
         } catch (e: PortalException) {
+            if (e.failure == PortalFailure.Cancelled && interactive) throw CaptureCancelled()
             throw CaptureException(
                 when (e.failure) {
-                    PortalFailure.Denied -> CaptureFailure.PortalDenied
+                    PortalFailure.Denied, PortalFailure.Cancelled -> CaptureFailure.PortalDenied
                     PortalFailure.Unavailable -> CaptureFailure.PortalUnavailable
                 },
                 e.details,

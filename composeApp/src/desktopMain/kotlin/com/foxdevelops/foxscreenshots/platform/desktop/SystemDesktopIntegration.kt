@@ -14,7 +14,6 @@ import com.foxdevelops.foxscreenshots.core.hotkey.HotkeyKey
 import com.foxdevelops.foxscreenshots.core.i18n.Strings
 import com.foxdevelops.foxscreenshots.core.settings.Settings
 import com.foxdevelops.foxscreenshots.platform.hotkey.HotkeyUnavailableException
-import com.foxdevelops.foxscreenshots.platform.session.DesktopSession
 import com.foxdevelops.foxscreenshots.platform.tray.TrayPresenter
 
 /** Tray icon + global hotkeys on the real desktop. Failures degrade the feature and are reported, never thrown. */
@@ -22,8 +21,19 @@ class SystemDesktopIntegration(
     private val tray: TrayPresenter,
     private val hotkeys: GlobalHotkeys,
     private val issues: SystemIssues,
-    private val session: DesktopSession = DesktopSession.detect(),
 ) : DesktopIntegration {
+
+    init {
+        // Some backends (the Wayland portal) only find out later whether the desktop accepted the shortcuts.
+        hotkeys.onStatus { working, detail ->
+            if (working) {
+                issues.clear(SystemDependency.Hotkeys)
+            } else {
+                System.err.println("[foxscreenshots] global hotkeys unavailable: $detail")
+                issues.report(DependencyIssue(SystemDependency.Hotkeys, DependencySeverity.Degraded))
+            }
+        }
+    }
 
     override fun attach(strings: Strings, settings: Settings, events: DesktopEvents) {
         attachTray(strings, events)
@@ -52,11 +62,6 @@ class SystemDesktopIntegration(
     }
 
     private fun attachHotkeys(settings: Settings, events: DesktopEvents) {
-        // Wayland gives a client no way to watch keys globally: nothing to install.
-        if (session == DesktopSession.Wayland) {
-            issues.report(DependencyIssue(SystemDependency.Hotkeys, DependencySeverity.Degraded))
-            return
-        }
         val bindings = mapOf(
             HotkeyAction.Instant to HotkeyBinding.parse(settings.hotkey, HotkeyKey.PrintScreen),
             HotkeyAction.Timer to HotkeyBinding.parse(settings.timerHotkey, HotkeyKey.F7),

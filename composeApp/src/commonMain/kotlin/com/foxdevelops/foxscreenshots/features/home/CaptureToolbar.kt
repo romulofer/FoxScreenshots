@@ -42,6 +42,8 @@ fun CaptureToolbar(
     modifier: Modifier = Modifier,
     /** Global hotkey of each mode, by label (e.g. `PrintScreen`); a mode without one gets no tooltip. */
     shortcuts: Map<CaptureMode, String> = emptyMap(),
+    /** Wayland cannot name the focused window: the mode asks the system's picker, and says so. */
+    windowPicksViaSystem: Boolean = false,
 ) {
     val strings = LocalStrings.current
     FlowRow(
@@ -52,7 +54,11 @@ fun CaptureToolbar(
         CaptureCard(Icons.Outlined.CropFree, strings.captureInstant, shortcuts[CaptureMode.Instant], primary = true) { onCapture(CaptureMode.Instant) }
         CaptureCard(Icons.Outlined.Timer, strings.captureTimer, shortcuts[CaptureMode.Timer]) { onCapture(CaptureMode.Timer) }
         CaptureCard(Icons.Outlined.Fullscreen, strings.captureFullScreen, shortcuts[CaptureMode.FullScreen]) { onCapture(CaptureMode.FullScreen) }
-        CaptureCard(Icons.Outlined.WebAsset, strings.captureActiveWindow, shortcuts[CaptureMode.ActiveWindow]) { onCapture(CaptureMode.ActiveWindow) }
+        CaptureCard(
+            Icons.Outlined.WebAsset,
+            if (windowPicksViaSystem) strings.captureActiveWindowPick else strings.captureActiveWindow,
+            shortcuts[CaptureMode.ActiveWindow],
+        ) { onCapture(CaptureMode.ActiveWindow) }
         CaptureCard(Icons.Outlined.Replay, strings.captureRepeat, shortcuts[CaptureMode.Repeat]) { onCapture(CaptureMode.Repeat) }
     }
 }

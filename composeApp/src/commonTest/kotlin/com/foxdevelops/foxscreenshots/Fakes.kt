@@ -68,6 +68,16 @@ class FakeCaptureService(
 
     override suspend fun activeWindowRegion(): CaptureRegion? = activeWindow
     override suspend fun virtualScreenSize(): ScreenSize = screen
+
+    /** Set to emulate Wayland: "window" mode goes through [picked] instead of the focused window. */
+    override var windowCaptureUsesSystemPicker: Boolean = false
+    var picked: CaptureResult? = null
+    var pickerCalls = 0
+
+    override suspend fun grabWithSystemPicker(): CaptureResult? {
+        pickerCalls++
+        return picked
+    }
 }
 
 class FakeSurface(var selection: CaptureRegion? = CaptureRegion(10, 20, 30, 40)) : CaptureSurface {

@@ -43,7 +43,7 @@ class StatusNotifierTrayTest {
         assumeTrue("set FOX_ISOLATED_DBUS=1 under dbus-run-session", System.getenv("FOX_ISOLATED_DBUS") == "1")
 
     private fun startWatcher() {
-        val bus = DBusConnectionBuilder.forSessionBus().build()
+        val bus = DBusConnectionBuilder.forSessionBus().withShared(false).build()
         bus.exportObject("/StatusNotifierWatcher", FakeWatcher(registered))
         bus.requestBusName("org.kde.StatusNotifierWatcher")
         watcherBus = bus
@@ -60,7 +60,7 @@ class StatusNotifierTrayTest {
         Node(fields[0] as Int, fields[1] as Map<String, Variant<*>>)
     }
 
-    private fun client() = DBusConnectionBuilder.forSessionBus().build().also { clientBus = it }
+    private fun client() = DBusConnectionBuilder.forSessionBus().withShared(false).build().also { clientBus = it }
 
     private fun newTray() =
         StatusNotifierTray(iconSource = { BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB) }).also { tray = it }

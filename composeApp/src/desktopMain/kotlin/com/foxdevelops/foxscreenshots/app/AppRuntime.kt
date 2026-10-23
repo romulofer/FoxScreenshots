@@ -11,7 +11,9 @@ import com.foxdevelops.foxscreenshots.features.capture.CaptureController
 import com.foxdevelops.foxscreenshots.features.home.SessionController
 import com.foxdevelops.foxscreenshots.platform.desktop.LinuxDependencyChecker
 import com.foxdevelops.foxscreenshots.platform.desktop.SystemDesktopIntegration
+import com.foxdevelops.foxscreenshots.core.hotkey.GlobalHotkeys
 import com.foxdevelops.foxscreenshots.platform.hotkey.NativeHookHotkeys
+import com.foxdevelops.foxscreenshots.platform.hotkey.PortalGlobalHotkeys
 import com.foxdevelops.foxscreenshots.platform.image.SkiaImageProcessor
 import com.foxdevelops.foxscreenshots.platform.macos.MacosScreenCaptureService
 import com.foxdevelops.foxscreenshots.platform.portal.PortalScreenCaptureService
@@ -36,6 +38,10 @@ class AppRuntime(
     val container: AppContainer,
     val surface: ComposeCaptureSurface,
     val dependencyChecker: DependencyChecker,
+    /** Whether the capture overlay must ask for fullscreen: a Wayland compositor ignores a window's requested position and size. */
+    val overlayFullscreen: Boolean = false,
+    /** Whether a global Esc can cancel the timer: the system-wide hook sees keys, the Wayland portal would grab Esc from everyone. */
+    val escapeCancelsTimer: Boolean = true,
 ) {
     companion object {
         /** Wires the real thing for this machine. */
@@ -69,12 +75,13 @@ class AppRuntime(
                 output = output,
                 issues = issues,
                 capture = capture,
-                desktop = SystemDesktopIntegration(trayFor(os), NativeHookHotkeys(libraryDir = settingsFile.resolveSibling("native")), issues, session),
+                desktop = SystemDesktopIntegration(trayFor(os), hotkeysFor(session, settingsFile.resolveSibling("native")), issues),
                 systemLanguage = Locale.getDefault().language,
                 appVersion = readVersion(),
             )
             val checker = if (os == HostOs.Linux) LinuxDependencyChecker(session) else NoDependencyChecker
-            return AppRuntime(container, surface, checker)
+            val wayland = session == DesktopSession.Wayland
+            return AppRuntime(container, surface, checker, overlayFullscreen = wayland, escapeCancelsTimer = !wayland)
         }
 
         /** The backend for this session: GDI on Windows, CoreGraphics on macOS, Xlib on X11, the portal on Wayland. */
@@ -88,6 +95,13 @@ class AppRuntime(
             }
             HostOs.Other -> UnsupportedScreenCaptureService(CaptureFailure.PlatformUnsupported, "no backend for this OS")
         }
+
+        /**
+         * Wayland lets no client watch the keyboard, so there the desktop is asked to bind the shortcuts
+         * (portal); everywhere else the system-wide hook sees the keys itself.
+         */
+        private fun hotkeysFor(session: DesktopSession, libraryDir: java.nio.file.Path): GlobalHotkeys =
+            if (session == DesktopSession.Wayland) PortalGlobalHotkeys() else NativeHookHotkeys(libraryDir = libraryDir)
 
         /** Linux desktops speak StatusNotifierItem over D-Bus, not the AWT tray protocol; everywhere else AWT works. */
         private fun trayFor(os: HostOs): TrayPresenter =

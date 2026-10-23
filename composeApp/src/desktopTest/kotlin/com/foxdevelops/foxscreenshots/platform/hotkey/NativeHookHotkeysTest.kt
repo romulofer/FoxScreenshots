@@ -35,6 +35,37 @@ class NativeHookHotkeysTest {
         assertEquals(NativeKeyEvent.VC_PRINTSCREEN, NativeHookHotkeys.virtualKey(HotkeyKey.PrintScreen))
     }
 
+    @Test
+    fun `a release the hook never saw does not swallow the next press`() {
+        var now = 0L
+        val sut = NativeHookHotkeys(clock = { now })
+        val seen = mutableListOf<HotkeyAction>()
+        // No hook is installed: the listener is driven by hand, which is all the matching needs.
+        setBindings(sut, mapOf(HotkeyAction.Instant to HotkeyBinding(HotkeyKey.PrintScreen)), seen::add)
+        val press = NativeKeyEvent(NativeKeyEvent.NATIVE_KEY_PRESSED, 0, 0, NativeKeyEvent.VC_PRINTSCREEN, NativeKeyEvent.CHAR_UNDEFINED)
+
+        sut.nativeKeyPressed(press)
+        now = 100
+        sut.nativeKeyPressed(press) // auto-repeat
+        now = 200
+        sut.nativeKeyPressed(press) // auto-repeat
+        assertEquals(listOf(HotkeyAction.Instant), seen)
+
+        now = 200 + NativeHookHotkeys.STALE_HELD_MILLIS + 1 // screen was locked: the release never arrived
+        sut.nativeKeyPressed(press)
+        assertEquals(listOf(HotkeyAction.Instant, HotkeyAction.Instant), seen)
+    }
+
+    private fun setBindings(
+        target: NativeHookHotkeys,
+        bindings: Map<HotkeyAction, HotkeyBinding>,
+        onTriggered: (HotkeyAction) -> Unit,
+    ) {
+        for ((name, value) in listOf("bindings" to bindings, "onTriggered" to onTriggered)) {
+            NativeHookHotkeys::class.java.getDeclaredField(name).apply { isAccessible = true }.set(target, value)
+        }
+    }
+
     // ---- live hook, driven by xdotool on a throwaway X server (xvfb-run); never on a real session ----
 
     private val hotkeys = NativeHookHotkeys()
