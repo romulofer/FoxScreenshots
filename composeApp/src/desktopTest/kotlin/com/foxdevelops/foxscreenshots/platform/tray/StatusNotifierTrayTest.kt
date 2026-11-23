@@ -1,12 +1,12 @@
 package com.foxdevelops.foxscreenshots.platform.tray
 
+import com.foxdevelops.foxscreenshots.platform.requireIsolatedBus
 import com.foxdevelops.foxscreenshots.core.desktop.TrayAction
 import org.freedesktop.dbus.connections.impl.DBusConnection
 import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder
 import org.freedesktop.dbus.interfaces.Properties
 import org.freedesktop.dbus.types.UInt32
 import org.freedesktop.dbus.types.Variant
-import org.junit.Assume.assumeTrue
 import java.awt.image.BufferedImage
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
@@ -38,9 +38,6 @@ class StatusNotifierTrayTest {
             registered += service
         }
     }
-
-    private fun requireIsolatedBus() =
-        assumeTrue("set FOX_ISOLATED_DBUS=1 under dbus-run-session", System.getenv("FOX_ISOLATED_DBUS") == "1")
 
     private fun startWatcher() {
         val bus = DBusConnectionBuilder.forSessionBus().withShared(false).build()

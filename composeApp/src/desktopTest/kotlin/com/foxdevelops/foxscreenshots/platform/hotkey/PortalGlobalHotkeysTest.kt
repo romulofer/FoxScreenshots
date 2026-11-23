@@ -1,5 +1,6 @@
 package com.foxdevelops.foxscreenshots.platform.hotkey
 
+import com.foxdevelops.foxscreenshots.platform.requireIsolatedBus
 import com.foxdevelops.foxscreenshots.core.hotkey.HotkeyAction
 import com.foxdevelops.foxscreenshots.core.hotkey.HotkeyBinding
 import com.foxdevelops.foxscreenshots.platform.portal.GlobalShortcutsApi
@@ -15,7 +16,6 @@ import org.freedesktop.dbus.interfaces.Properties
 import org.freedesktop.dbus.types.UInt32
 import org.freedesktop.dbus.types.UInt64
 import org.freedesktop.dbus.types.Variant
-import org.junit.Assume.assumeTrue
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -41,9 +41,6 @@ class PortalGlobalHotkeysTest {
 
     @Volatile
     private var sessionPath = ""
-
-    private fun requireIsolatedBus() =
-        assumeTrue("set FOX_ISOLATED_DBUS=1 under dbus-run-session", System.getenv("FOX_ISOLATED_DBUS") == "1")
 
     /** The portal: answers each request on its Response signal, as the real one does. */
     private inner class FakePortal(private val answerCode: Int = 0, private val offersShortcuts: Boolean = true) :

@@ -1,5 +1,6 @@
 package com.foxdevelops.foxscreenshots.platform.portal
 
+import com.foxdevelops.foxscreenshots.platform.requireIsolatedBus
 import com.foxdevelops.foxscreenshots.platform.image.Png
 import kotlinx.coroutines.runBlocking
 import org.freedesktop.dbus.DBusPath
@@ -8,7 +9,6 @@ import org.freedesktop.dbus.connections.impl.DBusConnection
 import org.freedesktop.dbus.connections.impl.DBusConnectionBuilder
 import org.freedesktop.dbus.types.UInt32
 import org.freedesktop.dbus.types.Variant
-import org.junit.Assume.assumeTrue
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.CopyOnWriteArrayList
@@ -30,9 +30,6 @@ class XdgScreenshotPortalTest {
     private var portalBus: DBusConnection? = null
     private val options = CopyOnWriteArrayList<Map<String, Any?>>()
     private val files = CopyOnWriteArrayList<File>()
-
-    private fun requireIsolatedBus() =
-        assumeTrue("set FOX_ISOLATED_DBUS=1 under dbus-run-session", System.getenv("FOX_ISOLATED_DBUS") == "1")
 
     private inner class FakePortal(
         private val code: Int = 0,

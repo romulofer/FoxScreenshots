@@ -12,7 +12,8 @@ wrapper do Gradle bastam.
 
 ```bash
 ./gradlew :composeApp:desktopTest
-FOX_ISOLATED_DISPLAY=1 xvfb-run -a ./gradlew :composeApp:desktopTest   # inclui os testes ao vivo (X11, atalhos, área de transferência)
+FOX_ISOLATED_DISPLAY=1 FOX_ISOLATED_DBUS=1 dbus-run-session --config-file composeApp/dbus-test-session.conf -- \
+  xvfb-run -a -s "-screen 0 1400x900x24" ./gradlew :composeApp:desktopTest   # inclui os testes ao vivo (X11, atalhos, área de transferência, bandeja, portal)
 ```
 
 ## Regras do projeto
@@ -62,7 +63,8 @@ wrapper are all you need.
 
 ```bash
 ./gradlew :composeApp:desktopTest
-FOX_ISOLATED_DISPLAY=1 xvfb-run -a ./gradlew :composeApp:desktopTest   # includes the live tests (X11, hotkeys, clipboard)
+FOX_ISOLATED_DISPLAY=1 FOX_ISOLATED_DBUS=1 dbus-run-session --config-file composeApp/dbus-test-session.conf -- \
+  xvfb-run -a -s "-screen 0 1400x900x24" ./gradlew :composeApp:desktopTest   # includes the live tests (X11, hotkeys, clipboard, tray, portal)
 ```
 
 ## Project rules
