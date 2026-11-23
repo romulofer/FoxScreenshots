@@ -61,6 +61,7 @@ import com.foxdevelops.foxscreenshots.core.settings.HotkeyRejection
 import com.foxdevelops.foxscreenshots.core.settings.LanguagePreference
 import com.foxdevelops.foxscreenshots.core.settings.Settings
 import com.foxdevelops.foxscreenshots.core.settings.ThemePreference
+import com.foxdevelops.foxscreenshots.core.theme.Spacing
 import com.foxdevelops.foxscreenshots.core.theme.foxSwitchColors
 import com.foxdevelops.foxscreenshots.core.theme.foxTextFieldColors
 import com.foxdevelops.foxscreenshots.ui.AppContainer
@@ -69,6 +70,14 @@ import com.foxdevelops.foxscreenshots.ui.FoxIconButton
 import com.foxdevelops.foxscreenshots.ui.FoxSlider
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+
+/** The moment used to preview a file-name pattern. */
+private const val SAMPLE_YEAR = 2026
+private const val SAMPLE_MONTH = 8
+private const val SAMPLE_DAY = 13
+private const val SAMPLE_HOUR = 8
+private const val SAMPLE_MINUTE = 42
+private const val SAMPLE_SECOND = 5
 
 /** Settings: theme, language, timer delay, hotkeys, output folder. Changes persist and apply live. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -105,7 +114,7 @@ fun SettingsScreen(app: AppContainer, modifier: Modifier = Modifier) {
                 )
             },
         )
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = 8.dp)) {
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(vertical = Spacing.sm)) {
             SectionHeader(strings.settingsSectionAppearance)
             SettingRow(strings.settingsTheme) {
                 Dropdown(
@@ -207,7 +216,7 @@ fun SettingsScreen(app: AppContainer, modifier: Modifier = Modifier) {
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
             )
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(Spacing.xl))
             if (app.appVersion.isNotEmpty()) {
                 Text(
                     strings.settingsVersion(app.appVersion),
@@ -280,7 +289,7 @@ private fun HotkeyRecorder(onRecorded: (String) -> Unit, onCancel: () -> Unit) {
         Box(
             Modifier
                 .border(2.dp, MaterialTheme.colorScheme.primary, MaterialTheme.shapes.small)
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .padding(horizontal = Spacing.md, vertical = Spacing.sm)
                 .focusRequester(focus)
                 .onFocusChanged { state ->
                     // Losing the focus (a click elsewhere) abandons the recording; the first, not-yet-focused callback is not a loss.
@@ -336,7 +345,7 @@ private fun <T> Dropdown(options: List<T>, selected: T, label: (T) -> String, on
 private fun SectionHeader(title: String) {
     Text(
         title,
-        modifier = Modifier.padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 4.dp),
+        modifier = Modifier.padding(start = Spacing.lg, top = Spacing.lg, end = Spacing.lg, bottom = Spacing.xs),
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.primary,
         fontWeight = FontWeight.SemiBold,
@@ -354,7 +363,7 @@ private fun FileNameRow(pattern: String, onChange: (String) -> Unit) {
             Column {
                 Text(strings.settingsFileNamePatternHint)
                 Text(
-                    strings.settingsFileNamePreview(renderFileName(text.ifBlank { pattern }, 2026, 8, 13, 8, 42, 5)),
+                    strings.settingsFileNamePreview(renderFileName(text.ifBlank { pattern }, SAMPLE_YEAR, SAMPLE_MONTH, SAMPLE_DAY, SAMPLE_HOUR, SAMPLE_MINUTE, SAMPLE_SECOND)),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }

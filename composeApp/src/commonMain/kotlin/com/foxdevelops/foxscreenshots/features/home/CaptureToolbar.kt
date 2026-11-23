@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.foxdevelops.foxscreenshots.core.capture.CaptureMode
 import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
+import com.foxdevelops.foxscreenshots.core.theme.Spacing
 import com.foxdevelops.foxscreenshots.ui.FoxTooltip
 
 /**
@@ -82,7 +83,7 @@ private fun CaptureCardBody(icon: ImageVector, label: String, accent: Color, pri
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = if (primary) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
     ) {
-        Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(horizontal = Spacing.lg, vertical = Spacing.md), verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = accent)
             Spacer(Modifier.width(10.dp))
             Text(label, color = accent, fontWeight = if (primary) FontWeight.SemiBold else FontWeight.Medium)

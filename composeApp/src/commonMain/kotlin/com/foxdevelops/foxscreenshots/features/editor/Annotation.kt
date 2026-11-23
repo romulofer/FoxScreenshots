@@ -95,10 +95,13 @@ data class ArrowAnnotation(
     override val bounds: Rect get() = rect.inflate(headLength)
 
     override fun hitTest(point: Offset, tolerance: Float): Boolean =
-        distanceToSegment(point, start, end) <= max(strokeWidth * 1.5f, headLength / 2f) + tolerance
+        distanceToSegment(point, start, end) <= max(strokeWidth * HIT_STROKE_SCALE, headLength / 2f) + tolerance
 
     companion object {
         const val HEAD_SCALE = 4f
+
+        /** Click slack around the shaft as a multiple of the stroke width. */
+        const val HIT_STROKE_SCALE = 1.5f
     }
 }
 
@@ -267,7 +270,7 @@ data class TextAnnotation(
             return Rect(
                 position.x,
                 position.y,
-                position.x + widest * fontSize * 0.6f,
+                position.x + widest * fontSize * CHAR_WIDTH_SCALE,
                 position.y + lines.size * fontSize * LINE_HEIGHT_SCALE,
             )
         }
@@ -275,6 +278,9 @@ data class TextAnnotation(
     companion object {
         /** Font size derived from the stroke slider, so text scales with the same control as every tool. */
         const val FONT_SCALE = 6f
+
+        /** Average glyph width as a multiple of the font size, for the rough [bounds] box. */
+        const val CHAR_WIDTH_SCALE = 0.6f
 
         /** Distance between two lines of a multi-line caption, as a multiple of the font size. */
         const val LINE_HEIGHT_SCALE = 1.4f

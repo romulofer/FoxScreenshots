@@ -38,6 +38,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
 import com.foxdevelops.foxscreenshots.core.i18n.formatClock
+import com.foxdevelops.foxscreenshots.core.theme.Spacing
 import com.foxdevelops.foxscreenshots.features.editor.ImageProcessor
 import com.foxdevelops.foxscreenshots.model.CaptureResult
 import com.foxdevelops.foxscreenshots.ui.FoxIconButton
@@ -46,6 +47,9 @@ import kotlinx.coroutines.withContext
 
 /** Width a gallery thumbnail is decoded at; a full 4K frame would blow GPU memory. */
 const val THUMBNAIL_WIDTH = 480
+
+/** Gallery tiles are 4:3 whatever the capture's shape; the image is letterboxed inside. */
+private const val THUMBNAIL_ASPECT_RATIO = 4f / 3f
 
 /**
  * A single session capture in the gallery grid. Clicking the image previews it;
@@ -80,7 +84,7 @@ fun ThumbnailTile(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .aspectRatio(4f / 3f)
+                    .aspectRatio(THUMBNAIL_ASPECT_RATIO)
                     .clip(MaterialTheme.shapes.medium)
                     // Letterbox colour: a wide or tall capture is shown whole instead of cropped to 4:3.
                     .background(MaterialTheme.colorScheme.background)
@@ -99,9 +103,9 @@ fun ThumbnailTile(
                 strings.captureMeta(capture.width, capture.height, formatClock(capture.takenAtMillis)),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 12.dp, top = 8.dp, end = 12.dp),
+                modifier = Modifier.padding(start = Spacing.md, top = Spacing.sm, end = Spacing.md),
             )
-            Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
                 TileAction(strings.actionEdit, Icons.Outlined.Edit, onEdit)
                 TileAction(strings.actionCopy, Icons.Outlined.ContentCopy, onCopy)
                 TileAction(strings.actionSave, Icons.Outlined.Save, onSave)

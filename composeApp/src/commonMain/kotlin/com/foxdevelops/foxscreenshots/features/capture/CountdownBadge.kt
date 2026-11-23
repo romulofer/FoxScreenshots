@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
+import com.foxdevelops.foxscreenshots.core.theme.Spacing
 
 /**
  * Timer-mode countdown badge. Shown in a small always-on-top window while the
@@ -48,7 +49,7 @@ fun CountdownBadge(
             .background(MaterialTheme.colorScheme.surface)
             .pointerHoverIcon(PointerIcon.Hand)
             .clickable(onClick = onCancel)
-            .padding(horizontal = 24.dp, vertical = 12.dp),
+            .padding(horizontal = Spacing.xl, vertical = Spacing.md),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
@@ -59,7 +60,7 @@ fun CountdownBadge(
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(32.dp),
             )
-            Spacer(Modifier.width(16.dp))
+            Spacer(Modifier.width(Spacing.lg))
             Text(
                 text = remainingSeconds.toString(),
                 color = MaterialTheme.colorScheme.onSurface,

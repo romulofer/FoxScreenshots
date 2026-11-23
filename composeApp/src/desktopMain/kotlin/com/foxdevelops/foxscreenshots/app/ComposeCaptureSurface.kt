@@ -13,6 +13,10 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
+/** Time for the overlay to repaint the frozen frame before the grab, and for the compositor to drop the hub. */
+private val DEFAULT_REPAINT_DELAY = 220.milliseconds
+private val DEFAULT_COMPOSITOR_DELAY = 120.milliseconds
+
 /** A selection overlay waiting for the user, and the slot its answer goes into. */
 class OverlayRequest(val frame: FrozenFrame, val answer: CompletableDeferred<CaptureRegion?>)
 
@@ -24,8 +28,8 @@ class OverlayRequest(val frame: FrozenFrame, val answer: CompletableDeferred<Cap
  * strands it click-through and pinned on top of the user's desktop.
  */
 class ComposeCaptureSurface(
-    private val repaintDelay: Duration = 220.milliseconds,
-    private val compositorDelay: Duration = 120.milliseconds,
+    private val repaintDelay: Duration = DEFAULT_REPAINT_DELAY,
+    private val compositorDelay: Duration = DEFAULT_COMPOSITOR_DELAY,
 ) : CaptureSurface {
 
     /** Whether the hub window is on screen. */

@@ -81,7 +81,7 @@ internal class WindowsScreenCaptureService(
             // A negative height requests a top-down DIB, so row 0 is the top of the screen.
             info.bmiHeader.biHeight = -area.height
             info.bmiHeader.biPlanes = 1
-            info.bmiHeader.biBitCount = 32
+            info.bmiHeader.biBitCount = BITS_PER_PIXEL.toShort()
             info.bmiHeader.biCompression = WinGDI.BI_RGB
 
             val bits = PointerByReference()
@@ -97,7 +97,7 @@ internal class WindowsScreenCaptureService(
             if (!copied) throw Win32Exception("BitBlt failed to copy the screen")
 
             // 32-bit DIB rows are already DWORD-aligned, so the stride is exactly width * 4.
-            val png = Png.encodeOpaque(pixels.getByteArray(0, area.width * area.height * 4), area.width, area.height)
+            val png = Png.encodeOpaque(pixels.getByteArray(0, area.width * area.height * BYTES_PER_PIXEL), area.width, area.height)
             CaptureResult(
                 id = "shot-${clock()}-${System.nanoTime()}",
                 pngBytes = png,
@@ -174,6 +174,10 @@ internal class WindowsScreenCaptureService(
     }
 
     private companion object {
+        /** Bits per pixel of the DIB section requested from GDI (BGRA). */
+        const val BITS_PER_PIXEL = 32
+        const val BYTES_PER_PIXEL = BITS_PER_PIXEL / Byte.SIZE_BITS
+
         const val SM_XVIRTUALSCREEN = 76
         const val SM_YVIRTUALSCREEN = 77
         const val SM_CXVIRTUALSCREEN = 78

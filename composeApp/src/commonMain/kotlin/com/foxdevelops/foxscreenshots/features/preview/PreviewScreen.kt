@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
+import com.foxdevelops.foxscreenshots.core.theme.Spacing
 import com.foxdevelops.foxscreenshots.features.editor.CanvasFit
 import com.foxdevelops.foxscreenshots.model.CaptureResult
 import com.foxdevelops.foxscreenshots.features.home.copyToClipboard
@@ -62,6 +63,12 @@ import kotlin.math.exp
 import kotlin.math.roundToInt
 
 private const val MAX_ZOOM = 8f
+
+/** Zoom change per wheel notch: the wheel delta scales an exponential, so each notch is the same ratio. */
+private const val ZOOM_WHEEL_SENSITIVITY = 0.1f
+
+/** Opacity of the hint text over the dark preview backdrop. */
+private const val HINT_ALPHA = 0.7f
 
 /** Full-size, read-only look at a session capture, without opening the editor. Scroll zooms, drag pans, Esc or the close button dismisses. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -98,7 +105,7 @@ fun PreviewScreen(app: AppContainer, capture: CaptureResult, modifier: Modifier 
             title = {
                 Column {
                     Text("${strings.previewTitle} · ${capture.width}×${capture.height}")
-                    Text(strings.previewHint, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))
+                    Text(strings.previewHint, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = HINT_ALPHA))
                 }
             },
             navigationIcon = {
@@ -140,7 +147,7 @@ private fun ZoomableImage(image: ImageBitmap?, modifier: Modifier = Modifier) {
     var pan by remember { mutableStateOf(Offset.Zero) }
     var viewport by remember { mutableStateOf(Size.Zero) }
 
-    Box(modifier.padding(bottom = 4.dp)) {
+    Box(modifier.padding(bottom = Spacing.xs)) {
         Canvas(
             Modifier
                 .fillMaxSize()
@@ -157,7 +164,7 @@ private fun ZoomableImage(image: ImageBitmap?, modifier: Modifier = Modifier) {
                             if (event.type != PointerEventType.Scroll) continue
                             val change = event.changes.first()
                             val delta = change.scrollDelta.y
-                            val newZoom = (zoom * exp(-delta * 0.1f)).coerceIn(1f, MAX_ZOOM)
+                            val newZoom = (zoom * exp(-delta * ZOOM_WHEEL_SENSITIVITY)).coerceIn(1f, MAX_ZOOM)
                             // Keep the point under the cursor fixed while zooming.
                             val focus = change.position - Offset(viewport.width / 2f, viewport.height / 2f)
                             pan = (pan - focus) * (newZoom / zoom) + focus

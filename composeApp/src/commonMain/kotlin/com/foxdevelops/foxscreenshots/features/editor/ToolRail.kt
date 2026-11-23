@@ -28,6 +28,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.unit.dp
 import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
 import com.foxdevelops.foxscreenshots.core.i18n.Strings
+import com.foxdevelops.foxscreenshots.core.theme.Spacing
 import com.foxdevelops.foxscreenshots.ui.FoxIconButton
 
 /**
@@ -41,7 +42,7 @@ fun ToolRail(selected: EditorTool, onSelected: (EditorTool) -> Unit, modifier: M
         modifier
             .background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(12.dp))
             .verticalScroll(rememberScrollState())
-            .padding(vertical = 6.dp, horizontal = 4.dp),
+            .padding(vertical = 6.dp, horizontal = Spacing.xs),
     ) {
         for (tool in EditorTool.entries) {
             val isSelected = tool == selected

@@ -189,17 +189,22 @@ private fun DrawScope.paintCropDraft(crop: Rect, fit: CanvasFit, accent: Color, 
     }
     drawPath(discarded, scrim)
     // Constant on screen regardless of zoom: the canvas is scaled, so divide the stroke back out.
-    drawRect(accent, crop.topLeft, crop.size, style = Stroke(width = 1.5f / fit.scale))
+    drawRect(accent, crop.topLeft, crop.size, style = Stroke(width = OUTLINE_WIDTH_PX / fit.scale))
 }
+
+/** Screen-pixel measures of the crop frame and the selection box; divided by the zoom so they stay constant on screen. */
+private const val OUTLINE_WIDTH_PX = 1.5f
+private const val SELECTION_MARGIN_PX = 4f
+private const val DASH_LENGTH_PX = 6f
 
 /** A dashed box around the annotation the Select tool picked, a constant width on screen whatever the zoom. */
 private fun DrawScope.paintSelection(annotation: Annotation, fit: CanvasFit, accent: Color) {
-    val box = annotation.bounds.inflate(4f / fit.scale)
-    val dash = 6f / fit.scale
+    val box = annotation.bounds.inflate(SELECTION_MARGIN_PX / fit.scale)
+    val dash = DASH_LENGTH_PX / fit.scale
     drawRect(
         accent,
         box.topLeft,
         box.size,
-        style = Stroke(width = 1.5f / fit.scale, pathEffect = PathEffect.dashPathEffect(floatArrayOf(dash, dash))),
+        style = Stroke(width = OUTLINE_WIDTH_PX / fit.scale, pathEffect = PathEffect.dashPathEffect(floatArrayOf(dash, dash))),
     )
 }

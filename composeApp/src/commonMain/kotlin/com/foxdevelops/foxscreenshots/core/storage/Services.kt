@@ -59,7 +59,7 @@ fun renderFileName(pattern: String, year: Int, month: Int, day: Int, hour: Int, 
         .replace("{hour}", two(hour))
         .replace("{minute}", two(minute))
         .replace("{second}", two(second))
-        .filter { it.code >= 32 && it !in FORBIDDEN_FILE_NAME_CHARS }
+        .filter { it.code >= FIRST_PRINTABLE_CODE && it !in FORBIDDEN_FILE_NAME_CHARS }
         .trim().trim('.')
         .removeSuffix(".png").trim()
     val stem = render(pattern).ifEmpty { render(DEFAULT_FILE_NAME_PATTERN) }
@@ -67,6 +67,9 @@ fun renderFileName(pattern: String, year: Int, month: Int, day: Int, hour: Int, 
 }
 
 private const val FORBIDDEN_FILE_NAME_CHARS = "/\\:*?\"<>|"
+
+/** Code points below the space are control characters, never valid in a file name. */
+private const val FIRST_PRINTABLE_CODE = 32
 
 /** Timestamped names collide when several shots are written in the same second; append `_2`, `_3`… so none is overwritten. */
 fun uniqueFileName(name: String, exists: (String) -> Boolean): String {
@@ -79,6 +82,7 @@ fun uniqueFileName(name: String, exists: (String) -> Boolean): String {
     return "${stem}_$n$ext"
 }
 
+/** The eight bytes every PNG starts with (PNG spec, section 5.2): 0x89, "PNG", CR LF, 0x1A, LF. */
 private val PNG_MAGIC = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
 
 /** Throws unless [bytes] starts with the PNG signature. */

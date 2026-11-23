@@ -47,6 +47,20 @@ import kotlinx.coroutines.launch
 import org.jetbrains.skia.Image
 import java.awt.Dimension
 
+/** Smallest size the hub window may be dragged to, in pixels. */
+private const val HUB_MIN_WIDTH_PX = 640
+private const val HUB_MIN_HEIGHT_PX = 480
+
+/** The countdown badge: its width and the gap to the top edge of the virtual screen, in dp. */
+private const val COUNTDOWN_WIDTH_DP = 220
+private const val COUNTDOWN_TOP_MARGIN_DP = 24
+
+/** The toast: its size and the gaps to the bottom-right corner (the bottom gap clears a taskbar), in dp. */
+private const val TOAST_WIDTH_DP = 360
+private const val TOAST_HEIGHT_DP = 72
+private const val TOAST_RIGHT_MARGIN_DP = 24
+private const val TOAST_BOTTOM_MARGIN_DP = 72
+
 private const val APP_ID = "com.foxdevelops.foxscreenshots"
 
 fun main() {
@@ -124,7 +138,7 @@ fun main() {
             // Closing keeps the app in the tray; with no tray to come back from, closing has to quit.
             onCloseRequest = { if (issues.any { it.dependency == SystemDependency.Tray }) quit() else surface.hideToTray() },
         ) {
-            window.minimumSize = Dimension(640, 480)
+            window.minimumSize = Dimension(HUB_MIN_WIDTH_PX, HUB_MIN_HEIGHT_PX)
             AppRoot(app)
         }
 
@@ -194,9 +208,9 @@ private fun CountdownWindow(
     escapeCancels: Boolean,
 ) {
     val bounds = remember { virtualScreenBounds() }
-    val width = 220
+    val width = COUNTDOWN_WIDTH_DP
     val state = rememberWindowState(
-        position = WindowPosition((bounds.x + (bounds.width - width) / 2).dp, (bounds.y + 24).dp),
+        position = WindowPosition((bounds.x + (bounds.width - width) / 2).dp, (bounds.y + COUNTDOWN_TOP_MARGIN_DP).dp),
         size = DpSize(width.dp, 120.dp),
     )
     Window(
@@ -216,10 +230,10 @@ private fun CountdownWindow(
 @Composable
 private fun ToastWindow(text: String, theme: ThemePreference, strings: Strings) {
     val bounds = remember { virtualScreenBounds() }
-    val width = 360
-    val height = 72
+    val width = TOAST_WIDTH_DP
+    val height = TOAST_HEIGHT_DP
     val state = rememberWindowState(
-        position = WindowPosition((bounds.x + bounds.width - width - 24).dp, (bounds.y + bounds.height - height - 72).dp),
+        position = WindowPosition((bounds.x + bounds.width - width - TOAST_RIGHT_MARGIN_DP).dp, (bounds.y + bounds.height - height - TOAST_BOTTOM_MARGIN_DP).dp),
         size = DpSize(width.dp, height.dp),
     )
     Window(

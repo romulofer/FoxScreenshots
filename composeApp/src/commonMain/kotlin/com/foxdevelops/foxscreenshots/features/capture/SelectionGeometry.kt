@@ -26,8 +26,10 @@ object SelectionGeometry {
     const val HANDLE_REACH = 10f
 
     /** Size of the floating "Capture" button. */
-    val ConfirmButtonSize = Size(116f, 34f)
+    val ConfirmButtonSize = Size(CONFIRM_BUTTON_WIDTH, CONFIRM_BUTTON_HEIGHT)
 
+    private const val CONFIRM_BUTTON_WIDTH = 116f
+    private const val CONFIRM_BUTTON_HEIGHT = 34f
     private const val CONFIRM_GAP = 8f
 
     /** The grip under [point], corners before edges, or `null` when [point] is not on the selection's outline. */

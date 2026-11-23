@@ -85,6 +85,11 @@ class FileSettingsStore(private val file: Path, importFrom: Map<String, String> 
 
         private const val APP_ID = "com.foxdevelops.foxscreenshots"
 
+        /** Capture groups of the flat-JSON entry regex: key, quoted value, bare value (number or boolean). */
+        private const val KEY_GROUP = 1
+        private const val QUOTED_VALUE_GROUP = 2
+        private const val BARE_VALUE_GROUP = 3
+
         private val IMPORTED_KEYS = setOf(
             "theme_mode", "locale_tag", "capture_hotkey", "timer_hotkey", "repeat_hotkey",
             "timer_delay_seconds", "output_dir", "auto_save",
@@ -94,7 +99,7 @@ class FileSettingsStore(private val file: Path, importFrom: Map<String, String> 
         internal fun parseFlatJson(text: String): Map<String, String> {
             val entry = Regex(""""((?:[^"\\]|\\.)*)"\s*:\s*(?:"((?:[^"\\]|\\.)*)"|(-?\d+(?:\.\d+)?|true|false))""")
             return entry.findAll(text).associate { match ->
-                match.groupValues[1] to unescape(match.groups[2]?.value ?: match.groupValues[3])
+                match.groupValues[KEY_GROUP] to unescape(match.groups[QUOTED_VALUE_GROUP]?.value ?: match.groupValues[BARE_VALUE_GROUP])
             }
         }
 

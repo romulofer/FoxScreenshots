@@ -13,6 +13,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.foxdevelops.foxscreenshots.core.settings.ThemePreference
 
+/** Opacity of the divider/outline color derived from the secondary text color. */
+private const val OUTLINE_VARIANT_ALPHA = 0.35f
+
 /** Material color scheme derived from the [FoxColors] tokens, so the UI never references raw colors. */
 fun foxColorScheme(colors: FoxColors, dark: Boolean): ColorScheme {
     val onBrand = colors.onBrand
@@ -52,7 +55,7 @@ fun foxColorScheme(colors: FoxColors, dark: Boolean): ColorScheme {
         surfaceContainerHigh = colors.surface,
         surfaceContainer = colors.surface,
         surfaceContainerLow = colors.surface,
-        outlineVariant = colors.textSecondary.copy(alpha = 0.35f),
+        outlineVariant = colors.textSecondary.copy(alpha = OUTLINE_VARIANT_ALPHA),
     )
 }
 

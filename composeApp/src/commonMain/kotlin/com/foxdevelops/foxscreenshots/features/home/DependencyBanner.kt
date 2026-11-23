@@ -28,6 +28,7 @@ import com.foxdevelops.foxscreenshots.core.desktop.SystemDependency
 import com.foxdevelops.foxscreenshots.core.desktop.SystemIssues
 import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
 import com.foxdevelops.foxscreenshots.core.i18n.Strings
+import com.foxdevelops.foxscreenshots.core.theme.Spacing
 
 /**
  * Tells the user which system components are missing, instead of leaving them
@@ -52,10 +53,10 @@ fun DependencyBanner(
     val container = if (blocking) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.secondaryContainer
     val content = if (blocking) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSecondaryContainer
 
-    Card(modifier.fillMaxWidth().padding(bottom = 16.dp), colors = CardDefaults.cardColors(containerColor = container)) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
+    Card(modifier.fillMaxWidth().padding(bottom = Spacing.lg), colors = CardDefaults.cardColors(containerColor = container)) {
+        Row(Modifier.padding(Spacing.md), verticalAlignment = Alignment.Top) {
             Icon(if (blocking) Icons.Outlined.ErrorOutline else Icons.Outlined.Info, contentDescription = null, tint = content)
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(Spacing.md))
             Column(Modifier.weight(1f)) {
                 Text(
                     if (blocking) strings.dependencyTitleBlocking else strings.dependencyTitleDegraded,

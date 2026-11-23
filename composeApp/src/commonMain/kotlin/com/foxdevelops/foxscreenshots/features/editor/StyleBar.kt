@@ -27,10 +27,16 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
+import com.foxdevelops.foxscreenshots.core.theme.Spacing
 import com.foxdevelops.foxscreenshots.core.theme.foxSwitchColors
 import com.foxdevelops.foxscreenshots.ui.FoxIconButton
 import com.foxdevelops.foxscreenshots.ui.FoxSlider
 import kotlin.math.roundToInt
+
+/** Keeps the red, green and blue bytes of an ARGB int; written as `#RRGGBB`. */
+private const val RGB_MASK = 0xFFFFFF
+private const val HEX_RADIX = 16
+private const val HEX_DIGITS = 6
 
 /**
  * Ink color and stroke width for the next annotation, plus the fill toggle for
@@ -51,7 +57,7 @@ fun StyleBar(
     val strings = LocalStrings.current
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
         Text(strings.editorColor, style = MaterialTheme.typography.labelLarge)
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(Spacing.sm))
         for (swatch in AnnotationPalette.colors) {
             Swatch(swatch, selected = swatch == color, onSelected = { onColorSelected(swatch) })
         }
@@ -77,10 +83,10 @@ fun StyleBar(
         if (tool == EditorTool.Rectangle) {
             Spacer(Modifier.width(20.dp))
             Text(strings.editorFill, style = MaterialTheme.typography.labelLarge)
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(Spacing.sm))
             Switch(colors = foxSwitchColors(), checked = filled, onCheckedChange = onFilledChanged)
         }
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(Spacing.md))
         FoxIconButton(
             Icons.Outlined.ZoomOut, strings.editorZoomOut, shortcut = "Ctrl+-",
             enabled = viewport.zoom > EditorViewport.MIN_ZOOM,
@@ -112,7 +118,7 @@ private fun Swatch(color: Color, selected: Boolean, onSelected: () -> Unit) {
             .semantics {
                 this.selected = selected
                 // The color has no name to announce; the value is the swatch itself.
-                contentDescription = "#" + (color.toArgb() and 0xFFFFFF).toString(16).padStart(6, '0')
+                contentDescription = "#" + (color.toArgb() and RGB_MASK).toString(HEX_RADIX).padStart(HEX_DIGITS, '0')
             }
             .clickable(onClick = onSelected),
     )

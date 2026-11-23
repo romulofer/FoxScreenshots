@@ -100,11 +100,11 @@ class SkiaAnnotationPainter(private val base: ImageBitmap?) {
         val head = min(arrow.headLength, length)
 
         // Stop the shaft where the head begins, so a thick stroke does not poke out of the tip.
-        val shaftEndX = arrow.end.x - cos(angle) * head * 0.6f
-        val shaftEndY = arrow.end.y - sin(angle) * head * 0.6f
+        val shaftEndX = arrow.end.x - cos(angle) * head * SHAFT_HEAD_OVERLAP
+        val shaftEndY = arrow.end.y - sin(angle) * head * SHAFT_HEAD_OVERLAP
         canvas.drawLine(arrow.start.x, arrow.start.y, shaftEndX, shaftEndY, stroke(arrow))
 
-        val spread = PI.toFloat() / 7f
+        val spread = PI.toFloat() / HEAD_SPREAD_DIVISOR
         val path = PathBuilder()
             .moveTo(arrow.end.x, arrow.end.y)
             .lineTo(arrow.end.x - head * cos(angle - spread), arrow.end.y - head * sin(angle - spread))
@@ -133,7 +133,7 @@ class SkiaAnnotationPainter(private val base: ImageBitmap?) {
         // Screenshots are busy; a dark halo keeps light text readable over light content and vice versa.
         val halo = Paint().apply {
             color = HALO_COLOR
-            maskFilter = MaskFilter.makeBlur(FilterBlurMode.NORMAL, 1.5f)
+            maskFilter = MaskFilter.makeBlur(FilterBlurMode.NORMAL, HALO_BLUR_SIGMA)
             isAntiAlias = true
         }
         text.text.lines().forEachIndexed { index, line ->
@@ -151,12 +151,12 @@ class SkiaAnnotationPainter(private val base: ImageBitmap?) {
             step.radius,
             Paint().apply {
                 mode = PaintMode.STROKE
-                strokeWidth = max(1f, step.strokeWidth / 3f)
+                strokeWidth = max(1f, step.strokeWidth / STEP_BORDER_DIVISOR)
                 color = WHITE
                 isAntiAlias = true
             },
         )
-        val font = Font(boldTypeface, step.radius * 1.1f)
+        val font = Font(boldTypeface, step.radius * STEP_FONT_SCALE)
         val label = step.number.toString()
         val width = font.measureTextWidth(label)
         val metrics = font.metrics
@@ -187,7 +187,7 @@ class SkiaAnnotationPainter(private val base: ImageBitmap?) {
 
         when (redaction.style) {
             RedactionStyle.Blur -> {
-                val padded = rect.inflate(redaction.sigma * 3f)
+                val padded = rect.inflate(redaction.sigma * BLUR_REACH_IN_SIGMAS)
                 val source = Rect.makeLTRB(
                     max(padded.left, 0f),
                     max(padded.top, 0f),
@@ -251,6 +251,22 @@ class SkiaAnnotationPainter(private val base: ImageBitmap?) {
     companion object {
         private const val WHITE = 0xFFFFFFFF.toInt()
         private const val HALO_COLOR = 0x99000000.toInt()
+
+        /** The shaft runs into the head by this fraction of the head length, so no gap shows at the join. */
+        private const val SHAFT_HEAD_OVERLAP = 0.6f
+
+        /** Half-angle of the arrow head: a seventh of a half turn (about 26 degrees). */
+        private const val HEAD_SPREAD_DIVISOR = 7f
+
+        /** Blur radius of the halo behind text, in image pixels. */
+        private const val HALO_BLUR_SIGMA = 1.5f
+
+        /** A step badge's ring is a third of the stroke width; its digit is a bit larger than the badge radius. */
+        private const val STEP_BORDER_DIVISOR = 3f
+        private const val STEP_FONT_SCALE = 1.1f
+
+        /** A Gaussian is negligible past three sigmas, so the source region is read that far beyond the blurred box. */
+        private const val BLUR_REACH_IN_SIGMAS = 3f
 
         /** Families tried in order: the fontconfig alias on Linux, then what Windows and macOS ship. */
         private val FONT_FAMILIES = listOf("sans-serif", "Segoe UI", "Helvetica Neue", "Arial", "DejaVu Sans")

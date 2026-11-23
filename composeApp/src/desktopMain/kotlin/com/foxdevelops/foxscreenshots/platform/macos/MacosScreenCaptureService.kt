@@ -115,7 +115,7 @@ internal class MacosScreenCaptureService(
         val width = cg.CGImageGetWidth(image).toInt()
         val height = cg.CGImageGetHeight(image).toInt()
         if (width <= 0 || height <= 0) throw MacCaptureException("Captured image has no area")
-        if (cg.CGImageGetBitsPerPixel(image).toInt() != 32) throw MacCaptureException("Unsupported pixel depth")
+        if (cg.CGImageGetBitsPerPixel(image).toInt() != BITS_PER_PIXEL) throw MacCaptureException("Unsupported pixel depth")
 
         val provider = cg.CGImageGetDataProvider(image) ?: throw MacCaptureException("CGImage has no data provider")
         // CGDataProviderCopyData returns an owned CFData; the byte pointer is valid until it is released.
@@ -201,6 +201,9 @@ internal class MacosScreenCaptureService(
     }
 
     private companion object {
+        /** The only layout supported: 32-bit BGRA/RGBA. */
+        const val BITS_PER_PIXEL = 32
+
         const val MAX_DISPLAYS = 16
     }
 }

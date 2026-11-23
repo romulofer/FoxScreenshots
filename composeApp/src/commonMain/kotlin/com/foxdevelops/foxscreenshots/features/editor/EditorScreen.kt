@@ -54,6 +54,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.unit.dp
 import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
+import com.foxdevelops.foxscreenshots.core.theme.Spacing
 import com.foxdevelops.foxscreenshots.core.theme.foxTextFieldColors
 import com.foxdevelops.foxscreenshots.features.home.copyToClipboard
 import com.foxdevelops.foxscreenshots.features.home.saveWithDialog
@@ -62,6 +63,9 @@ import com.foxdevelops.foxscreenshots.ui.AppContainer
 import com.foxdevelops.foxscreenshots.ui.FoxIconButton
 import com.foxdevelops.foxscreenshots.ui.FoxTooltip
 import kotlinx.coroutines.launch
+
+/** Tallest the caption box grows before it scrolls. */
+private const val TEXT_INPUT_MAX_LINES = 6
 
 /**
  * Non-destructive annotation editor. The annotation layer only becomes pixels
@@ -146,7 +150,7 @@ fun EditorScreen(app: AppContainer, capture: CaptureResult, modifier: Modifier =
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(if (state.isDirty) "• ${strings.editorTitle}" else strings.editorTitle)
                     if (state.isDirty) {
-                        Spacer(Modifier.width(12.dp))
+                        Spacer(Modifier.width(Spacing.md))
                         Text(
                             strings.editorUnsaved,
                             style = MaterialTheme.typography.labelMedium,
@@ -167,7 +171,7 @@ fun EditorScreen(app: AppContainer, capture: CaptureResult, modifier: Modifier =
                 )
                 FoxIconButton(Icons.AutoMirrored.Outlined.Undo, strings.undo, shortcut = "Ctrl+Z", enabled = canUndo, onClick = controller::undo)
                 FoxIconButton(Icons.AutoMirrored.Outlined.Redo, strings.redo, shortcut = "Ctrl+Y", enabled = canRedo, onClick = controller::redo)
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(Spacing.sm))
                 FoxIconButton(
                     Icons.Outlined.ContentCopy, strings.actionCopy, shortcut = "Ctrl+C",
                     enabled = image != null,
@@ -178,19 +182,19 @@ fun EditorScreen(app: AppContainer, capture: CaptureResult, modifier: Modifier =
                     enabled = image != null,
                     onClick = ::save,
                 )
-                FoxTooltip("${strings.editorApply} (Ctrl+Enter)", modifier = Modifier.padding(horizontal = 8.dp)) {
+                FoxTooltip("${strings.editorApply} (Ctrl+Enter)", modifier = Modifier.padding(horizontal = Spacing.sm)) {
                     Button(enabled = image != null && state.isDirty, onClick = ::applyEdits) {
                         Icon(Icons.Outlined.Check, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(Spacing.sm))
                         Text(strings.editorApply)
                     }
                 }
             },
         )
-        Column(Modifier.fillMaxSize().padding(12.dp)) {
+        Column(Modifier.fillMaxSize().padding(Spacing.md)) {
             Row(Modifier.weight(1f).fillMaxSize()) {
                 ToolRail(state.tool, controller::selectTool)
-                Spacer(Modifier.width(12.dp))
+                Spacer(Modifier.width(Spacing.md))
                 Box(Modifier.weight(1f).fillMaxSize()) {
                     if (image == null) {
                         CircularProgressIndicator(Modifier.align(Alignment.Center))
@@ -219,7 +223,7 @@ fun EditorScreen(app: AppContainer, capture: CaptureResult, modifier: Modifier =
                     }
                 }
             }
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(Spacing.md))
             StyleBar(
                 tool = state.tool,
                 color = state.color,
@@ -318,7 +322,7 @@ private fun TextPromptDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit)
                 placeholder = { Text(strings.editorTextHint) },
                 // Enter starts a new line; Ctrl+Enter confirms.
                 minLines = 2,
-                maxLines = 6,
+                maxLines = TEXT_INPUT_MAX_LINES,
                 colors = foxTextFieldColors(),
                 modifier = Modifier.focusRequester(focus).onPreviewKeyEvent { event ->
                     if (event.type == KeyEventType.KeyDown && event.key == Key.Enter && (event.isCtrlPressed || event.isMetaPressed)) {

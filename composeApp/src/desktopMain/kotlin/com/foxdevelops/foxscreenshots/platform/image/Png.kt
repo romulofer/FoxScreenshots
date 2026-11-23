@@ -1,5 +1,6 @@
 package com.foxdevelops.foxscreenshots.platform.image
 
+import com.foxdevelops.foxscreenshots.core.storage.requirePng
 import com.foxdevelops.foxscreenshots.model.CaptureRegion
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ColorInfo
@@ -11,6 +12,7 @@ import org.jetbrains.skia.ImageInfo
 import org.jetbrains.skia.Rect
 import org.jetbrains.skia.SamplingMode
 import org.jetbrains.skia.Surface
+import java.nio.ByteBuffer
 
 /** Byte order of a raw 32-bit frame as it sits in memory. */
 enum class PixelOrder(val colorType: ColorType) {
@@ -20,6 +22,14 @@ enum class PixelOrder(val colorType: ColorType) {
 
 /** PNG helpers shared by the capture backends. */
 object Png {
+    /** Bytes per pixel of the 32-bit rasters the capture backends hand back. */
+    private const val BYTES_PER_PIXEL = Int.SIZE_BYTES
+
+    /** Where the IHDR chunk's width and height sit: 8-byte signature, 4-byte length, 4-byte type. */
+    private const val IHDR_WIDTH_OFFSET = 16
+    private const val IHDR_HEIGHT_OFFSET = 20
+    private const val IHDR_END = 24
+
     /**
      * Encodes raw 32-bit pixels — what X11, GDI and CoreGraphics hand back — as
      * an opaque PNG. The fourth byte is undefined on some of them, so the image
@@ -29,12 +39,12 @@ object Png {
         pixels: ByteArray,
         width: Int,
         height: Int,
-        rowBytes: Int = width * 4,
+        rowBytes: Int = width * BYTES_PER_PIXEL,
         order: PixelOrder = PixelOrder.Bgra,
     ): ByteArray {
         require(width > 0 && height > 0) { "invalid size ${width}x$height" }
-        require(rowBytes >= width * 4) { "rowBytes $rowBytes shorter than a $width-pixel row" }
-        require(pixels.size >= (height - 1) * rowBytes + width * 4) { "pixels too short for ${width}x$height" }
+        require(rowBytes >= width * BYTES_PER_PIXEL) { "rowBytes $rowBytes shorter than a $width-pixel row" }
+        require(pixels.size >= (height - 1) * rowBytes + width * BYTES_PER_PIXEL) { "pixels too short for ${width}x$height" }
         val info = ImageInfo(ColorInfo(order.colorType, ColorAlphaType.OPAQUE, ColorSpace.sRGB), width, height)
         val image = Image.makeRaster(info, pixels, rowBytes)
         try {
@@ -48,12 +58,10 @@ object Png {
 
     /** Width and height from the IHDR chunk, without decoding. Throws [IllegalArgumentException] if [png] is not a PNG. */
     fun size(png: ByteArray): Pair<Int, Int> {
-        require(png.size >= 24) { "too short for PNG" }
-        val signature = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
-        for (i in signature.indices) require(png[i] == signature[i]) { "not a PNG" }
-        fun int(at: Int) = ((png[at].toInt() and 0xFF) shl 24) or ((png[at + 1].toInt() and 0xFF) shl 16) or
-            ((png[at + 2].toInt() and 0xFF) shl 8) or (png[at + 3].toInt() and 0xFF)
-        return int(16) to int(20)
+        require(png.size >= IHDR_END) { "too short for PNG" }
+        requirePng(png)
+        val header = ByteBuffer.wrap(png) // big-endian, as PNG integers are
+        return header.getInt(IHDR_WIDTH_OFFSET) to header.getInt(IHDR_HEIGHT_OFFSET)
     }
 
     /** A cropped PNG with its pixel size. */

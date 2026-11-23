@@ -84,14 +84,14 @@ internal class X11ScreenCaptureService(
         if (image.width <= 0 || image.height <= 0 || image.width > MAX_DIMENSION || image.height > MAX_DIMENSION) {
             throw X11Exception("XImage dimensions out of range (${image.width}x${image.height})")
         }
-        if (image.bitsPerPixel != 32) throw X11Exception("Unsupported pixel depth (${image.bitsPerPixel} bpp)")
+        if (image.bitsPerPixel != BITS_PER_PIXEL) throw X11Exception("Unsupported pixel depth (${image.bitsPerPixel} bpp)")
         val data = image.data ?: throw X11Exception("XImage has a null data pointer")
-        if (image.bytesPerLine < image.width * 4) throw X11Exception("XImage bytesPerLine shorter than a scanline")
+        if (image.bytesPerLine < image.width * BYTES_PER_PIXEL) throw X11Exception("XImage bytesPerLine shorter than a scanline")
 
         // With LSBFirst byte order the low mask byte is the first byte in memory.
         val order = when {
-            image.blueMask.toLong() and 0xFF == 0xFFL -> PixelOrder.Bgra
-            image.redMask.toLong() and 0xFF == 0xFFL -> PixelOrder.Rgba
+            image.blueMask.toLong() and LOW_BYTE_MASK == LOW_BYTE_MASK -> PixelOrder.Bgra
+            image.redMask.toLong() and LOW_BYTE_MASK == LOW_BYTE_MASK -> PixelOrder.Rgba
             else -> throw X11Exception(
                 "Unsupported pixel layout (red 0x${image.redMask.toLong().toString(16)}, " +
                     "blue 0x${image.blueMask.toLong().toString(16)})",
@@ -166,9 +166,9 @@ internal class X11ScreenCaptureService(
         val buffer = data.value
         if (status != 0 || buffer == null) return emptyList()
         try {
-            if (actualFormat.value != 32) return emptyList()
+            if (actualFormat.value != PROPERTY_FORMAT_LONGS) return emptyList()
             // X hands `format 32` data back as C longs, 64 bits wide on the platforms this backend runs on.
-            return List(itemCount.value.toInt()) { buffer.getLong(it * 8L) }
+            return List(itemCount.value.toInt()) { buffer.getLong(it * C_LONG_BYTES) }
         } finally {
             x.XFree(buffer)
         }
@@ -203,5 +203,18 @@ internal class X11ScreenCaptureService(
     private companion object {
         const val MAX_DIMENSION = 16384
         const val MAX_LONGS = 1024L
+
+        /** Only 32-bit-per-pixel XImages are decoded. */
+        const val BITS_PER_PIXEL = 32
+        const val BYTES_PER_PIXEL = Int.SIZE_BYTES
+
+        /** Selects the lowest byte of a color mask. */
+        const val LOW_BYTE_MASK = 0xFFL
+
+        /** X reports `format 32` for properties made of C longs. */
+        const val PROPERTY_FORMAT_LONGS = 32
+
+        /** Width of a C long on the 64-bit platforms this backend runs on. */
+        const val C_LONG_BYTES = Long.SIZE_BYTES.toLong()
     }
 }

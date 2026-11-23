@@ -19,6 +19,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
+/** Messages held for a window that is not collecting yet; older ones are dropped beyond this. */
+private const val MESSAGE_BUFFER_SIZE = 8
+
 /** The screens of the single app window. */
 sealed interface Screen {
     data object Home : Screen
@@ -61,7 +64,7 @@ class AppNavigator {
  * from the tray or a hotkey has no screen of its own to report on.
  */
 class Messenger {
-    private val mutableMessages = MutableSharedFlow<Notice>(extraBufferCapacity = 8)
+    private val mutableMessages = MutableSharedFlow<Notice>(extraBufferCapacity = MESSAGE_BUFFER_SIZE)
     val messages: SharedFlow<Notice> = mutableMessages.asSharedFlow()
 
     fun show(text: String) {

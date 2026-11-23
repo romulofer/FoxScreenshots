@@ -57,6 +57,7 @@ import com.foxdevelops.foxscreenshots.core.capture.CaptureMode
 import com.foxdevelops.foxscreenshots.core.desktop.SystemDependency
 import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
 import com.foxdevelops.foxscreenshots.core.i18n.captureFailureMessage
+import com.foxdevelops.foxscreenshots.core.theme.Spacing
 import com.foxdevelops.foxscreenshots.model.CaptureResult
 import com.foxdevelops.foxscreenshots.ui.AppContainer
 import com.foxdevelops.foxscreenshots.ui.FoxIconButton
@@ -122,7 +123,7 @@ fun HomeScreen(app: AppContainer, modifier: Modifier = Modifier) {
                 FoxIconButton(Icons.Outlined.Info, strings.aboutTitle, onClick = { app.navigator.aboutVisible = true })
             },
         )
-        Column(Modifier.fillMaxSize().padding(16.dp)) {
+        Column(Modifier.fillMaxSize().padding(Spacing.lg)) {
             DependencyBanner(
                 issues = app.issues,
                 dismissed = settings.dismissedIssues,
@@ -143,12 +144,12 @@ fun HomeScreen(app: AppContainer, modifier: Modifier = Modifier) {
                     emptyMap()
                 },
             )
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(Spacing.sm))
             TimerDelayChips(selected = settings.timerDelaySeconds, onSelect = app.settings::setTimerDelaySeconds)
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(Spacing.lg))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(strings.sessionGalleryTitle, style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(Spacing.sm))
                 if (session.isNotEmpty()) {
                     val full = session.size >= SessionController.MAX_SESSION_CAPTURES
                     FoxTooltip(if (full) strings.sessionFullHint else strings.sessionGalleryTitle) {
@@ -160,7 +161,7 @@ fun HomeScreen(app: AppContainer, modifier: Modifier = Modifier) {
                     }
                 }
             }
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(Spacing.sm))
             Gallery(app, session, savedPaths, scope)
         }
     }
@@ -235,7 +236,7 @@ private fun Gallery(
                     modifier = Modifier.size(64.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(Spacing.lg))
                 Text(
                     strings.sessionEmpty,
                     textAlign = TextAlign.Center,
@@ -248,9 +249,9 @@ private fun Gallery(
     }
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = 220.dp),
-        contentPadding = PaddingValues(bottom = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(bottom = Spacing.sm),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.md),
+        verticalArrangement = Arrangement.spacedBy(Spacing.md),
         modifier = Modifier.fillMaxWidth(),
     ) {
         items(session, key = { it.id }) { capture ->

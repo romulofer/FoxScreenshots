@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
+import com.foxdevelops.foxscreenshots.core.theme.Spacing
 
 /** Help ▸ About: name, version, the privacy promise and the license. */
 @Composable
@@ -23,12 +24,12 @@ fun AboutDialog(version: String, onDismiss: () -> Unit) {
             Column {
                 if (version.isNotEmpty()) {
                     Text(strings.settingsVersion(version), style = MaterialTheme.typography.labelLarge)
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(Spacing.sm))
                 }
                 Text(strings.aboutTagline)
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(Spacing.sm))
                 Text(strings.aboutPrivacy, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(Spacing.sm))
                 Text(strings.aboutLicense, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         },

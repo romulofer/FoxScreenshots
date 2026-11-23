@@ -19,6 +19,9 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
 
+/** How long a portal request may stay unanswered (the user may be looking at a permission dialog). */
+private const val DEFAULT_TIMEOUT_SECONDS = 120L
+
 /**
  * Global hotkeys on Wayland, through the `GlobalShortcuts` portal.
  *
@@ -32,7 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 class PortalGlobalHotkeys(
     private val connect: () -> DBusConnection = { DBusConnectionBuilder.forSessionBus().withShared(false).build() },
-    private val timeoutSeconds: Long = 120,
+    private val timeoutSeconds: Long = DEFAULT_TIMEOUT_SECONDS,
 ) : GlobalHotkeys {
 
     private val worker = Executors.newSingleThreadExecutor { runnable -> Thread(runnable, "portal-hotkeys").apply { isDaemon = true } }

@@ -141,7 +141,7 @@ fun CaptureSelectionOverlay(
             .focusable()
             .onKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
-                val step = if (event.isShiftPressed) 10f else 1f
+                val step = if (event.isShiftPressed) NUDGE_STEP_SHIFT_PX else NUDGE_STEP_PX
                 when (event.key) {
                     Key.Escape -> { cancel(); true }
                     Key.Enter, Key.NumPadEnter ->
@@ -234,6 +234,28 @@ private fun rectOf(a: Offset, b: Offset) =
 private const val MAGNIFIER_SIZE = 132f
 private const val MAGNIFIER_ZOOM = 6f
 
+// Geometry and opacity of the overlay's drawing, in canvas pixels unless the name says otherwise.
+private const val NUDGE_STEP_PX = 1f
+private const val NUDGE_STEP_SHIFT_PX = 10f
+private const val CROSSHAIR_ALPHA = 0.7f
+private const val SELECTION_BORDER_PX = 1.5f
+private const val CORNER_TICK_LENGTH_PX = 14f
+private const val CORNER_TICK_WIDTH_PX = 3f
+private const val BADGE_PAD_X_PX = 8f
+private const val BADGE_PAD_Y_PX = 4f
+private const val BADGE_GAP_PX = 6f
+private const val BADGE_CORNER_RADIUS_PX = 6f
+private const val HINT_PAD_X_PX = 14f
+private const val HINT_PAD_Y_PX = 10f
+private const val HINT_TOP_OFFSET_PX = 64f
+private const val HINT_CORNER_RADIUS_PX = 10f
+private const val MAGNIFIER_CURSOR_GAP_PX = 24f
+private const val MAGNIFIER_CORNER_RADIUS_PX = 10f
+private const val MAGNIFIER_BORDER_PX = 2f
+private const val HANDLE_HALF_SIZE_PX = 5f
+private const val HANDLE_BORDER_PX = 2f
+private const val CONFIRM_BUTTON_CORNER_RADIUS_PX = 10f
+
 /**
  * Draws the whole capture overlay in one pass: the frozen backdrop, dimmed
  * surroundings, the rubber band with its live size badge, and a pixel magnifier.
@@ -297,16 +319,16 @@ private fun DrawScope.paintDim(canvasRect: Rect, selection: Rect?, scrim: Color)
 
 private fun DrawScope.paintCrosshair(canvasRect: Rect, at: Offset?, accent: Color) {
     at ?: return
-    val color = accent.copy(alpha = 0.7f)
+    val color = accent.copy(alpha = CROSSHAIR_ALPHA)
     drawLine(color, Offset(canvasRect.left, at.y), Offset(canvasRect.right, at.y), strokeWidth = 1f)
     drawLine(color, Offset(at.x, canvasRect.top), Offset(at.x, canvasRect.bottom), strokeWidth = 1f)
 }
 
 private fun DrawScope.paintSelection(selection: Rect, accent: Color) {
-    drawRect(accent, selection.topLeft, selection.size, style = Stroke(width = 1.5f))
+    drawRect(accent, selection.topLeft, selection.size, style = Stroke(width = SELECTION_BORDER_PX))
 
     // Corner ticks, so the exact edge stays visible against busy wallpaper.
-    val tick = 14f
+    val tick = CORNER_TICK_LENGTH_PX
     val corners = listOf(
         Triple(selection.topLeft, Offset(tick, 0f), Offset(0f, tick)),
         Triple(selection.topRight, Offset(-tick, 0f), Offset(0f, tick)),
@@ -314,8 +336,8 @@ private fun DrawScope.paintSelection(selection: Rect, accent: Color) {
         Triple(selection.bottomRight, Offset(-tick, 0f), Offset(0f, -tick)),
     )
     for ((corner, horizontal, vertical) in corners) {
-        drawLine(accent, corner, corner + horizontal, strokeWidth = 3f)
-        drawLine(accent, corner, corner + vertical, strokeWidth = 3f)
+        drawLine(accent, corner, corner + horizontal, strokeWidth = CORNER_TICK_WIDTH_PX)
+        drawLine(accent, corner, corner + vertical, strokeWidth = CORNER_TICK_WIDTH_PX)
     }
 }
 
@@ -330,28 +352,28 @@ private fun DrawScope.paintSizeBadge(
 ) {
     val label = "${(selection.width * scale).roundToInt()} × ${(selection.height * scale).roundToInt()} px"
     val text = measurer.measure(label, TextStyle(color = onAccent, fontSize = 13.sp, fontWeight = FontWeight.SemiBold))
-    val padX = 8f
-    val padY = 4f
+    val padX = BADGE_PAD_X_PX
+    val padY = BADGE_PAD_Y_PX
     val badgeWidth = text.size.width + padX * 2
     val badgeHeight = text.size.height + padY * 2
 
     // Above the selection, flipping inside when there is no room.
-    var origin = Offset(selection.left, selection.top - badgeHeight - 6f)
-    if (origin.y < canvasRect.top) origin = Offset(selection.left, selection.bottom + 6f)
+    var origin = Offset(selection.left, selection.top - badgeHeight - BADGE_GAP_PX)
+    if (origin.y < canvasRect.top) origin = Offset(selection.left, selection.bottom + BADGE_GAP_PX)
 
-    drawRoundRect(accent, origin, Size(badgeWidth, badgeHeight), CornerRadius(6f))
+    drawRoundRect(accent, origin, Size(badgeWidth, badgeHeight), CornerRadius(BADGE_CORNER_RADIUS_PX))
     drawText(text, topLeft = origin + Offset(padX, padY))
 }
 
 private fun DrawScope.paintHint(canvasRect: Rect, hint: String, colors: FoxColors, measurer: TextMeasurer) {
     val text: TextLayoutResult =
         measurer.measure(hint, TextStyle(color = colors.onScrim, fontSize = 15.sp, fontWeight = FontWeight.Medium))
-    val padX = 14f
-    val padY = 10f
+    val padX = HINT_PAD_X_PX
+    val padY = HINT_PAD_Y_PX
     val width = text.size.width + padX * 2
     val height = text.size.height + padY * 2
-    val topLeft = Offset(canvasRect.center.x - width / 2f, canvasRect.top + 64f - height / 2f)
-    drawRoundRect(colors.scrimStrong, topLeft, Size(width, height), CornerRadius(10f))
+    val topLeft = Offset(canvasRect.center.x - width / 2f, canvasRect.top + HINT_TOP_OFFSET_PX - height / 2f)
+    drawRoundRect(colors.scrimStrong, topLeft, Size(width, height), CornerRadius(HINT_CORNER_RADIUS_PX))
     drawText(text, topLeft = topLeft + Offset(padX, padY))
 }
 
@@ -360,14 +382,14 @@ private fun DrawScope.paintMagnifier(frame: FrozenFrame, mapping: ScreenMapping,
     at ?: return
 
     // Keep the loupe clear of the cursor, flipping near the screen edges.
-    var origin = at + Offset(24f, 24f)
-    if (origin.x + MAGNIFIER_SIZE > canvasRect.right) origin = Offset(at.x - MAGNIFIER_SIZE - 24f, origin.y)
-    if (origin.y + MAGNIFIER_SIZE > canvasRect.bottom) origin = Offset(origin.x, at.y - MAGNIFIER_SIZE - 24f)
+    var origin = at + Offset(MAGNIFIER_CURSOR_GAP_PX, MAGNIFIER_CURSOR_GAP_PX)
+    if (origin.x + MAGNIFIER_SIZE > canvasRect.right) origin = Offset(at.x - MAGNIFIER_SIZE - MAGNIFIER_CURSOR_GAP_PX, origin.y)
+    if (origin.y + MAGNIFIER_SIZE > canvasRect.bottom) origin = Offset(origin.x, at.y - MAGNIFIER_SIZE - MAGNIFIER_CURSOR_GAP_PX)
     val box = Rect(origin, Size(MAGNIFIER_SIZE, MAGNIFIER_SIZE))
 
     val source = (MAGNIFIER_SIZE / MAGNIFIER_ZOOM * mapping.imagePixelsPerCanvasPixel).roundToInt().coerceAtLeast(1)
     val center = mapping.toImage(at)
-    val clip = Path().apply { addRoundRect(RoundRect(box, CornerRadius(10f))) }
+    val clip = Path().apply { addRoundRect(RoundRect(box, CornerRadius(MAGNIFIER_CORNER_RADIUS_PX))) }
     clipPath(clip) {
         drawImage(
             image = frame.image,
@@ -380,25 +402,25 @@ private fun DrawScope.paintMagnifier(frame: FrozenFrame, mapping: ScreenMapping,
     }
     drawLine(accent, Offset(box.left, box.center.y), Offset(box.right, box.center.y), strokeWidth = 1f)
     drawLine(accent, Offset(box.center.x, box.top), Offset(box.center.x, box.bottom), strokeWidth = 1f)
-    drawRoundRect(accent, box.topLeft, box.size, CornerRadius(10f), style = Stroke(width = 2f))
+    drawRoundRect(accent, box.topLeft, box.size, CornerRadius(MAGNIFIER_CORNER_RADIUS_PX), style = Stroke(width = MAGNIFIER_BORDER_PX))
 }
 
 /** Grips at the corners and edge midpoints of a pending selection. */
 private fun DrawScope.paintHandles(selection: Rect, accent: Color) {
-    val half = 5f
+    val half = HANDLE_HALF_SIZE_PX
     val points = listOf(
         selection.topLeft, selection.topCenter, selection.topRight, selection.centerRight,
         selection.bottomRight, selection.bottomCenter, selection.bottomLeft, selection.centerLeft,
     )
     for (p in points) {
         drawRect(Color.White, Offset(p.x - half, p.y - half), Size(half * 2, half * 2))
-        drawRect(accent, Offset(p.x - half, p.y - half), Size(half * 2, half * 2), style = Stroke(width = 2f))
+        drawRect(accent, Offset(p.x - half, p.y - half), Size(half * 2, half * 2), style = Stroke(width = HANDLE_BORDER_PX))
     }
 }
 
 /** The floating "Capture" button of a pending selection; a click anywhere on [box] confirms it. */
 private fun DrawScope.paintConfirmButton(box: Rect, label: String, colors: FoxColors, measurer: TextMeasurer) {
-    drawRoundRect(colors.brandOnSurface, box.topLeft, box.size, CornerRadius(10f))
+    drawRoundRect(colors.brandOnSurface, box.topLeft, box.size, CornerRadius(CONFIRM_BUTTON_CORNER_RADIUS_PX))
     val text = measurer.measure(label, TextStyle(color = colors.onBrand, fontSize = 14.sp, fontWeight = FontWeight.SemiBold))
     drawText(text, topLeft = Offset(box.center.x - text.size.width / 2f, box.center.y - text.size.height / 2f))
 }

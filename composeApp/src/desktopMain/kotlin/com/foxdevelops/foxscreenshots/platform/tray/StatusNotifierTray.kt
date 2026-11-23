@@ -12,6 +12,7 @@ import org.freedesktop.dbus.types.UInt32
 import org.freedesktop.dbus.types.Variant
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
+import java.nio.ByteBuffer
 import javax.imageio.ImageIO
 
 /**
@@ -166,7 +167,7 @@ class StatusNotifierTray(
         override fun getObjectPath() = MENU_PATH
 
         private fun properties(): Map<String, Variant<*>> = mapOf(
-            "Version" to Variant(UInt32(3), "u"),
+            "Version" to Variant(UInt32(DBUSMENU_VERSION), "u"),
             "TextDirection" to Variant("ltr", "s"),
             "Status" to Variant("normal", "s"),
             "IconThemePath" to Variant(emptyList<String>(), "as"),
@@ -240,6 +241,9 @@ class StatusNotifierTray(
         private const val MENU_PATH = "/MenuBar"
         private val ICON_SIZES = listOf(22, 32, 48, 64)
 
+        /** Version of the `com.canonical.dbusmenu` interface this menu implements. */
+        private const val DBUSMENU_VERSION = 3L
+
         fun loadIcon(): BufferedImage {
             val stream = StatusNotifierTray::class.java.getResourceAsStream("/icon.png")
                 ?: throw IllegalStateException("icon.png is missing from the app resources")
@@ -255,16 +259,10 @@ class StatusNotifierTray(
                 drawImage(source, 0, 0, size, size, null)
                 dispose()
             }
-            val bytes = ByteArray(size * size * 4)
-            for (y in 0 until size) for (x in 0 until size) {
-                val argb = scaled.getRGB(x, y)
-                val at = (y * size + x) * 4
-                bytes[at] = (argb ushr 24).toByte()
-                bytes[at + 1] = (argb ushr 16).toByte()
-                bytes[at + 2] = (argb ushr 8).toByte()
-                bytes[at + 3] = argb.toByte()
-            }
-            IconPixmap(size, size, bytes)
+            // The spec wants ARGB in network (big-endian) byte order, which is how ByteBuffer writes an Int.
+            val bytes = ByteBuffer.allocate(size * size * Int.SIZE_BYTES)
+            for (y in 0 until size) for (x in 0 until size) bytes.putInt(scaled.getRGB(x, y))
+            IconPixmap(size, size, bytes.array())
         }
     }
 }

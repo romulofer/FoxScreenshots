@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
 import com.foxdevelops.foxscreenshots.core.settings.Settings
+import com.foxdevelops.foxscreenshots.core.theme.Spacing
 
 /** One-click timer delays under the capture bar. A delay the user set elsewhere (say 7 s) shows as an extra, selected chip. */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
@@ -23,14 +24,14 @@ import com.foxdevelops.foxscreenshots.core.settings.Settings
 fun TimerDelayChips(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
     val strings = LocalStrings.current
     val delays = (Settings.QUICK_DELAYS_SECONDS + selected).distinct().sorted()
-    Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
         Text(
             strings.quickDelayLabel,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(end = 4.dp),
+            modifier = Modifier.padding(end = Spacing.xs),
         )
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
             for (seconds in delays) {
                 FilterChip(
                     selected = seconds == selected,
