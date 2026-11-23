@@ -3,8 +3,10 @@ package com.foxdevelops.foxscreenshots.features.editor
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sqrt
 
 /**
  * One non-destructive mark on top of a capture.
@@ -139,7 +141,7 @@ data class EllipseAnnotation(
         if (a <= 0f || b <= 0f) return super.hitTest(point, tolerance)
         val dx = (point.x - rect.center.x) / a
         val dy = (point.y - rect.center.y) / b
-        val radial = kotlin.math.abs(kotlin.math.sqrt(dx * dx + dy * dy) - 1f) * min(a, b)
+        val radial = abs(sqrt(dx * dx + dy * dy) - 1f) * min(a, b)
         return radial <= strokeWidth / 2f + tolerance
     }
 }

@@ -1,5 +1,6 @@
 package com.foxdevelops.foxscreenshots.platform.image
 
+import com.foxdevelops.foxscreenshots.model.CaptureRegion
 import org.jetbrains.skia.ColorAlphaType
 import org.jetbrains.skia.ColorInfo
 import org.jetbrains.skia.ColorSpace
@@ -7,6 +8,9 @@ import org.jetbrains.skia.ColorType
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.ImageInfo
+import org.jetbrains.skia.Rect
+import org.jetbrains.skia.SamplingMode
+import org.jetbrains.skia.Surface
 
 /** Byte order of a raw 32-bit frame as it sits in memory. */
 enum class PixelOrder(val colorType: ColorType) {
@@ -59,17 +63,17 @@ object Png {
      * Crops [png] to [region] (clipped to the image), or returns `null` when the
      * region does not overlap it.
      */
-    fun crop(png: ByteArray, region: com.foxdevelops.foxscreenshots.model.CaptureRegion): Cropped? {
+    fun crop(png: ByteArray, region: CaptureRegion): Cropped? {
         val image = Image.makeFromEncoded(png)
         try {
             val area = region.clampedTo(image.width, image.height)
             if (area.isEmpty) return null
-            org.jetbrains.skia.Surface.makeRasterN32Premul(area.width, area.height).use { surface ->
+            Surface.makeRasterN32Premul(area.width, area.height).use { surface ->
                 surface.canvas.drawImageRect(
                     image,
-                    org.jetbrains.skia.Rect.makeXYWH(area.x.toFloat(), area.y.toFloat(), area.width.toFloat(), area.height.toFloat()),
-                    org.jetbrains.skia.Rect.makeWH(area.width.toFloat(), area.height.toFloat()),
-                    org.jetbrains.skia.SamplingMode.DEFAULT,
+                    Rect.makeXYWH(area.x.toFloat(), area.y.toFloat(), area.width.toFloat(), area.height.toFloat()),
+                    Rect.makeWH(area.width.toFloat(), area.height.toFloat()),
+                    SamplingMode.DEFAULT,
                     null,
                     true,
                 )

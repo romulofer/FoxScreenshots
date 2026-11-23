@@ -30,6 +30,7 @@ import com.foxdevelops.foxscreenshots.platform.tray.TrayPresenter
 import com.foxdevelops.foxscreenshots.platform.windows.WindowsScreenCaptureService
 import com.foxdevelops.foxscreenshots.platform.x11.X11ScreenCaptureService
 import com.foxdevelops.foxscreenshots.ui.AppContainer
+import java.nio.file.Path
 import java.util.Locale
 import java.util.Properties
 
@@ -100,7 +101,7 @@ class AppRuntime(
          * Wayland lets no client watch the keyboard, so there the desktop is asked to bind the shortcuts
          * (portal); everywhere else the system-wide hook sees the keys itself.
          */
-        private fun hotkeysFor(session: DesktopSession, libraryDir: java.nio.file.Path): GlobalHotkeys =
+        private fun hotkeysFor(session: DesktopSession, libraryDir: Path): GlobalHotkeys =
             if (session == DesktopSession.Wayland) PortalGlobalHotkeys() else NativeHookHotkeys(libraryDir = libraryDir)
 
         /** Linux desktops speak StatusNotifierItem over D-Bus, not the AWT tray protocol; everywhere else AWT works. */

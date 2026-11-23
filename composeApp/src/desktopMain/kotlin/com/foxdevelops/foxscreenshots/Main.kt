@@ -27,12 +27,16 @@ import com.foxdevelops.foxscreenshots.core.desktop.DesktopEvents
 import com.foxdevelops.foxscreenshots.core.desktop.SystemDependency
 import com.foxdevelops.foxscreenshots.core.desktop.TrayAction
 import com.foxdevelops.foxscreenshots.core.hotkey.HotkeyAction
+import com.foxdevelops.foxscreenshots.core.i18n.Strings
 import com.foxdevelops.foxscreenshots.core.i18n.stringsFor
+import com.foxdevelops.foxscreenshots.core.settings.LanguagePreference
+import com.foxdevelops.foxscreenshots.core.settings.ThemePreference
 import com.foxdevelops.foxscreenshots.core.theme.FoxTheme
 import com.foxdevelops.foxscreenshots.features.capture.CaptureSelectionOverlay
 import com.foxdevelops.foxscreenshots.features.capture.CountdownBadge
 import com.foxdevelops.foxscreenshots.features.home.runCapture
 import com.foxdevelops.foxscreenshots.core.i18n.LocalStrings
+import com.foxdevelops.foxscreenshots.ui.AppContainer
 import com.foxdevelops.foxscreenshots.ui.AppRoot
 import com.foxdevelops.foxscreenshots.ui.FoxToast
 import kotlinx.coroutines.Dispatchers
@@ -40,6 +44,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import io.github.vinceglb.filekit.FileKit
 import kotlinx.coroutines.launch
+import org.jetbrains.skia.Image
+import java.awt.Dimension
 
 private const val APP_ID = "com.foxdevelops.foxscreenshots"
 
@@ -118,7 +124,7 @@ fun main() {
             // Closing keeps the app in the tray; with no tray to come back from, closing has to quit.
             onCloseRequest = { if (issues.any { it.dependency == SystemDependency.Tray }) quit() else surface.hideToTray() },
         ) {
-            window.minimumSize = java.awt.Dimension(640, 480)
+            window.minimumSize = Dimension(640, 480)
             AppRoot(app)
         }
 
@@ -133,7 +139,7 @@ fun main() {
 }
 
 private fun loadAppIcon() =
-    org.jetbrains.skia.Image.makeFromEncoded(AppRuntime::class.java.getResourceAsStream("/icon.png")!!.use { it.readBytes() })
+    Image.makeFromEncoded(AppRuntime::class.java.getResourceAsStream("/icon.png")!!.use { it.readBytes() })
         .toComposeImageBitmap()
 
 /** How long a toast stays up. */
@@ -143,9 +149,9 @@ private const val TOAST_MILLIS = 2_500L
 @Composable
 private fun SelectionWindow(
     request: OverlayRequest,
-    theme: com.foxdevelops.foxscreenshots.core.settings.ThemePreference,
-    language: com.foxdevelops.foxscreenshots.core.settings.LanguagePreference,
-    app: com.foxdevelops.foxscreenshots.ui.AppContainer,
+    theme: ThemePreference,
+    language: LanguagePreference,
+    app: AppContainer,
     adjustable: Boolean,
     fullscreen: Boolean,
 ) {
@@ -182,8 +188,8 @@ private fun SelectionWindow(
 @Composable
 private fun CountdownWindow(
     seconds: Int,
-    theme: com.foxdevelops.foxscreenshots.core.settings.ThemePreference,
-    strings: com.foxdevelops.foxscreenshots.core.i18n.Strings,
+    theme: ThemePreference,
+    strings: Strings,
     onCancel: () -> Unit,
     escapeCancels: Boolean,
 ) {
@@ -208,7 +214,7 @@ private fun CountdownWindow(
 
 /** A small always-on-top message near the bottom-right corner, never focused so it cannot steal typing from the app underneath. */
 @Composable
-private fun ToastWindow(text: String, theme: com.foxdevelops.foxscreenshots.core.settings.ThemePreference, strings: com.foxdevelops.foxscreenshots.core.i18n.Strings) {
+private fun ToastWindow(text: String, theme: ThemePreference, strings: Strings) {
     val bounds = remember { virtualScreenBounds() }
     val width = 360
     val height = 72

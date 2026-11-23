@@ -16,6 +16,8 @@ import org.freedesktop.dbus.types.Variant
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Global hotkeys on Wayland, through the `GlobalShortcuts` portal.
@@ -46,7 +48,7 @@ class PortalGlobalHotkeys(
     private var session: String? = null
     private var tokenCounter = 0
 
-    private val closing = java.util.concurrent.atomic.AtomicBoolean(false)
+    private val closing = AtomicBoolean(false)
 
     private val closed: Boolean get() = closing.get()
 
@@ -142,7 +144,7 @@ class PortalGlobalHotkeys(
             call(token)
             val response = try {
                 answer.get(timeoutSeconds, TimeUnit.SECONDS)
-            } catch (e: java.util.concurrent.TimeoutException) {
+            } catch (e: TimeoutException) {
                 throw HotkeyUnavailableException("the desktop never answered the shortcuts request")
             }
             if (response.response.toInt() != 0) {

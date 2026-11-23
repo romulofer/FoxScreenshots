@@ -16,6 +16,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
@@ -366,7 +367,7 @@ private fun DrawScope.paintMagnifier(frame: FrozenFrame, mapping: ScreenMapping,
 
     val source = (MAGNIFIER_SIZE / MAGNIFIER_ZOOM * mapping.imagePixelsPerCanvasPixel).roundToInt().coerceAtLeast(1)
     val center = mapping.toImage(at)
-    val clip = Path().apply { addRoundRect(androidx.compose.ui.geometry.RoundRect(box, CornerRadius(10f))) }
+    val clip = Path().apply { addRoundRect(RoundRect(box, CornerRadius(10f))) }
     clipPath(clip) {
         drawImage(
             image = frame.image,

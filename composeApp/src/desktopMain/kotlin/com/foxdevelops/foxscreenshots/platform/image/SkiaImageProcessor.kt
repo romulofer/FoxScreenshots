@@ -8,6 +8,7 @@ import com.foxdevelops.foxscreenshots.features.editor.Annotation
 import com.foxdevelops.foxscreenshots.features.editor.ImageProcessor
 import com.foxdevelops.foxscreenshots.features.editor.ProcessedImage
 import com.foxdevelops.foxscreenshots.features.editor.roundedOut
+import org.jetbrains.skia.Canvas
 import org.jetbrains.skia.EncodedImageFormat
 import org.jetbrains.skia.Image
 import org.jetbrains.skia.SamplingMode
@@ -69,7 +70,7 @@ class SkiaImageProcessor : ImageProcessor {
         image.asSkiaBitmap().close()
     }
 
-    private fun render(width: Int, height: Int, draw: (org.jetbrains.skia.Canvas) -> Unit): ProcessedImage {
+    private fun render(width: Int, height: Int, draw: (Canvas) -> Unit): ProcessedImage {
         Surface.makeRasterN32Premul(width, height).use { surface ->
             draw(surface.canvas)
             surface.makeImageSnapshot().use { snapshot ->

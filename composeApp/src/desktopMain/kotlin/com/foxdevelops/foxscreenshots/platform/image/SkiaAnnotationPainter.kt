@@ -1,5 +1,6 @@
 package com.foxdevelops.foxscreenshots.platform.image
 
+import androidx.compose.ui.geometry.Rect as ComposeRect
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asSkiaBitmap
 import androidx.compose.ui.graphics.toArgb
@@ -33,8 +34,11 @@ import org.jetbrains.skia.SamplingMode
 import org.jetbrains.skia.Surface
 import org.jetbrains.skia.Typeface
 import java.util.WeakHashMap
+import kotlin.math.PI
 import kotlin.math.atan2
+import kotlin.math.ceil
 import kotlin.math.cos
+import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
@@ -89,7 +93,7 @@ class SkiaAnnotationPainter(private val base: ImageBitmap?) {
     private fun paintArrow(canvas: Canvas, arrow: ArrowAnnotation) {
         val dx = arrow.end.x - arrow.start.x
         val dy = arrow.end.y - arrow.start.y
-        val length = kotlin.math.hypot(dx, dy)
+        val length = hypot(dx, dy)
         if (length == 0f) return
 
         val angle = atan2(dy, dx)
@@ -100,7 +104,7 @@ class SkiaAnnotationPainter(private val base: ImageBitmap?) {
         val shaftEndY = arrow.end.y - sin(angle) * head * 0.6f
         canvas.drawLine(arrow.start.x, arrow.start.y, shaftEndX, shaftEndY, stroke(arrow))
 
-        val spread = Math.PI.toFloat() / 7f
+        val spread = PI.toFloat() / 7f
         val path = PathBuilder()
             .moveTo(arrow.end.x, arrow.end.y)
             .lineTo(arrow.end.x - head * cos(angle - spread), arrow.end.y - head * sin(angle - spread))
@@ -215,8 +219,8 @@ class SkiaAnnotationPainter(private val base: ImageBitmap?) {
             min(region.bottom, image.height.toFloat()),
         )
         if (clipped.width <= 0f || clipped.height <= 0f) return
-        val cols = max(1, kotlin.math.ceil(clipped.width / block).toInt())
-        val rows = max(1, kotlin.math.ceil(clipped.height / block).toInt())
+        val cols = max(1, ceil(clipped.width / block).toInt())
+        val rows = max(1, ceil(clipped.height / block).toInt())
 
         Surface.makeRasterN32Premul(cols, rows).use { small ->
             small.canvas.drawImageRect(
@@ -242,7 +246,7 @@ class SkiaAnnotationPainter(private val base: ImageBitmap?) {
         }
     }
 
-    private fun androidx.compose.ui.geometry.Rect.toSkia() = Rect.makeLTRB(left, top, right, bottom)
+    private fun ComposeRect.toSkia() = Rect.makeLTRB(left, top, right, bottom)
 
     companion object {
         private const val WHITE = 0xFFFFFFFF.toInt()

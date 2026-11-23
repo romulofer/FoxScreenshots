@@ -7,6 +7,7 @@ import com.foxdevelops.foxscreenshots.core.capture.ScreenSize
 import com.foxdevelops.foxscreenshots.model.CaptureRegion
 import com.foxdevelops.foxscreenshots.model.CaptureResult
 import com.foxdevelops.foxscreenshots.platform.image.Png
+import com.sun.jna.NativeLong
 import com.sun.jna.Pointer
 import com.sun.jna.ptr.IntByReference
 import kotlinx.coroutines.Dispatchers
@@ -155,7 +156,7 @@ internal class MacosScreenCaptureService(
             val boundsKey = CoreGraphics.key("kCGWindowBounds")
             val count = cf.CFArrayGetCount(windows).toLong()
             for (i in 0 until count) {
-                val window = cf.CFArrayGetValueAtIndex(windows, com.sun.jna.NativeLong(i)) ?: continue
+                val window = cf.CFArrayGetValueAtIndex(windows, NativeLong(i)) ?: continue
                 // Layer 0 is the normal window layer; menus, the Dock and the wallpaper live elsewhere.
                 if (readInt(window, layerKey) != 0) continue
                 if (readInt(window, pidKey) == ownPid) continue
